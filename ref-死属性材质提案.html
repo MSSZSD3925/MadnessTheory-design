@@ -1,0 +1,300 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<title>死属性材质提案 · 癫狂构想设计站</title>
+<link rel="stylesheet" href="style.css">
+<nav><div class="t">设计站</div><a class="" href="index.html">总览与体检</a>
+<a class="" href="kinds.html">雕像种类</a>
+<a class="" href="materials.html">材质 ↔ 方块</a>
+<a class="" href="attributes.html">属性</a>
+<a class="" href="traits.html">特性与特殊功能</a>
+<a class="" href="moods.html">心绪</a>
+<a class="" href="numerics.html">数值与公式</a>
+<a class="" href="rituals.html">仪式</a>
+<a class="" href="storage.html">温养仪式</a>
+<a class="" href="moodstaff.html">情绪之杖</a>
+<a class="on" href="refs.html">参考文档</a>
+<a class="" href="intent.html">设计意图</a>
+<div class="t">说明</div>
+<div class="small dim" style="padding:4px 8px">本页内容由 <code>gen-design-site.mjs</code>
+从源码生成，改完代码重跑即可。</div></nav>
+<main><h1>死属性材质提案</h1><p>﻿# 死属性材质提案 —— 为 5 个无承载属性新增 5 种雕像种类</p>
+<div class="card small"><b>一句话结论</b>：5 个提案只使用原版方块、只引用原版贴图，<b>不需要任何新美术</b>；</div>
+<div class="card small">但 <b>"沉坠天花板已经高于升华天花板 37.8%"，新增种类不会推高天花板，却也不能修复这个不对称</b> ——</div>
+<div class="card small">修复方案（一个数字）写在 §3.2。</div>
+<p><b>核对基准</b>：<code>D:\mods\MadnessTheory</code>（只读，未做任何修改）、Minecraft <code>26.1.2</code>、NeoForge <code>26.1.2.112</code></p>
+<p>（<code>gradle.properties:18,24</code>）；方块名单以 <code>net/minecraft/world/level/block/Blocks.java</code>（7231 行）为准。</p>
+<hr>
+<h3>零、先把代码事实摆清楚（含与任务描述不一致之处）</h3>
+<table>
+<tr><th>任务描述</th><th>代码里的实际情况</th><th>出处</th></tr>
+<tr><td><code>StatueMaterial</code> 110 条只是外观</td><td>属实。110 条材质的 <code>kind</code> 指向 19 种之一，材质不影响任何数值</td><td><code>StatueMaterial.java:144-151</code> + 头注释</td></tr>
+<tr><td>11 种属性，6 种有种类承载</td><td>基本属实，但<b>"聚落那一批"只有绿宝石一种</b>；<code>challenge</code> 靠绿宝石的 <code>challengeMultiplier()=1.50</code> 拿到乘数，<b>并不改变"没有种类把 challenge 当自己的属性"</b></td><td><code>EmotionStatueKind.java:45</code>、<code>StatueTrait.java:137-140</code></td></tr>
+<tr><td><code>cavern/ocean/mountain/ruin/challenge</code> 无承载</td><td>属实。<code>cavern</code> 在 19 种里一次都没出现；另 4 个同理</td><td><code>EmotionStatueKind.java:31-57</code></td></tr>
+<tr><td>每种 Kind 要 <code>bind(...)</code> 一组方块</td><td>属实，且 <code>initSources()</code> 只在 <code>ModBlocks.register()</code> 里调一次（方块注册之后）</td><td><code>EmotionStatueKind.java:193</code>、<code>ModBlocks.java:148</code></td></tr>
+</table>
+<h4>0.1 两条结构约束（本提案完全围绕它们设计）</h4>
+<p>1. <b>只有木头类能当升华外围、只有石头类能当沉坠外围</b></p>
+<p>   <code>RitualStructure.isWood()</code> = {WOOD, NETHER_WOOD, CHORUS}，<code>isStone()</code> = {COBBLE, NETHER_ROCK, END_ROCK}</p>
+<p>   （<code>RitualStructure.java:206-217</code>）。外围四尊必须同类；不在集合里直接判失败。</p>
+<p>   → <b>新增种类默认只能当"中心雕像"</b>。想让它当外围必须改这两个方法（见 §4 第 0 项）。</p>
+<p>2. <b>注入总系数 = 外围注入损耗 × 中心注入损耗 × 偏好</b>，</p>
+<p>   "注入损耗"取 <code>EmotionStatueKind.injectionRatio()</code>（tier 0/1/2/3 → 0.50/0.75/0.90/1.00，<code>EmotionStatueKind.java:113-120</code>）；</p>
+<p>   <code>outputRatioForTier</code>（含 tier3 的 ×1.20，<code>EmotionStatueKind.java:131-138</code>）<b>不参与注入</b>（<code>RitualEffects.java:168-187</code>）。</p>
+<h4>0.2 记录的情绪点上限</h4>
+<p><code>amountFrom</code> = <code>8 + 档位 × 8</code> → 档位 0/1/2/3 = <b>8 / 16 / 24 / 32</b>（<code>GuideBookItem.java:393-395</code>）。</p>
+<p>单次仪式只烧一条记录（<code>RitualEffects.java:127-139</code>），所以下文一律用 <b>32 点</b> 作为上限口径。</p>
+<hr>
+<h3>一、原版方块使用情况盘点</h3>
+<h4>1.1 已被绑定的方块（去重 109 个）</h4>
+<p>来源：<code>initSources()</code> 的全部 <code>bind(...)</code>（<code>EmotionStatueKind.java:199-281</code>）。</p>
+<p>（<code>StatueMaterial</code> 有 110 条，但 <code>SNOW</code> 与 <code>SNOW_BLOCK</code> 共用 <code>minecraft:block/snow</code>，所以不同贴图 109 条。）</p>
+<table>
+<tr><th>家族</th><th>已绑定的方块</th></tr>
+<tr><td>泥土系</td><td><code>dirt</code> <code>grass_block</code> <code>coarse_dirt</code> <code>rooted_dirt</code> <code>podzol</code> <code>mycelium</code> <code>mud</code> <code>dirt_path</code></td></tr>
+<tr><td>原木/去皮/木板</td><td>9 种原木（oak/spruce/birch/jungle/acacia/cherry/dark_oak/pale_oak/mangrove）+ 8 种去皮原木 + 9 种木板 + <code>bamboo_planks</code> <code>bamboo_block</code> <code>stripped_bamboo_block</code></td></tr>
+<tr><td>石头家族</td><td><code>cobblestone</code> <code>mossy_cobblestone</code> <code>stone</code> <code>smooth_stone</code> <code>stone_bricks</code> <code>deepslate</code> <code>cobbled_deepslate</code> <code>deepslate_bricks</code> <code>andesite</code> <code>polished_andesite</code> <code>diorite</code> <code>polished_diorite</code> <code>granite</code> <code>polished_granite</code> <code>tuff</code> <code>polished_tuff</code> <code>calcite</code></td></tr>
+<tr><td>沙岩</td><td><code>sandstone</code> <code>smooth_sandstone</code> <code>cut_sandstone</code> <code>chiseled_sandstone</code> <code>red_sandstone</code> <code>smooth_red_sandstone</code> <code>cut_red_sandstone</code> <code>chiseled_red_sandstone</code></td></tr>
+<tr><td>冰雪</td><td><code>snow_block</code> <code>snow</code> <code>powder_snow</code> <code>ice</code> <code>packed_ice</code> <code>blue_ice</code> <code>frosted_ice</code></td></tr>
+<tr><td>金属宝石</td><td><code>iron_block</code> <code>raw_iron_block</code> <code>gold_block</code> <code>raw_gold_block</code> <code>diamond_block</code> <code>emerald_block</code></td></tr>
+<tr><td>下界</td><td><code>netherrack</code> <code>nether_wart_block</code> <code>warped_wart_block</code> <code>blackstone</code> <code>polished_blackstone</code> <code>polished_blackstone_bricks</code> <code>chiseled_polished_blackstone</code> <code>gilded_blackstone</code> <code>cracked_polished_blackstone_bricks</code> <code>basalt</code> <code>smooth_basalt</code> <code>polished_basalt</code> <code>crimson_stem</code> <code>stripped_crimson_stem</code> <code>crimson_hyphae</code> <code>stripped_crimson_hyphae</code> <code>crimson_planks</code> <code>warped_stem</code> <code>stripped_warped_stem</code> <code>warped_hyphae</code> <code>stripped_warped_hyphae</code> <code>warped_planks</code> <code>nether_bricks</code> <code>red_nether_bricks</code> <code>chiseled_nether_bricks</code> <code>cracked_nether_bricks</code> <code>soul_sand</code> <code>soul_soil</code></td></tr>
+<tr><td>末地</td><td><code>end_stone</code> <code>end_stone_bricks</code> <code>chorus_flower</code> <code>chorus_plant</code> <code>purpur_block</code> <code>purpur_pillar</code></td></tr>
+</table>
+<p><b>常被误以为用过、其实没用的原版方块</b>：</p>
+<p><code>cracked_stone_bricks</code> <code>chiseled_stone_bricks</code> <code>mossy_stone_bricks</code> <code>polished_deepslate</code> <code>chiseled_deepslate</code></p>
+<p><code>deepslate_tiles</code> <code>mud_bricks</code> <code>packed_mud</code> <code>amethyst_block</code> 全部铜系列 全部幽匿系列</p>
+<p><code>prismarine*</code> <code>quartz*</code> <code>dripstone_block</code> <code>resin*</code> <code>heavy_core</code> <code>tuff_bricks</code>。</p>
+<h4>1.2 原版存在、模组完全没用到的家族（26.1.2 实测）</h4>
+<table>
+<tr><th>家族</th><th>体量</th><th>获取难度</th><th>是满方块吗</th><th>适合当雕像材质？</th></tr>
+<tr><td><b>铜 + 氧化 + 打蜡全套</b></td><td>极大（满方块 30+：4 氧化态 × {块/切制/凿制} + 8 打蜡切制 + 8 铜格栅 + 8 铜灯 + 8 铜活板门）</td><td>低→中（铜矿遍地；氧化靠时间或蜜脾）</td><td>是</td><td>✅ <b>最适合"残迹"</b> —— 氧化本身就是"时间留下的痕迹"，四色阶自带层次</td></tr>
+<tr><td><b>幽匿系列</b></td><td>中（<code>sculk</code> <code>sculk_vein</code> <code>sculk_catalyst</code> <code>sculk_shrieker</code> <code>sculk_sensor</code> <code>calibrated_sculk_sensor</code>）</td><td>高（远古城市/深暗之域）</td><td>只有 <code>sculk</code> 是满方块</td><td>✅ 适合"幽闭"的门槛材质，<b>只收 <code>sculk</code></b></td></tr>
+<tr><td><b>紫水晶</b></td><td>中（<code>amethyst_block</code> <code>budding_amethyst</code> + 3 晶簇）</td><td>中（紫水晶洞，y&lt;30）</td><td><code>amethyst_block</code>/<code>budding_amethyst</code> 是；晶簇不是</td><td>✅ 适合"幽闭"（洞+晶体），<b>晶簇不收</b></td></tr>
+<tr><td><b>深板岩装饰变种</b></td><td>中（<code>polished_deepslate</code> <code>chiseled_deepslate</code> <code>deepslate_tiles</code> <code>cracked_deepslate_bricks</code> <code>cracked_deepslate_tiles</code>）</td><td>低（y&lt;0 遍地）</td><td>是</td><td>✅ 最省事的补量来源（现有 COBBLE 只收 3 个深板岩）</td></tr>
+<tr><td><b>泥 / 泥砖</b></td><td>小（<code>packed_mud</code> <code>mud_bricks</code> 未用；<code>mud</code> 已被 DIRT 绑定）</td><td>低（红树林沼泽）</td><td>是</td><td>✅ 适合"残迹/高峻"的夯土层次，<b>注意 <code>mud</code> 已占用</b></td></tr>
+<tr><td><b>滴水石</b></td><td>小（<code>dripstone_block</code> <code>pointed_dripstone</code>）</td><td>中（滴水石洞）</td><td>只有 <code>dripstone_block</code></td><td>✅ 适合"高峻"，<b>只收 <code>dripstone_block</code></b></td></tr>
+<tr><td><b>凝灰岩变种</b></td><td>中（<code>tuff_bricks</code> <code>chiseled_tuff</code> <code>chiseled_tuff_bricks</code>；<code>tuff</code>/<code>polished_tuff</code> 已用）</td><td>中（试炼密室、山地露头）</td><td>是</td><td>✅ 适合"挑战"（试炼密室原生建材）</td></tr>
+<tr><td><b>海晶石系列</b></td><td>中（<code>prismarine</code> <code>prismarine_bricks</code> <code>dark_prismarine</code> <code>sea_lantern</code>）</td><td>中（海底神殿）</td><td>是</td><td>✅ <b>最适合"深海"</b>，原版唯一自带"水下遗迹"气质的建材</td></tr>
+<tr><td><b>树脂系列</b></td><td>小（<code>resin_block</code> <code>resin_bricks</code> <code>resin_clump</code>）</td><td>中（苍白橡树 + 嘎枝之心）</td><td><code>resin_block</code>/<code>resin_bricks</code> 是</td><td>⚪ 可用，但叙事偏"诡异"，本提案只把它当"高峻"的补量</td></tr>
+<tr><td><b>石英 / 紫珀 / 末地石砖变种</b></td><td>中（<code>quartz_block</code> <code>chiseled_quartz_block</code> <code>quartz_pillar</code> <code>quartz_bricks</code> <code>smooth_quartz</code>）</td><td>低→中</td><td>是</td><td>⚪ 好拿好看，但叙事是"人造精致"，与 5 个死属性都不最贴；本提案只把石英当"高峻/深海"的补量</td></tr>
+<tr><td><b>石砖变种</b></td><td>小（<code>mossy_stone_bricks</code> <code>cracked_stone_bricks</code> <code>chiseled_stone_bricks</code>）</td><td>低</td><td>是</td><td>⚪ 与 <code>cobblestone</code>/<code>stone_bricks</code> 血缘太近（COBBLE 已收），只作补充量</td></tr>
+<tr><td><b>苍白苔藓 / 嘎枝之心</b></td><td>小（<code>pale_moss_block</code> <code>creaking_heart</code> <code>pale_hanging_moss</code>）</td><td>中（苍白花园）</td><td>前两个是</td><td>⚪ 留给"梦魇/苍白"方向的后续扩展</td></tr>
+<tr><td><b>26.x 新增"书架"shelf 家族</b></td><td>中（<code>oak_shelf</code> … <code>warped_shelf</code> 共 12 种）</td><td>低</td><td>是满方块但<b>视觉是薄架子</b></td><td>❌ 雕成雕像像一堵木板墙，且原版形状暗示"容器"，与"台座"语义打架</td></tr>
+<tr><td>小件装饰（<code>bush</code> <code>leaf_litter</code> <code>firefly_bush</code> <code>cactus_flower</code> <code>wildflowers</code> <code>short/tall_dry_grass</code> <code>pale_hanging_moss</code> <code>resin_clump</code> <code>sculk_vein</code> <code>pointed_dripstone</code>）</td><td>多</td><td>低</td><td><b>不是满方块</b>（无碰撞箱或极薄）</td><td>❌ <code>EmotionStatueBlock</code> 是满方块 + <code>noOcclusion</code>，用薄方块当材质会出现"悬空贴图"</td></tr>
+<tr><td>命令/调试方块（<code>test_block</code> <code>test_instance_block</code> <code>light</code> <code>barrier</code> <code>structure_void</code>）</td><td>少</td><td>创造限定</td><td>—</td><td>❌ 不该进生存配方</td></tr>
+<tr><td>铜傀儡雕像（<code>copper_golem_statue</code>）</td><td>1</td><td>中</td><td>是</td><td>❌ 名字里就有"雕像"，拿它雕雕像语义打结</td></tr>
+</table>
+<h4>1.3 白名单（本提案只从这 9 个里取）</h4>
+<p><b>铜氧化全套 · 幽匿 · 深板岩装饰变种 · 紫水晶块 · 海晶石 · 泥砖/包泥 · 滴水石 · 凝灰岩变种 + 重核 · 树脂块</b></p>
+<hr>
+<h3>二、5 个新种类的提案</h3>
+<h4>2.0 设计公约（照现有 19 种的行推出来，避免断层）</h4>
+<table>
+<tr><th>观测项</th><th>现有分布（出处）</th><th>本提案的取值约束</th></tr>
+<tr><td>极性层</td><td>0.50 ~ 2.00（<code>StatueTrait.java:88-125</code>）</td><td>新种类取 0.60 ~ 1.50，<b>不设 1.75 / 2.00</b>（那是末地岩/紫颂的专属区）</td></tr>
+<tr><td>属性层</td><td>同类 ×2.00 / 交叉 ×1.50，写死在 <code>multiplierFor</code></td><td>不新增层级，只用现有两条</td></tr>
+<tr><td>无条件层</td><td>只有绿宝石 1.20（<code>StatueTrait.java:133-135</code>）</td><td>新种类<b>一律 1.00</b>（不扩散，否则绿宝石失去身份）</td></tr>
+<tr><td>challenge 特例</td><td>只有绿宝石 1.50（<code>StatueTrait.java:137-140</code>）</td><td>新种类<b>一律 1.00</b>，把 challenge 当【属性】而非【特例】</td></tr>
+<tr><td>容量</td><td>8/16/24/32/40/48/56/128（<code>EmotionStatueKind.java:35-57</code>）</td><td>取 32 ~ 52，全部落在"沙岩 24 / 铁 32 / 金 40 / 绿宝石 48 / 钻石 56"这条主线上</td></tr>
+<tr><td>等级</td><td>0/1/2/3</td><td><b>全部 tier 2</b>（注入 90%）；不给 tier 3（tier 3 只有钻石与紫珀，是末端锚点）</td></tr>
+<tr><td>同属性 × 极性上限</td><td>现有最高 = 紫珀(负面 1.75) × 末地岩(跨界 1.50) 一侧 ≈ 2.63</td><td>新种类 ≤ 3.00，且 §3.2 证明全局天花板不被推高</td></tr>
+</table>
+<h4>2.1 <code>cavern</code> 幽闭 → <code>sculk</code> 潜声石像</h4>
+<table>
+<tr><th>项</th><th>值</th><th>依据</th></tr>
+<tr><td>id / 中文名</td><td><code>sculk</code> / 潜声石像</td><td>与方块家族同名（现有种类全部按方块命名）</td></tr>
+<tr><td>等级 / 容量 / 属性</td><td><b>2 / 40 / CAVERN</b></td><td>容量对齐 GOLD 的 40；等级 2 对齐"下界砖/末地岩"这一档（注入 90%）</td></tr>
+<tr><td>极性层</td><td>正面 <b>0.90</b> / 负面 <b>1.40</b></td><td>沿用 NETHER_DIRT(0.90/1.50) 的"负面强、正面弱"形状，但压低到 1.40 —— 因为 CAVERN 来自<b>群系关键词</b>（<code>EmotionAttribute.java:239</code> 的 <code>deep_dark</code>/<code>lush_caves</code>/<code>dripstone_caves</code>），比下界的结构门槛更容易批量获得</td></tr>
+<tr><td>无条件层 / challenge 特例</td><td>1.00 / 1.00</td><td>公约</td></tr>
+<tr><td>绑定方块（6）</td><td><code>sculk</code>、<code>polished_deepslate</code>、<code>chiseled_deepslate</code>、<code>deepslate_tiles</code>、<code>amethyst_block</code>、<code>budding_amethyst</code></td><td>幽匿=深暗之域；深板岩装饰=洞穴本体；紫水晶=洞穴晶体</td></tr>
+<tr><td>获取门槛</td><td>低→高：深板岩系 y&lt;0 随手可得；<b><code>sculk</code> 必须进远古城市（有监守者）</b></td><td>"越强越难拿"的门槛只压在一块方块上，不逼玩家重复刷</td></tr>
+<tr><td>特性 <code>CAVERN_DARK</code></td><td>属性层（现成 <code>EmotionAttribute.CAVERN.crossPartners() = {OCEAN}</code>）· 极性 0.90/1.40 · 无条件 1.00 · challenge 1.00</td><td>—</td></tr>
+<tr><td>特殊功能</td><td><b>不建议加</b>（详见下方说明）</td><td>—</td></tr>
+</table>
+<div class="card small"><b>为什么幽闭不加特殊功能</b>：现有 4 个特殊机制（泥土免冲突、紫颂随机增减、紫珀共享、灵魂混装）</div>
+<div class="card small">每一个都对应一条<b>玩家会主动执行的策略</b>。幽闭目前没有这样的策略空位 ——</div>
+<div class="card small">它的玩法价值已经完整：<b>它是第一个让 CAVERN 吃满 ×2.00 的材质，同时让 <code>cavern↔ocean</code> 交叉从"永不触发"变成"可触发"</b>。</div>
+<div class="card small">硬塞一个功能就是"为了特殊而特殊"。</div>
+<h4>2.2 <code>ocean</code> 深海 → <code>abyssal</code> 深海石像</h4>
+<table>
+<tr><th>项</th><th>值</th><th>依据</th></tr>
+<tr><td>id / 中文名</td><td><code>abyssal</code> / 深海石像</td><td>避开与方块 <code>prismarine</code> 撞名后不好读</td></tr>
+<tr><td>等级 / 容量 / 属性</td><td><b>2 / 32 / OCEAN</b></td><td>容量对齐 IRON(32)/NETHER_ROCK(32) —— 同类 ×2.00 已经很高，容量不再给大</td></tr>
+<tr><td>极性层</td><td>正面 <b>1.10</b> / 负面 <b>1.10</b></td><td>参照 METAL_GOLD(1.25/1.15) 的"对称小幅"，但两边都压到 1.10：<b>不带倾向，身份完全由属性层表达</b></td></tr>
+<tr><td>无条件层 / challenge 特例</td><td>1.00 / 1.00</td><td>公约</td></tr>
+<tr><td>绑定方块（5）</td><td><code>prismarine</code>、<code>prismarine_bricks</code>、<code>dark_prismarine</code>、<code>sea_lantern</code>、<code>smooth_quartz</code></td><td>海晶石=海底神殿（深海唯一的"人为遗迹"）；<code>smooth_quartz</code> 作压舱/白瓷补一个亮色层次</td></tr>
+<tr><td>获取门槛</td><td>中：海底神殿（守卫者、挖掘疲劳）+ 一块烧石英（最便宜的补料）</td><td>难度位置 ≈ <code>NETHER_BRICK</code>：一个危险结构 + 一种廉价填充</td></tr>
+<tr><td>特性 <code>OCEAN_DEEP</code></td><td>属性层（<code>OCEAN.crossPartners() = {CAVERN}</code>）· 极性 1.10/1.10 · 无条件 1.00 · challenge 1.00</td><td>—</td></tr>
+<tr><td><b>特殊功能：水压稳固</b></td><td><b>雕像被水淹没时，由它产出的手杖不产生"输出损失"</b></td><td><b>解决的真实问题</b>：<code>EmotionStatueBlock</code> 是 <code>noOcclusion</code> 且可被水淹没，但在海底神殿/水下基地搭仪式的额外成本（气泡、守卫者、挖掘疲劳）目前<b>没有任何机制补偿</b>。这条只在水下生效，陆地玩家拿不到，等于<b>用场景本身当代价</b>。实现要点：<code>EmotionStatueBlockEntity</code> 已持有 <code>level</code>/<code>pos</code>，可取 <code>level.getFluidState(pos)</code>；输出侧在 <code>EmotionStaffItem</code> 释放路径乘一个系数（默认 1.0 时行为不变）。★ 若想零代码，删掉这条即可，其余数值不受影响</td></tr>
+</table>
+<h4>2.3 <code>mountain</code> 高峻 → <code>dripstone</code> 石笋石像</h4>
+<table>
+<tr><th>项</th><th>值</th><th>依据</th></tr>
+<tr><td>id / 中文名</td><td><code>dripstone</code> / 石笋石像</td><td>按方块家族命名</td></tr>
+<tr><td>等级 / 容量 / 属性</td><td><b>2 / 52 / MOUNTAIN</b></td><td>容量 52 落在"绿宝石 48 / 钻石 56"之间：<b>给最高容量但不给最高等级</b>，用容量换等级，避免变成"新钻石"</td></tr>
+<tr><td>极性层</td><td>正面 <b>1.50</b> / 负面 <b>0.60</b></td><td>正面 1.50 <b>刻意顶格</b>（与 NETHER_WOOD 正面 1.50、METAL_DIAMOND 双面 1.50 同值）；代价是负面 0.60 —— 它是<b>全球第二低</b>（最低仍是 WOOD_POSITIVE 的 0.50），<b>没有破纪录</b></td></tr>
+<tr><td>无条件层 / challenge 特例</td><td>1.00 / 1.00</td><td>公约</td></tr>
+<tr><td>绑定方块（8）</td><td><code>dripstone_block</code>、<code>packed_mud</code>、<code>mud_bricks</code>、<code>resin_block</code>、<code>resin_bricks</code>、<code>quartz_block</code>、<code>chiseled_quartz_block</code>、<code>quartz_pillar</code></td><td>滴水石=喀斯特山体；包泥/泥砖=山道夯土；树脂=高地苍白林；石英=山体白垩矿脉。<b>八块全部不在现有 109 条里</b></td></tr>
+<tr><td>获取门槛</td><td>中：滴水石洞（y 不限）、红树林沼泽（泥砖）、苍白花园（树脂）、下界（石英）</td><td>无结构门槛，属于"资源种类多、单次采集量大"的难度类型</td></tr>
+<tr><td>特性 <code>MOUNTAIN_PEAK</code></td><td>属性层（<code>MOUNTAIN.crossPartners() = {CHALLENGE}</code>）· 极性 1.50/0.60 · 无条件 1.00 · challenge 1.00</td><td>—</td></tr>
+<tr><td>特殊功能</td><td><b>不建议加</b>：它的价值全在数值取向上（正面顶格、负面极弱），再叠机制会与 <code>mountain↔challenge</code> 交叉规则形成两层奖励</td><td>—</td></tr>
+</table>
+<h4>2.4 <code>ruin</code> 残迹 → <code>corrosion</code> 蚀痕石像</h4>
+<table>
+<tr><th>项</th><th>值</th><th>依据</th></tr>
+<tr><td>id / 中文名</td><td><code>corrosion</code> / 蚀痕石像</td><td>直指铜锈这条叙事主线</td></tr>
+<tr><td>等级 / 容量 / 属性</td><td><b>2 / 44 / RUIN</b></td><td>容量 44 取自"金 40 / 绿宝石 48"之间</td></tr>
+<tr><td>极性层</td><td>正面 <b>0.95</b> / 负面 <b>1.30</b></td><td>参照 END_ROCK(1.00/1.75) 的"只吃负面"形状，但负面压到 1.30 —— 因为它的交叉伙伴 VILLAGE <b>是现有最好拿的属性之一</b>（绿宝石雕像随处可造），负面不能给高</td></tr>
+<tr><td>无条件层 / challenge 特例</td><td>1.00 / 1.00</td><td>公约</td></tr>
+<tr><td>绑定方块（10）</td><td><code>copper_block</code>、<code>exposed_copper</code>、<code>weathered_copper</code>、<code>oxidized_copper</code>、<code>cut_copper</code>、<code>exposed_cut_copper</code>、<code>weathered_cut_copper</code>、<code>oxidized_cut_copper</code>、<code>chiseled_copper</code>、<code>waxed_oxidized_copper</code></td><td>十块全是铜 —— <b>单一家族、四种氧化色阶 + 打蜡态</b>，视觉上"越旧越深"，正好是"残迹"的语义；<code>waxed_oxidized_copper</code> 是"被刻意保存下来的旧物"这个反差点</td></tr>
+<tr><td>获取门槛</td><td><b>最低</b>：铜矿遍地、氧化靠时间或蜜脾</td><td>门槛最低 → 数值最保守（负面 1.30 远低于末地岩 1.75）。它存在的意义是<b>让 <code>VILLAGE↔RUIN</code> 交叉可以被日常用到</b></td></tr>
+<tr><td>特性 <code>RUIN_ECHO</code></td><td>属性层（<code>RUIN.crossPartners() = {VILLAGE}</code>）· 极性 0.95/1.30 · 无条件 1.00 · challenge 1.00</td><td>—</td></tr>
+<tr><td><b>特殊功能（推荐做）：锈蚀渐深</b></td><td>这尊雕像每完成一次升华/沉坠，自身<b>负面乘数 +0.01、正面 −0.01</b>，上限 ±0.10；状态存方块实体 NBT，破坏重放即重置</td><td><b>解决的问题</b>：现有 19 种全是"静态材质"，玩家摆好结构后没有任何<b>养成</b>空间（紫颂的随机增减是漂移，不是成长）。这条让"残迹"成为唯一会随使用变强的材质；上限 0.10 相对现有跳变（0.50→1.75）极小，不会造成断层。★ 需要碰 <code>EmotionStatueBlockEntity</code> 的 NBT 读写 + <code>RitualEffects</code> 结算处；若要零代码，删掉即可</td></tr>
+</table>
+<h4>2.5 <code>challenge</code> 挑战 → <code>trial</code> 试炼石像</h4>
+<table>
+<tr><th>项</th><th>值</th><th>依据</th></tr>
+<tr><td>id / 中文名</td><td><code>trial</code> / 试炼石像</td><td>直指试炼密室</td></tr>
+<tr><td>等级 / 容量 / 属性</td><td><b>2 / 48 / CHALLENGE</b></td><td>容量对齐 EMERALD(48)</td></tr>
+<tr><td>极性层</td><td>正面 <b>1.15</b> / 负面 <b>1.05</b></td><td>参照 METAL_IRON(1.05/1.10) 的"两面对称、幅度最小"，压到最保守一档</td></tr>
+<tr><td>无条件层 / challenge 特例</td><td><b>1.00 / 1.00</b>（刻意不给）</td><td>★ 绿宝石已经是"无条件 ×1.20 + 挑战特例 ×1.50"；新材质若再带无条件层或特例，会把绿宝石彻底挤掉。新材质把 challenge 当<b>属性</b>（×2.00），绿宝石把它当<b>特例</b>（×1.50），两条路互不重叠</td></tr>
+<tr><td>绑定方块（6）</td><td><code>tuff_bricks</code>、<code>chiseled_tuff</code>、<code>chiseled_tuff_bricks</code>、<code>heavy_core</code>、<code>lightning_rod</code>、<code>copper_grate</code></td><td>凝灰岩变种=试炼密室原生建材；<code>heavy_core</code>=试炼钥匙开宝库的奖励（<b>最难拿的一块</b>）；避雷针+铜格栅=机关与风口</td></tr>
+<tr><td>获取门槛</td><td>高：试炼密室（刷怪笼、试炼之兆）；<code>heavy_core</code> 需要清场并开宝库</td><td>与绿宝石（刌民掉落）并列的高门槛</td></tr>
+<tr><td>特性 <code>TRIAL_EDGE</code></td><td>属性层（<code>CHALLENGE.crossPartners() = {MOUNTAIN}</code>）· 极性 1.15/1.05 · 无条件 1.00 · challenge 特例 1.00</td><td>—</td></tr>
+<tr><td><b>特殊功能（可选，二选一）</b></td><td><b>A</b>：仪式进行中以雕像为球心 16 格内的敌对生物数量使最终乘数每只 +0.01、上限 +0.10。<b>B</b>：与绿宝石雕像相邻时互相 +0.05</td><td>A 解决的真实问题：挑战属性的来源是"危险的结构"，但现有玩法里<b>危险到仪式那一刻通常已经结束</b>（结构早被清干净）。让尚未清场的危险参与加成，把"要不要边打边搭"变成真实选择。B 更省代码但没新意，还会与未来的"相邻雕像"系统抢位置。<b>推荐 A，或两者都不做</b></td></tr>
+</table>
+<h4>2.6 汇总表（新增 5 种）</h4>
+<table>
+<tr><th>id</th><th>中文</th><th>tier</th><th>容量</th><th>属性</th><th>特性</th><th>正面</th><th>负面</th><th>同属性</th><th>交叉</th><th>无条件</th><th>challenge</th><th>方块数</th></tr>
+<tr><td><code>sculk</code></td><td>潜声石像</td><td>2</td><td>40</td><td>CAVERN 幽闭</td><td>CAVERN_DARK</td><td>0.90</td><td>1.40</td><td>×2.00</td><td>×1.50</td><td>×1.00</td><td>×1.00</td><td>6</td></tr>
+<tr><td><code>abyssal</code></td><td>深海石像</td><td>2</td><td>32</td><td>OCEAN 深海</td><td>OCEAN_DEEP</td><td>1.10</td><td>1.10</td><td>×2.00</td><td>×1.50</td><td>×1.00</td><td>×1.00</td><td>5</td></tr>
+<tr><td><code>dripstone</code></td><td>石笋石像</td><td>2</td><td>52</td><td>MOUNTAIN 高峻</td><td>MOUNTAIN_PEAK</td><td>1.50</td><td>0.60</td><td>×2.00</td><td>×1.50</td><td>×1.00</td><td>×1.00</td><td>8</td></tr>
+<tr><td><code>corrosion</code></td><td>蚀痕石像</td><td>2</td><td>44</td><td>RUIN 残迹</td><td>RUIN_ECHO</td><td>0.95</td><td>1.30</td><td>×2.00</td><td>×1.50</td><td>×1.00</td><td>×1.00</td><td>10</td></tr>
+<tr><td><code>trial</code></td><td>试炼石像</td><td>2</td><td>48</td><td>CHALLENGE 挑战</td><td>TRIAL_EDGE</td><td>1.15</td><td>1.05</td><td>×2.00</td><td>×1.50</td><td>×1.00</td><td>×1.00</td><td>6</td></tr>
+</table>
+<p><b>新增材质 35 条</b> → <code>StatueMaterial</code> 110 → 145，方块状态 <code>19×8×110 = 16720</code> → <code>24×8×145 = 27840</code>（+66%）。</p>
+<p>★ 若每个家族收敛到 4 块，新材质可降到 20，状态数 <code>24×8×130 = 24960</code>（+49%）—— 数值完全不受影响，只影响外观丰富度。</p>
+<p><b>新增种类与现有数值的"无断层"验证</b>（同属性层 × 极性层，取较大一侧）：</p>
+<table>
+<tr><th>种类</th><th>上限</th><th>与现有最近的一行比</th></tr>
+<tr><td><code>sculk</code></td><td>2.00 × 1.40 = <b>2.80</b></td><td>介于金(1.50×1.25=1.875)与紫珀(2.00×1.75=3.50)之间，不贴近任何极端</td></tr>
+<tr><td><code>abyssal</code></td><td>2.00 × 1.10 = <b>2.20</b></td><td>与钻石(1.50×1.50=2.25)几乎等同，但它没有属性层优势，实际更弱</td></tr>
+<tr><td><code>dripstone</code></td><td>2.00 × 1.50 = <b>3.00</b></td><td>低于末地岩/紫珀的 3.50，且负面 0.60 是第二低（未破 0.50 纪录）</td></tr>
+<tr><td><code>corrosion</code></td><td>2.00 × 1.30 = <b>2.60</b></td><td>介于下界岩石(2.00×1.50=3.00)与金之间</td></tr>
+<tr><td><code>trial</code></td><td>2.00 × 1.15 = <b>2.30</b></td><td>与钻石 2.25 齐平，最保守</td></tr>
+</table>
+<hr>
+<h3>三、配套检查</h3>
+<h4>3.1 11 种属性是否全部可达</h4>
+<table>
+<tr><th>属性</th><th>现有可用种类（材质属性 = 该属性）</th><th>新增后</th><th>交叉伙伴</th><th>交叉现在能触发吗</th></tr>
+<tr><td>NATURAL 自然</td><td>DIRT、WOOD、COBBLE</td><td>不变</td><td>无（<code>crossPartners()</code> 返回空集）</td><td>设计如此</td></tr>
+<tr><td>HOT 炎热</td><td>SANDSTONE、RED_SANDSTONE</td><td>不变</td><td>NETHER</td><td>✅ 已可触发</td></tr>
+<tr><td>COLD 霜寒</td><td>SNOW、ICE</td><td>不变</td><td>VOID</td><td>✅ 已可触发</td></tr>
+<tr><td>VOID 空无</td><td>SOUL、END_ROCK、CHORUS、PURPUR</td><td>不变</td><td>COLD</td><td>✅ 已可触发</td></tr>
+<tr><td>NETHER 下界</td><td>NETHER_DIRT、NETHER_ROCK、NETHER_WOOD、NETHER_BRICK</td><td>不变</td><td>HOT</td><td>✅ 已可触发</td></tr>
+<tr><td>VILLAGE 聚落</td><td>EMERALD</td><td>不变</td><td>RUIN</td><td>❌ <b>现在不可能</b> → ✅ 加 <code>corrosion</code> 后可触发</td></tr>
+<tr><td><b>CAVERN 幽闭</b></td><td><b>无</b></td><td><b><code>sculk</code></b></td><td>OCEAN</td><td>❌ → ✅</td></tr>
+<tr><td><b>OCEAN 深海</b></td><td><b>无</b></td><td><b><code>abyssal</code></b></td><td>CAVERN</td><td>❌ → ✅</td></tr>
+<tr><td><b>MOUNTAIN 高峻</b></td><td><b>无</b></td><td><b><code>dripstone</code></b></td><td>CHALLENGE</td><td>❌ → ✅</td></tr>
+<tr><td><b>RUIN 残迹</b></td><td><b>无</b></td><td><b><code>corrosion</code></b></td><td>VILLAGE</td><td>❌ → ✅</td></tr>
+<tr><td><b>CHALLENGE 挑战</b></td><td><b>无</b>（只有绿宝石的 ×1.50 特例，不是属性）</td><td><b><code>trial</code></b></td><td>MOUNTAIN</td><td>❌ → ✅</td></tr>
+</table>
+<p><b>结论：新增后 11 种属性全部拥有"属性层 ×2.00"的承载，5 组交叉关系全部可触发</b>（现状只有 3 组）。</p>
+<h4>3.2 升华（木类）与沉坠（石类）的极值是否仍然对称</h4>
+<p><b>判定公式</b>（<code>RitualEffects.java:182-187</code>）：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+注入量 = max(1, round( total × 外围injectionLoss × 中心injectionRatio × 偏好 ))
+偏好   = 外围trait.multiplierFor(外围.属性, 情绪属性, 极性) × 中心trait.multiplierFor(中心.属性, 情绪属性, 极性)
+每条 multiplierFor = 属性层 × 极性层 × 无条件层（再对 CHALLENGE 单独乘 challengeMultiplier）
+</pre>
+<p>外围集合（本次不改）：木类 {WOOD 0.50, NETHER_WOOD 0.75, CHORUS 0.90}；石类 {COBBLE 0.50, NETHER_ROCK 0.75, END_ROCK 0.90}。</p>
+<h5>（1）当前代码下的极值</h5>
+<table>
+<tr><th>仪式</th><th>最优组合</th><th>偏好算式</th><th>注入系数</th><th>32 点记录单次注入</th></tr>
+<tr><td><b>升华天花板</b></td><td>CHORUS 外围 + DIAMOND 中心 + <b>空无</b>情绪</td><td>(同属性 2.00 × 正面 2.00) × (1.00 属性层 × 正面 1.50) = 4.00 × 1.50 = <b>6.00</b></td><td>0.90 × 1.00 × 6.00 = <b>5.40</b></td><td><b>173</b></td></tr>
+<tr><td><b>沉坠天花板</b></td><td>END_ROCK 外围 + PURPUR 中心 + <b>霜寒</b>情绪</td><td>(跨界 1.50 × 负面 1.75) × (跨界 1.50 × 负面 1.75) = 2.625 × 2.625 = <b>6.89</b></td><td>0.90 × 1.20 × 6.89 = <b>7.44</b></td><td><b>238</b></td></tr>
+<tr><td>升华地板（正面最差）</td><td>WOOD 外围 + DIAMOND 中心 + 任意</td><td>(1.00 × 0.50) × (1.00 × 1.50) = 0.75</td><td>0.50 × 1.00 × 0.75 = <b>0.375</b></td><td>12</td></tr>
+<tr><td>沉坠地板（负面最差）</td><td>COBBLE 外围 + DIAMOND 中心 + 任意</td><td>(1.00 × 1.25) × (1.00 × 1.50) = 1.875</td><td>0.50 × 1.00 × 1.875 = <b>0.9375</b></td><td>30</td></tr>
+</table>
+<p><b>→ 现状明明白白地不对称：沉坠天花板(7.44) 比 升华天花板(5.40) 高 37.8%。</b></p>
+<p>作者宣布的改动会<b>让差距更大</b>：</p>
+<p><code>CHORUS 正面 2.00 → 1.80</code> 使升华天花板变成 <code>0.90 × (1.80×2.00) × 1.50 = 4.86</code>，</p>
+<p>沉坠不变 → 差距扩大到 <b>53%</b>。</p>
+<h5>（2）新增 5 种后天花板有没有被推高？<b>没有</b></h5>
+<p>新种类的注入比率全部是 tier 2 的 0.90，且它们的"同属性 × 极性"上限最高 3.00（<code>dripstone</code>）——</p>
+<p>都低于现有最优中心（DIAMOND 的 1.50 极性 × 任意属性层、PURPUR 的 6.89 偏好）。逐个验算：</p>
+<table>
+<tr><th>新种类当中心</th><th>注入比率</th><th>它能达到的最高偏好</th><th>乘积</th><th>是否超过 7.44</th></tr>
+<tr><td><code>sculk</code></td><td>0.90</td><td>(同属性 2.00 × 负面 1.40) = 2.80</td><td>0.90 × 0.90 × 2.80 = <b>2.27</b></td><td>❌</td></tr>
+<tr><td><code>abyssal</code></td><td>0.90</td><td>(2.00 × 1.10) = 2.20</td><td>0.90 × 0.90 × 2.20 = <b>1.78</b></td><td>❌</td></tr>
+<tr><td><code>dripstone</code></td><td>0.90</td><td>(交叉 1.50 × 正面 1.50) = 2.25；若情绪是 MOUNTAIN 则 (2.00 × 1.50) = 3.00</td><td>0.90 × 0.90 × 3.00 = <b>2.43</b></td><td>❌</td></tr>
+<tr><td><code>corrosion</code></td><td>0.90</td><td>(交叉 1.50 × 负面 1.30) = 1.95</td><td>0.90 × 0.90 × 1.95 = <b>1.58</b></td><td>❌</td></tr>
+<tr><td><code>trial</code></td><td>0.90</td><td>(交叉 1.50 × 正面 1.15) = 1.725</td><td>0.90 × 0.90 × 1.725 = <b>1.40</b></td><td>❌</td></tr>
+</table>
+<p>（若把它们当外围，还需要先改 <code>isWood/isStone</code>；即便改了，外围 loss ≤ 0.90，天花板仍是原来的 7.44。）</p>
+<p><b>→ 结论：天花板不变，仍是 沉坠 7.44 / 升华 5.40。新增种类不会引入新断层，但也不会自动修复不对称。</b></p>
+<h5>（3）压制建议（只改一个数字）</h5>
+<table>
+<tr><th>方案</th><th>改动</th><th>改后天花板</th><th>评价</th></tr>
+<tr><td><b>B（强烈推荐）</b></td><td><code>END_ROCK</code> 负面乘数 <b>1.75 → 1.50</b>（<code>StatueTrait.java:117</code>）</td><td>沉坠 = <code>0.90 × 1.20 × (1.50×1.50) × (1.50×1.50) = 0.90×1.20×2.25×2.25 = <b>5.47</b></code></td><td>✅ 与"CHORUS 改回 2.00"时的升华 5.40 只差 <b>1.3%</b> —— 正好落在作者"约 336/333"的 1% 对称目标上。一个数字，零重构</td></tr>
+<tr><td>A</td><td>让 <code>PURPUR</code> 的<b>注入比率</b>从 tier 3 的 1.00/输出 1.20 降下来</td><td>沉坠 ≈ 6.2</td><td>⚠️ <b>做不到"只降注入"</b>：<code>injectionRatio()</code> 与 <code>outputRatio()</code> 共用同一个 <code>tier</code> 字段（<code>EmotionStatueKind.java:108-138</code>）。要单独降注入必须把输出系数拆成独立字段，属于小重构</td></tr>
+<tr><td>C</td><td>抬 <code>CHORUS</code> 正面 2.00 → 2.22</td><td>升华 5.99 vs 沉坠 7.44</td><td>❌ 与"12.96 已经偏高"的方向相反</td></tr>
+</table>
+<div class="card small"><b>给作者的关键提醒</b>：<code>CHORUS 2.00 → 1.80</code>（已宣布）与 <code>END_ROCK 1.75 → 1.50</code>（本提案建议）</div>
+<div class="card small"><b>必须一起做</b>。只做前者，不对称会从 37.8% <b>恶化到 53%</b>。</div>
+<div class="card small">两个一起做 + 把 CHORUS 正面保留在 2.00，则 5.40 / 5.47，差 1.3%。</div>
+<h5>（4）一处需要作者决断的"玩家回报"问题</h5>
+<p>注入量会被<b>手杖容量</b>卡住：单次上限注入 238（沉坠）或 173（升华），</p>
+<p>而最大容量是 SOUL 128（作者拟改 96）、DIAMOND 56。</p>
+<p>→ 实际玩法是"<b>拿到容量上限就换杖</b>"，天花板只体现在<b>超容量法杖</b>上（绽裂的前提，<code>RitualEffects.java:287-293</code>）。</p>
+<p>这不是缺陷，但意味着 §3.2 的天花板数值<b>主要影响"要多快攒到超容量"</b>，而不是单次收益。</p>
+<p>若作者的目标是"单次收益对称"，建议以 §3.2(3) 的方案为准。</p>
+<h4>3.3 两条交叉规则在新种类下怎么触发</h4>
+<p><code>crossPartners()</code> 是全表写死的对称关系（<code>EmotionAttribute.java:193-207</code>），</p>
+<p>属性层判定只做一件事：<code>materialAttribute.crossPartners().contains(emotionAttribute) → ×1.50</code>（<code>StatueTrait.java:172-178</code>）。</p>
+<p>所以<b>只要两端都有材质承载，规则自动生效</b>。</p>
+<table>
+<tr><th>规则</th><th>新增前</th><th>新增后</th><th>典型触发场景</th><th>是否合理</th></tr>
+<tr><td><code>cavern ↔ ocean</code></td><td><b>永不触发</b>（两端都无材质）</td><td><code>sculk</code>(CAVERN) 处理深海情绪 → ×1.50；<code>abyssal</code>(OCEAN) 处理幽闭情绪 → ×1.50；互为外围/中心时两层叠加</td><td>海底洞穴/水下基地：<code>sculk</code> 当中心 + <code>abyssal</code> 当外围。中心对 OCEAN 是跨界 ×1.50，外围对 OCEAN 是同属性 ×2.00 —— <b>混搭比纯同类更划算</b>，正好对应现实中"海底洞穴"这个两种场景的交集</td><td>✅ 合理，语义（封闭 + 压力）自洽</td></tr>
+<tr><td><code>mountain ↔ challenge</code></td><td><b>永不触发</b></td><td><code>dripstone</code>(MOUNTAIN) 处理挑战情绪 → ×1.50；<code>trial</code>(CHALLENGE) 处理高峻情绪 → ×1.50</td><td>试炼密室建在高山上：<code>trial</code> 外围 + <code>dripstone</code> 中心；挑战情绪吃 <code>trial</code> 同属性 ×2.00，同时 <code>dripstone</code> 中心对挑战 ×1.50</td><td>✅ 合理，<b>但有一个数值副作用要处理</b>（见下）</td></tr>
+</table>
+<div class="card small"><b>数值副作用</b>：把"情绪 = 挑战"这一列的两种中心放在一起看 ——</div>
+<div class="card small"><code>dripstone</code> 中心：跨界 1.50 × 正面 1.50 = <b>2.25</b></div>
+<div class="card small"><code>trial</code> 中心：同属性 2.00 × 正面 1.15 = <b>2.30</b></div>
+<div class="card small">两者几乎相等 → <b>"高峻雕像"与"试炼雕像"在挑战情绪上会互相替代</b>，"挑战要用挑战的东西"这个直觉失效。</div>
+<div class="card small">二选一修正：<code>trial</code> 正面 <b>1.15 → 1.25</b>（2.50 &gt; 2.25），或 <code>dripstone</code> 正面 <b>1.50 → 1.40</b>（2.10 &lt; 2.30）。</div>
+<div class="card small">我建议前者（把"试炼石像"做成挑战属性的正解，符合"越难拿越强"）。</div>
+<hr>
+<h3>四、实施清单（按改动量从小到大）</h3>
+<table>
+<tr><th>#</th><th>改动</th><th>要碰的文件 / 表</th><th>量级</th><th>需要美术？</th></tr>
+<tr><td>0</td><td><b>先决定：新种类能不能当升华/沉坠的外围？</b> 若要 → 把 <code>isWood/isStone</code> 从"硬编码 3 个枚举"改为按材质族判定（建议给 <code>EmotionStatueKind</code> 加 <code>materialFamily</code> 字段：WOODEN / STONY / OTHER，两个方法查它）。若不要 → 什么都不做，新种类只能当中心</td><td><code>RitualStructure.java:206-217</code>、<code>EmotionStatueKind.java</code></td><td>极小（~20 行）</td><td>否</td></tr>
+<tr><td>1</td><td>在<b>枚举末尾</b>追加 5 条 <code>EmotionStatueKind</code>。⚠️ 必须加在最后：<code>values()</code> 顺序会影响 <code>StatueMaterial.values()[0]</code> 这条兜底（<code>EmotionStatueBlock.java:185-187</code>、<code>CarvingKnifeItem.java:67</code>），插在中间会让兜底材质从橡木变成别的</td><td><code>EmotionStatueKind.java:31-57</code></td><td>小（5 行）</td><td>否</td></tr>
+<tr><td>2</td><td>加 5 个 <code>StatueTrait</code> 常量，并在 <code>positiveMultiplier()</code> 与 <code>negativeMultiplier()</code> 两个 switch 里<b>各显式加 5 个 case</b>。⚠️ 两个 switch 都是 <code>default -&gt; 1.00</code>，漏写会<b>静默拿错乘数</b>。<code>unconditionalMultiplier()</code>/<code>challengeMultiplier()</code>/三个布尔不用动</td><td><code>StatueTrait.java:88-125</code></td><td>小（~15 行）</td><td>否</td></tr>
+<tr><td>3</td><td>在 <code>initSources()</code> 里为 5 个新种类 <code>bind(...)</code> 共 35 个方块。⚠️ <b>一个方块只能绑一个种类</b>（<code>SOURCES</code> 是单值 Map，重复会静默覆盖）；⚠️ <b>绑了就必须同步在 <code>StatueMaterial</code> 里有一行</b>，否则 <code>forBlock</code> 返回 null，雕刻刀兜底成 <code>values()[0]</code>（橡木原木），玩家会拿到"潜声石像却长着木头脸"</td><td><code>EmotionStatueKind.java:199-281</code></td><td>中（35 行）</td><td>否</td></tr>
+<tr><td>4</td><td>加 35 条 <code>StatueMaterial</code>（<code>id, kind, sideTexture, topTexture, block</code>）。<code>sideTexture</code> 直接写 <code>minecraft:block/&lt;原版贴图&gt;</code>；有独立顶面的（如 <code>copper_block</code> 无、<code>quartz_pillar</code> 有）才填 <code>topTexture</code></td><td><code>StatueMaterial.java</code></td><td>中</td><td>否</td></tr>
+<tr><td>5</td><td>生成资产：每材质 4 个 JSON = <code>blockstates/emotion_statue.json</code> 新增条目（4 方向 × 2 模型）+ <code>models/block/emotion_statue_&lt;id&gt;.json</code> + <code>_45.json</code> + <code>items/emotion_statue_&lt;id&gt;.json</code>。<b>35 材质 ≈ 140 个新文件</b>；<code>emotion_statue.json</code> 从 880 → 1024 个 variant。模型只引用原版贴图，<b>零新美术</b></td><td><code>assets/madnesstheory/**</code></td><td>大（机械生成）</td><td><b>否</b></td></tr>
+<tr><td>6</td><td><code>en_us.json</code> 补 <code>block.madnesstheory.emotion_statue.named</code> 等 key（中文名走枚举的 <code>label</code> 字段，<b>不在</b> lang 文件里；<code>EmotionStatueItem.getName</code> 用的是 <code>translatable("block.madnesstheory.emotion_statue.named", kind.label())</code>）</td><td><code>assets/madnesstheory/lang/en_us.json</code></td><td>极小</td><td>否</td></tr>
+<tr><td>7</td><td>属性可达性的配套：<code>EmotionAttribute.initBiomeMapping()</code> 的<b>结构规则</b>目前只喂 CHALLENGE。建议补 <code>ruin</code>（<code>ruined_portal</code> <code>desert_pyramid</code> <code>jungle_temple</code> <code>igloo</code> <code>ocean_ruin</code>）、<code>ocean</code>（<code>shipwreck</code> <code>ocean_ruin</code> <code>monument</code>）；<code>cavern</code> 的 <code>mineshaft</code> 与 <code>mountain</code> 的 <code>windswept/jagged/stony</code> 已经有了</td><td><code>EmotionAttribute.java:234-255</code></td><td>小</td><td>否</td></tr>
+<tr><td>8</td><td>三个<b>可选</b>特殊功能：水压稳固（<code>abyssal</code>）、锈蚀渐深（<code>corrosion</code>）、危险加成（<code>trial</code>）。分别需要动 <code>EmotionStaffItem</code> 释放路径、<code>EmotionStatueBlockEntity</code> 的 NBT、<code>RitualEffects.inject()</code> 的偏好计算</td><td>3 个文件</td><td>中~大</td><td>否</td></tr>
+<tr><td>9</td><td>与作者已定改动对齐：<code>EmotionMoodStore.CAPACITY 100 → 150</code>（<code>EmotionMoodStore.java:30</code>）、<code>RitualEffects.burst()</code> 的 <code>× 3.0 → × 1.5</code>（<code>RitualEffects.java:309</code>）、以及过时注释同步（<code>RitualEffects.java:43,274</code>、<code>Config.java:266</code>）</td><td>3 处</td><td>小</td><td>否</td></tr>
+<tr><td>10</td><td><code>EmotionStatueItem.appendHoverText</code> 的 F3+H 行会自动显示新 trait 名与正/负面乘数；若采纳 §2.2/2.4/2.5 的布尔标志，建议在此补一行标志位显示</td><td><code>EmotionStatueItem.java:61-81</code></td><td>小</td><td>否</td></tr>
+<tr><td>11</td><td>★ <b>前置障碍</b>：<code>StatueMaterial.java:20</code> 与 <code>ModBlocks.java:109</code> 都声明"本文件由 <code>_tools/gen-statue-materials.mjs</code> 生成"，但该脚本<b>在磁盘上不存在</b>（<code>**/*.mjs</code> 搜索 0 结果，<code>_tools</code> 目录也不存在）。要产出第 4/5 项的 35 条材质与 140 个资产，<b>必须先把生成器重建出来</b>（或写一个等价的一次性脚本）</td><td>新建 <code>_tools/gen-statue-materials.mjs</code></td><td>中</td><td>否</td></tr>
+</table>
+<p><b>需要美术的部分：0 项。</b> 5 个提案的贴图全部指向原版方块贴图，做法与现有 110 条完全一致</p>
+<p>（见 <code>models/block/emotion_statue_calcite.json</code> 的 6 行结构：<code>parent: emotion_statue_base</code> + 一个 <code>side</code> 贴图）。</p>
+<p>唯一需要"表现设计"的是三个可选特殊功能，可直接复用现有素材：</p>
+<p><code>SoundEvents.AMETHYST_BLOCK_CHIME</code>、<code>DustParticleOptions</code>、<code>ParticleTypes.END_ROD/WITCH</code>。</p>
+<hr>
+<h3>五、未核对 / 不敢编的部分</h3>
+<p>1. <b>"新极值约 升华 336 / 沉坠 333"的绝对数</b>：按代码的乘数链，我算出的是</p>
+<p>   升华 5.40 / 沉坠 7.44（32 点记录 → 173 / 238 点注入），<b>对不上 336/333</b>（那组比值 0.991，我这里是 0.726）。</p>
+<p>   究竟对应哪条记录量、哪套常数，<b>未核对</b>。</p>
+<p>2. <b>"四条材质联合定值"具体是哪四条、定了什么值</b>：任务描述里只给了 CHORUS/PURPUR/SOUL 三条 +</p>
+<p>   "铁与泥土要被修"，具体数值<b>未给出</b>，我按 CHORUS + PURPUR + SOUL +（铁或泥土）推测，<b>未核对</b>。</p>
+<p>3. <b>方块的"是否满方块 / 有无碰撞箱"</b>：我按原版常识判断（晶簇、点状滴水石、幽匿脉络、书架系不适合），</p>
+<p>   <b>没有逐个去读方块类</b>。若要收其中某一个，建议先看它的 <code>Block</code> 子类与 <code>getShape</code>。</p>
+<p>4. <b>26.x 是否有本提案没扫到的新家族</b>：我用正则扫了 <code>Blocks.java</code> 的 7231 行里 8 组关键词</p>
+<p>   （铜/紫水晶/幽匿/深板岩/泥/滴水石/凝灰岩+重核/树脂+海晶石+石英+书架+试炼+苍白/小件装饰/调试方块），</p>
+<p>   <b>没有做全量枚举</b>。若要"完全没被用到的方块全清单"，需另跑一次全量比对。</p>
+<p>5. <b>§2.2 水压稳固的具体数值</b>：我写的是"不产生输出损失"，但现有代码里<b>输出损失的来源与量级</b></p>
+<p>   （手杖输出等级如何折损、是否与水量/深度相关）我没有读完 <code>EmotionStaffItem</code> 的完整释放路径，<b>未核对</b>。</p></main></html>

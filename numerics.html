@@ -1,0 +1,256 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<title>数值与公式 · 癫狂构想设计站</title>
+<link rel="stylesheet" href="style.css">
+<nav><div class="t">设计站</div><a class="" href="index.html">总览与体检</a>
+<a class="" href="kinds.html">雕像种类</a>
+<a class="" href="materials.html">材质 ↔ 方块</a>
+<a class="" href="attributes.html">属性</a>
+<a class="" href="traits.html">特性与特殊功能</a>
+<a class="" href="moods.html">心绪</a>
+<a class="on" href="numerics.html">数值与公式</a>
+<a class="" href="rituals.html">仪式</a>
+<a class="" href="storage.html">温养仪式</a>
+<a class="" href="moodstaff.html">情绪之杖</a>
+<a class="" href="refs.html">参考文档</a>
+<a class="" href="intent.html">设计意图</a>
+<div class="t">说明</div>
+<div class="small dim" style="padding:4px 8px">本页内容由 <code>gen-design-site.mjs</code>
+从源码生成，改完代码重跑即可。</div></nav>
+<main><h1>数值与公式</h1><h2>等级表</h2><table><tr><th>等级</th><th>注入</th><th>输出</th><th>材质</th></tr><tr><td>0</td><td>50%</td>
+    <td>80%</td>
+    <td class="small">泥土（16）、木头（16）、圆石（16）</td></tr><tr><td>1</td><td>75%</td>
+    <td>90%</td>
+    <td class="small">砂岩（32）、红沙岩（32）、雪（32）、冰（32）、下界泥土（32）、下界岩石（32）、下界原木（32）、灵魂（96）</td></tr><tr><td>2</td><td>90%</td>
+    <td>100%</td>
+    <td class="small">铁（32）、金（40）、绿宝石（48）、下界砖（40）、末地石（48）、紫颂花（48）、潜声石像（40）、深海石像（32）、石笋石像（52）、蚀痕石像（44）、试炼石像（48）、砖质石像（48）、紫水晶石像（32）、石英石像（48）、琥珀石像（48）</td></tr><tr><td>3</td><td>100%</td>
+    <td>120%</td>
+    <td class="small">钻石（56）、紫珀砖（64）、末地砖（64）</td></tr></table><h2>一条记录能出多少情绪点数</h2>
+    <table><tr><th>情绪组</th><th>极性</th><th>可用仪式</th><th>面值（情绪点数）</th></tr><tr><td>serene</td><td>正面</td>
+    <td>升华</td><td>32</td></tr><tr><td>gloomy</td><td>负面</td>
+    <td>沉坠</td><td>24</td></tr><tr><td>irritable</td><td>负面</td>
+    <td>沉坠</td><td>24</td></tr><tr><td>chilly</td><td>负面</td>
+    <td>沉坠</td><td>24</td></tr><tr><td>haunted</td><td>负面</td>
+    <td>沉坠</td><td>32</td></tr><tr><td>void</td><td>负面</td>
+    <td>沉坠</td><td>32</td></tr><tr><td>challenge</td><td>正面</td>
+    <td>升华</td><td>24</td></tr><tr><td>village</td><td>正面</td>
+    <td>升华</td><td>32</td></tr><tr><td>relic</td><td>正面</td>
+    <td>升华</td><td>24</td></tr></table>
+    <p class="small dim">面值分两档（作者 2026-10-06：保持比例最高组别与最低组别的特殊性）：
+    极端档 <b>32</b> 点是 serene / village / haunted / void，其余组是
+    <b>24</b>。注意最低那两档（haunted / void）拿的也是最高点数 ——
+    它们是【负面里最强的两档】，不是"负面所以更少"；最高那两档是【正面里最强的两档】。
+    极性由【情绪组】决定（EmotionRecords.isPositiveGroup）：升华只收正面组的记录、
+    沉坠只收负面组的记录，用错仪式会被拒绝<b>且不消耗</b>那条记录。
+    面值只是起点 —— 实际到手还要乘注入损耗、材质等级与偏好。</p><h2 id="knife">负罪的收益曲线（插刀）· 数值</h2>
+    <p class="small dim">★ 机制与行为在<a href="rituals.html#guilt">仪式 · 负罪（插刀）</a>；
+    下面是同源读出来的数值。</p>
+    <p class="small dim">第 n 把刀的权重 = decay^(n−1)，n = 插入那一刻【身上已插着的刀数 + 1】；
+    身上的刀全部碎光之后再插，n 从 1 重新开始（按"一辈子插过的总数"算的话权重会永久衰减到 0）。
+    只有【自然碎裂】结算收益：死亡清除或别的途径移除的不给。</p>
+    <table><tr><th>第 n 把</th><th>权重</th><th>累计权重</th><th>倍率（floor 后夹 1..4）</th><th>情绪点数</th></tr>
+    <tr><td>1</td><td>1.0000</td><td>1.0000</td>
+    <td>1</td><td>8</td></tr>
+<tr><td>2</td><td>0.8000</td><td>1.8000</td>
+    <td>1</td><td>8</td></tr>
+<tr><td>3</td><td>0.6400</td><td>2.4400</td>
+    <td>2</td><td>16</td></tr>
+<tr><td>4</td><td>0.5120</td><td>2.9520</td>
+    <td>2</td><td>16</td></tr>
+<tr><td>5</td><td>0.4096</td><td>3.3616</td>
+    <td>3</td><td>24</td></tr>
+<tr><td>6</td><td>0.3277</td><td>3.6893</td>
+    <td>3</td><td>24</td></tr>
+<tr><td>7</td><td>0.2621</td><td>3.9514</td>
+    <td>3</td><td>24</td></tr>
+<tr><td>8</td><td>0.2097</td><td>4.1611</td>
+    <td>4</td><td>32</td></tr>
+<tr><td>9</td><td>0.1678</td><td>4.3289</td>
+    <td>4</td><td>32</td></tr></table>
+    <p class="small dim">参数（Config 默认值）：decay = <b>0.8</b>（knifeDecayRatio）、
+    每把扣血 <b>2</b>（knifeMaxHealthLoss）、插入后至少留
+    <b>2</b> 点血；按原版 20 点血算，最多 <b>9</b> 把。
+    极限累计权重 4.3289 → floor 4 → 满档 32 点 ——
+    也就是说【插到极限正好是满档】，这个关系由 decay 与上限把数共同决定，调 decay 时上限会跟着变。</p><h2 id="selfharm">简单自虐四条 · 数值</h2>
+    <p class="small dim">四档点数与次数门槛见下表；机制与行为在<a href="rituals.html#selfharm">仪式 · 简单自虐</a>。</p><table><tr><th>累计次数</th><th>情绪点数</th></tr><tr><td>1</td><td>2</td></tr><tr><td>5</td><td>4</td></tr><tr><td>10</td><td>16</td></tr><tr><td>20</td><td>32</td></tr></table><h2 id="bloodbath">浴血：亲手杀戮连起来的极端仪式 · 数值</h2>
+    <p class="small dim">★ 机制与行为在<a href="rituals.html#bloodbath">仪式 · 浴血</a>；下面是同源读出来的数值与规则表。</p><p class="small dim">每级的效果（作者 2026-10-06 重定）：
+    2 级给<b>速度</b>；3 级给<b>速度 + 锋利</b>
+    （★ 原版没有"锋利"这个药水效果 —— 锋利是附魔 —— 所以用【力量】近似）；
+    4 级换成<b>缓慢 + 虚弱 + 保护 2</b>（抗性提升 II），并<b>开始把附近的怪引过来</b>
+    （作者实测"缓慢后太难追上敌人"，所以补一层保护、再让它们自己走过来），
+    同时每砍一刀回 3 点血；
+    5 级是<b>缓慢 + 锋利 2 + 保护 3</b>。
+    ★ <b>2026-10-06 晚：这五档合并成一条 buff</b>（<code>madnesstheory:bloodbath</code>）——
+    amplifier = 等级 − 1，HUD 上是"浴血 II"这样，只显示这一个图标；
+    上面那些辅助增益由它自己每秒续一次，而且<b>都不显示图标</b>。
+    ★ <b>阶段判定也绑到 buff 上</b>：等级的唯一出处是这条 buff 的 amplifier，
+    击杀数只决定"该升到几级"（升级动作就是把 amplifier 改上去）。
+    所以调试、幻象清理、5 级判定都直接问 buff，不再另存一套等级账。
+    5 级那两件特殊功能（刷敌 + 撑满即幻觉结局）挂在<b>这条 buff 的 5 级分支</b>上，
+    真正的实现仍在 Bloodbath（生物池、幻象、快照都在那边）。</p>
+    <p class="small dim">5 级是【陷阱】（作者修订原文：无法主动退出、视野受限、刷怪量升到几乎打不过）：
+    到期【不再结算】，只把窗口续下去，出口只有被打死、或撑满 2400 刻
+    （约 2 分钟 —— 加这个上限是为了不软锁：不然把自己关进安全屋就永久困在 5 级）；
+    持续 DARKNESS；每 20 刻直接放 1 到 2 只敌对生物
+    （不走嗜血那条放置判定 —— 原版刷怪上限在它之前就判完了，所以"推到打不过"只能直接放）。
+    手动放的这批里<b>多数是幻象</b>：无 AI、无掉落、无经验，放在离玩家 3 到 7 格的近处；
+    少数是真的，放 8 到 16 格。变种按<b>维度</b>从三个混合池取（主世界 / 下界 / 末地）。
+    ★ 幻象的三条额外规矩（作者 2026-10-06）：<b>生命值固定 1 点</b>；
+    <b>碰到玩家就散</b>（1.5 格内，每秒扫一次）；<b>被玩家看中就散</b>
+    （12 度视线锥内、24 格以内、且没被方块挡住 —— 每 4 刻扫一次，只对幻象生效，
+    先用玩家附近的空间查询拿候选，锥外连射线都不发，所以开销可以忽略）。
+    幻象带标记与主人 UUID，主人一离开 5 级（结局、退出、或服务器重启后状态不在）就自己消失 ——
+    自删做成每秒集中扫一遍，不给每种生物注册自定义实体类。
+    放置时必须找【有地面支撑】的位置（脚下一格能挡人）：NoAI 的怪 <code>isEffectiveAi()</code> 为 false，
+    <code>travel()</code> 不被调用、重力不生效，放在半空就永远飘在那儿（作者实测"飘在天上，根本没啥用"）。</p>
+    <p class="small dim">5 级的死亡是【结局】，按"一场幻觉"处理：死亡被<b>取消</b>
+    （拦下会致死的那一下，而不是先死再复原 —— 否则物品会掉落、可能被复制或被别人捡走）；
+    状态回滚到踏进 5 级那一刻（背包 / 护甲 / 副手 / 经验 / 血量 / 饥饿 / 状态效果），
+    <b>不回滚位置</b>（多人环境里那等于瞬移）；附近敌对生物直接清除；
+    ★ 负面仪式【不再写记录】（作者 2026-10-06 定）：浴血在结束时直接把心绪条顶上去，
+    点数：走到几级给 8 × 等级（最多 32）；而 <b>L5（最高阶段）直接给 150 点</b> ——
+    一次把【愤怒】那一类顶满（作者 2026-10-06 晚要求"最高阶段大方一点"）。
+    ★ <b>多余结算（两重门槛）</b>：装不下的那部分折成【愤怒结晶】——一颗 = 30 点，<b>够一整颗才给</b>；
+    <b>最多折几颗由"资格"封顶</b>：在 5 级每撑满 <b>10 秒</b>算一份资格（底数 1 份），
+    另外<b>保底 1 颗</b>——走进这一段就至少留一颗，哪怕心绪条装得下也照给。
+    原来那条"按时长发结晶"的接底奖励已删掉，结晶只剩这一条来路。
+    记录那条路留给<b>环境</b>（群系 / 结构 / 事件）—— 仪式改走"当下感受"这条路之后，
+    书不再被仪式刷屏，那 600 秒冷却也不再是回报的闸门。
+    退出登录时只回滚、<b>不给记录</b>，所以"冲五级然后退出"什么都拿不到。
+    回滚带来一个复制口子，已堵：<b>仪式期间不许扔东西</b>（扔了提示"它们粘在你满身的血浆中"）——
+    否则先扔在地上、结束之后再捡回来就是白拿第二份。
+    ⚠️ 简化成一条总规则（作者同意）：<b>仪式期间禁止把物品放进世界</b>。已覆盖：
+    丢出去 / 拖出窗口、容器（箱子那一家）、非容器的储物方块（唱片机 / 讲台 / 营火 / 花盆 / 堆肥桶 /
+    饰纹陶罐 / 凿纹书架 / 物品架）、展示框与盔甲架，以及<b>放方块</b>
+    （挂的是放置事件而不是"拦手里的方块" —— 后者会把拿着方块开门也一起禁掉）。
+    塞不回去时（把可堆叠物品拆成两组占满格子再丢，逼我们放行）：<b>这一场会回滚背包就直接删那一份</b>
+    （回滚会还给他，地上不会多出一份）；1 到 4 级没有回滚，所以照旧让它掉在地上，不真丢东西。
+    至于<b>背包页</b>：服务端拦不住（那是纯客户端界面，没有对应事件），也不需要拦 ——
+    从背包页能走的物品出口只有"丢出去"，那条已经堵了。</p>
+    <p class="small dim">反挂机（作者 2026-10-06 定的尺度）：硬门两条 —— 只有<b>敌对生物</b>算、
+    <b>刷怪笼生的</b>不计；其余按软分够 <b>2 分</b>才计入等级
+    （被这只盯上 / 打过 +2、人在动 +1、与上次计数击杀拉开距离 +1、最近挨过打 +1、换种类 +1）。
+    再加一条硬门槛：同一刻被同一次攻击打中 <b>8 只以上</b>（按不同的怪去重；
+    窗口就是同一刻，不能放宽到相邻刻 —— 放宽过一次，结果连续几刻的攻击会一路累加、
+    正常打怪也能涨到 8 只以上）、而你自己没在动也没挨打，
+    就<b>立刻打断</b>浴血（无论等级）：这一段不结算、不发顶点结晶，提示"你从恍惚中清醒过来"。
+    打断同时给两条惩罚（<b>落存档</b>）：以当时所在区块为中心的 <b>3×3 共 9 个区块</b>记成
+    "这里不触发仪式"（冷却会结束，这块地不会），以及 <b>一小时冷却</b>；
+    再被抓到一次就重置计时、并把新位置的 9 个区块也记进去。
+    ⚠️ 按这个尺度，"人在动"只是 1 分软分，所以<b>自然刷怪塔</b>（站桩砍落下来的怪）仍然凑得够门槛 ——
+    已知口子，要堵就把"人在动"恢复成硬门，或把"被盯上"降到 1 分并把门槛提到 3。</p><p class="small dim">★ 记录行末尾还追加了一段【行为烈度】（只允许
+    INTENSITY_LOWEST / INTENSITY_LOW / INTENSITY_HIGH / INTENSITY_HIGHEST 四个值，常量见 EmotionRecords.INTENSITY_*）：
+    环境路径写它按组算出来的那一档，自虐路径（插刀等）由【你做了什么】给。
+    问"这条记录值多少"时优先用存下来的烈度，没存才回退到按组 —— 口径在
+    <code>EmotionRecords.intensityOf</code>。</p><h2>效率链</h2>
+    <table><tr><th>环节</th><th>公式/取值</th></tr>
+    <tr><td>注入</td><td class="mono">round(提取量 × 外围注入 × 中心注入 × 属性偏好)</td></tr>
+    <tr><td>外围注入</td><td>按外围种类的等级取 50% / 75% / 90% / 100%</td></tr>
+    <tr><td>中心注入</td><td>按中心种类的等级取，同上</td></tr>
+    <tr><td>属性偏好</td><td class="mono">外围一尊 × 中心一尊（<b>只乘两层</b>，不是四次方）</td></tr>
+    <tr><td>偏食</td><td>中心是下界四件套时，按面值的 <b>0.15</b> 折进
+    （★ 2026-10-06 口径改动：原来算"被抛弃那一半的 15%"，占比去掉后记录本身是单极的，
+    "另一半"不存在，改为直接折面值的 15%）</td></tr>
+    <tr><td>绽裂</td><td>法杖点数 × <b>1.5</b> = 心绪总量，按极性均分到 6（正）/ 4（负）种</td></tr>
+    <tr><td>溢出转经验</td><td class="mono">round(装不下的心绪 × 0.6667)，攒到最后一次性交给原版拆分成大球</td></tr>
+    <tr><td>心绪上限</td><td>每类各自 150</td></tr>
+    </table><h2 id="rot">腐烂之物（rotting_thing）· 常量表</h2>
+<p class="small dim">机制与行为在<a href="rituals.html#rot">仪式页</a>；
+这里是同一份读取出来的数值。源码：
+<code>RottingThing</code> / <code>MobScale</code> / <code>RottingThingConversion</code>。</p><table><tr><th>项</th><th>常量</th><th>值</th><th>说明</th></tr>
+<tr><td>生命值上限</td><td class="mono small">MAX_HEALTH</td><td><b>40</b></td>
+<td>固定，不继承来源生物</td></tr>
+<tr><td>闲置流失速率</td><td class="mono small">ROT_HP_PER_DAY</td>
+<td>每天 <b>8</b> 点</td>
+<td>满血 40 能撑 <b>5.0 天</b>；
+第 4 天还剩 8 点
+（20%）</td></tr>
+<tr><td>流失结算</td><td class="mono small">ROT_SETTLE_TICKS / ROT_SETTLE_JITTER</td>
+<td class="mono">6000 刻（5 分钟）／ ±10%</td>
+<td>作者："观感太慢就把它加长，结算金额相应变大" —— 加长它一天的总量不变，
+只改单次金额与观感。随机偏差落在<b>金额</b>上，不落在间隔上</td></tr>
+<tr><td>转化中流失倍率</td><td class="mono small">ROT_SPEEDUP_WHILE_CONVERTING</td>
+<td><b>×2.5</b></td>
+<td>⚠️ 只作用于<b>普通生物 → 腐烂之物</b>那段变形期（作者点名保持不动）；
+与紫水晶转化的烧血无关</td></tr>
+<tr><td>一次喂食吸收上限</td><td class="mono small">FEED_ABSORB_CAP / MIN_FEED_ABSORB</td>
+<td><b>8</b> / 1 点</td><td>让"少量多次"成为必须</td></tr>
+<tr><td>附魔金不腐窗口</td><td class="mono small">GOOD_FOOD_IMMUNITY_TICKS</td>
+<td><b>3600</b> 刻（3 分钟）</td><td>只停饥饿流失</td></tr>
+<tr><td>金胡萝卜不腐窗口</td><td class="mono small">GOLDEN_CARROT_IMMUNITY_TICKS</td>
+<td><b>2400</b> 刻（2 分钟）</td><td>不回血</td></tr>
+<tr><td>碎片容量</td><td class="mono small">SHARD_CAPACITY</td><td><b>8</b> 颗</td><td>一次塞满为止</td></tr>
+<tr><td>块容量</td><td class="mono small">BLOCK_CAPACITY</td><td><b>1</b> 块</td>
+<td>块每轮产 <b>1</b> 颗（<code>CRYSTALS_PER_BLOCK</code>）；
+块<b>不被消耗</b>，插着就一直产</td></tr>
+<tr><td class="mono">⚠️ 四条门槛（带滞回）</td>
+<td class="mono small">BLOCK_MAX_HEALTH_RATIO / BLOCK_PHASE_UPPER_RATIO</td>
+<td>下界 ≤ <b>25%</b>；上界 &gt; <b>50%</b></td>
+<td>40 上限即：≤10 点 / &gt;20 点。<br>
+① <b>插块</b>：血量 ≤ 25%；
+② <b>吐块</b>：血量 &gt; 50%；
+③ <b>插碎片</b>：血量 &gt; 25% <b>且没插着块</b>；
+④ <b>吐碎片</b>：血量 ≤ 25%。<br>
+⚠️ ③ 的条件是<b>两个</b>（2026-10-11 作者确认）：只要"没含着块"就能装，不必血多高。
+两种拒收各有各的话 —— 血量太低 → 作者原话"它承担不了这样的折磨了"；
+块正含着 →"它正含着块，塞不进碎片。"<br>
+于是 25%～50% 是<b>滞回带</b>：
+块插着就留着、玩家可以在这段里喂它续命（<b>带里可以正常装碎片</b>，除非块正含着）。<br>
+<b>为什么非要滞回</b>：块一直在烧血，玩家必须喂；若"超过 25% 就吐块"，
+那喂一口（哪怕 +1 点的浆果，10 → 11 点）
+就会把块顶出去，<b>"必须一直喂"这条规则物理上做不到</b>。<br>
+★ <b>喂食提醒</b>：块插着且喂食<b>前</b>血量 ≥ 30%
+（<code>BLOCK_EJECT_WARNING_RATIO</code>）时给一句"再喂就会把块吐出来。"。
+这个点 = 吐块线 50% − 单次吸收上限
+20% = <b>30%</b>，
+也就是"<b>任何一口食物都可能越线</b>"的那条线（不要低于 25%，
+否则块刚插上就一直提示）</td></tr>
+<tr><td>产出间隔（基准）</td><td class="mono small">PRODUCE_INTERVAL_TICKS</td>
+<td><b>1200</b> 刻（60 秒）</td><td>平时</td></tr>
+<tr><td>产出间隔（转化中基准）</td><td class="mono small">PRODUCE_INTERVAL_WHILE_CONVERTING</td>
+<td><b>400</b> 刻（20 秒）</td><td>转化中；
+⚠️ 它也是<b>基准</b>，加速曲线从它往下乘</td></tr>
+<tr><td>加速曲线</td>
+<td class="mono small">PRODUCE_RAMP_FACTOR / _MIN_DIVISOR / _BLOCK_MIN_DIVISOR / _RESET_TICKS</td>
+<td class="mono">0.9 / 4 / 8 / 12000 刻</td>
+<td><b>碎片与块都吃这条曲线</b>：每完成一轮间隔 ×0.9。
+下限 = 基准 ÷ 4（15.0 秒）；
+<b>块在产时</b>下限更低，÷ 8
+（7.50 秒）。
+连续 10 分钟没完成一轮就回基准</td></tr>
+<tr><td>单颗产出（碎片）</td><td class="mono small">CRYSTALS_PER_SHARD</td>
+<td>固定 <b>2</b> 颗 / 轮</td><td>不再随痛苦度变化（痛苦度已整体删除）</td></tr>
+<tr><td>单颗产出（块）</td><td class="mono small">CRYSTALS_PER_BLOCK</td>
+<td>固定 <b>1</b> 颗 / 轮</td>
+<td>块<b>永不被消耗</b>（不写 blocks--），插着就一轮一轮产、不用回填</td></tr>
+<tr><td class="mono">⚠️ 两条路的分工</td><td class="mono small">HP_COST_PER_CRYSTAL</td>
+<td><b>0.5</b> 点 / 颗</td>
+<td><b>碎片 = 有消耗的爆发</b>：一轮 2 颗、扣
+1 点、<b>自己会被用光</b>（要重新装填）。<br>
+<b>块 = 不用回填的涓流</b>：一轮 1 颗、扣
+0.5 点、<b>自己永不用光</b>。<br>
+⚠️ 两边<b>都扣血、都吃加速曲线</b> —— 块的"无消耗"只指<b>它自己不被消耗</b>，不是不扣血
+（作者原话："吃加速曲线，有加速曲线就代表它掉血太快必须一直喂"）。<br>
+装满 8 个碎片位 = 16 颗
+= <b>8 点</b>，
+正好把满血 40 烧到 32
+（80%），
+<b>低于插块门槛</b> —— 装满一轮这个动作本身就会把它推进第四阶段</td></tr>
+<tr><td>腐肉掉落</td><td class="mono small">ROTTEN_FLESH_MIN/MAX</td>
+<td>2 到 4 块</td><td>另有肚子里没转化完的紫水晶</td></tr>
+<tr><td>嘲讽范围 / 频率</td><td class="mono small">TAUNT_RANGE / TAUNT_INTERVAL_TICKS</td>
+<td>24 格 / 每 20 刻</td><td>硬条件是原版视线判定</td></tr>
+<tr><td>雕刻刀伤害</td><td class="mono small">KNIFE_DAMAGE（RottingThingConversion）</td>
+<td><b>4</b> 点</td><td>不造成击退</td></tr>
+<tr><td>转化缓慢</td><td class="mono small">SLOWNESS_TICKS / SLOWNESS_MAX_AMPLIFIER</td>
+<td>5 秒 / 封顶 amplifier 3</td><td>已有缓慢则升一级</td></tr>
+<tr><td>转化时长</td><td class="mono small">CONVERT_TICKS</td>
+<td><b>1200</b> 刻（1 分钟）</td><td>归零不击杀，到点变形</td></tr>
+<tr><td>体积折算</td><td class="mono small">REFERENCE_HEALTH / GROWTH_EXPONENT</td>
+<td class="mono">clamp((h/20) ^ 0.32, 0.4, 4)</td>
+<td>起始体积只由来源上限决定</td></tr>
+<tr><td>缩水系数</td><td class="mono small">MIN_SHRINK</td>
+<td class="mono">0.4 + 0.6 × 当前/上限</td>
+<td>缩到底仍有起始的 0.4 倍</td></tr>
+<tr><td>不能转变的物种</td><td class="mono small">cannot_rot 标签</td>
+<td>31 条</td><td>村民与流浪商人可以转</td></tr>
+</table></main></html>

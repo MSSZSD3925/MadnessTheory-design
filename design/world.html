@@ -1,0 +1,127 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<title>这个世界 · 癫狂构想设计分册</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="wiki.css">
+<nav>
+<div class="t">设计分册</div>
+<a href="index.html">总览</a>
+<a href="world.html">这个世界</a>
+<a href="moods.html">心绪</a>
+<a href="traces.html">痕迹与账</a>
+<a href="rituals.html">一切仪式</a>
+<a href="doors.html">四门大魔法</a>
+<a href="dimension.html">情绪维度</a>
+<a href="things.html">材料与装置</a>
+<a href="progression.html">从零开始的路</a>
+<div class="t">现状（代码生成）</div>
+<a href="../index.html">总览与体检</a>
+<a href="../kinds.html">雕像种类</a>
+<a href="../materials.html">材质 ↔ 方块</a>
+<a href="../attributes.html">属性</a>
+<a href="../traits.html">特性</a>
+<a href="../moods.html">心绪</a>
+<a href="../numerics.html">数值与公式</a>
+<a href="../rituals.html">仪式</a>
+<a href="../storage.html">温养</a>
+<a href="../moodstaff.html">情绪之杖</a>
+<div class="t">说明</div>
+<div class="small dim" style="padding:4px 8px">设计分册是手写的，取自已定稿的设计记录；「现状」那栏由 <code>gen-design-site.mjs</code> 从源码生成。</div>
+</nav>
+<main>
+<p class="crumb"><a href="index.html">设计分册</a><span>/</span>这个世界</p>
+<h1>这个世界</h1>
+<p class="lede">硬约束与两条主线</p>
+
+<div class="infobox"><div class="cap">一句话</div><table><tr><th>原点</th><td>它要玩家真的感到愧疚和情绪的波动。</td></tr><tr><th>一句话总纲</th><td>心绪条回答「你此刻有什么」，使用方式回答「你怎么把它交出去」，个人账回答「你做过什么」，场地账回答「你在哪里做过」。</td></tr><tr><th>脊椎</th><td>负面怎么用都留账，正面只在驻场时擦。</td></tr><tr><th>密度判据</th><td>动作要密，反馈要即时——亲手做的事不该绕「写记录 → 再提炼」那条慢路。</td></tr><tr><th>供给一句话</th><td>环境只产正面，负面靠仪式，悦灵与恼鬼是微量补充。</td></tr><tr><th>硬约束</th><td>附录甲 8 条，实现时必须写死。</td></tr><tr><th>状态</th><td>本页内容取自第四十六轮定稿 <span class="tag ok">已定</span></td></tr></table></div>
+
+<h2>四层结构</h2>
+
+<p>四种东西层层叠上去，各记一件事，各有自己的量法。</p>
+
+<div class="scroll"><table>
+<tr><th>层</th><th>记什么</th><th>量化</th><th>可见性</th><th>会不会自己好</th><th>代价</th></tr>
+<tr><td>心绪条</td><td>你此刻有什么</td><td>十类各自，基准上限 150</td><td>常驻可见，现有十根管子</td><td>靠消耗与抵消变</td><td>正面总量定增益或减益；负面各自过满定特征减益</td></tr>
+<tr><td>使用方式</td><td>这一下你怎么把它交出去</td><td>瞬发 / 蓄力 / 驻场</td><td>操作时可见</td><td>—</td><td>瞬发不记账；蓄力写个人账；驻场写场地账</td></tr>
+<tr><td>个人账</td><td>你烧过多少负面</td><td>四路，可消退 100/路 加 不可逆 25/路（四路合计 100）</td><td>可查不可见，查询物给形状不给数字</td><td>不自然消退，靠反着做削</td><td>counter ＝ 可消退＋不可逆，过 300 发作，四级后果</td></tr>
+<tr><td>场地账</td><td>你在哪里烧过</td><td>区块四路残留</td><td>只做氛围，不给数字</td><td>永不消退</td><td>施法消耗上浮加失准，三段升级到禁地</td></tr>
+</table></div>
+
+<p>三种使用方式与三本账一一对应，这是整套设计的脊椎。</p>
+
+<pre class="grid">
+  你此刻有什么 ── 心绪条（十类，基准上限 150）
+        │
+        ├── 怎么交出去 ── 瞬发 / 蓄力 / 驻场
+        │        瞬发：负面写个人账 1 点
+        │        蓄力：负面写个人账（投入 ÷ 10）
+        │        驻场：负面写场地账（投入 ÷ 10）
+        │
+        ├── 你做过什么 ── 个人账（四路，300 发作）
+        └── 你在哪里做过 ── 场地账（区块四路，永不消退）
+</pre>
+<p class="fig">三种使用方式与三本账一一对应；正面只在驻场时写反向的场地账，也就是中和。</p>
+
+<h2>八条硬约束</h2>
+
+<p>附录甲：实现时必须写死。</p>
+
+<div class="scroll"><table>
+<tr><th>条</th><th>约束</th><th>为什么</th></tr>
+<tr><td>1</td><td>场地污染不产记录，也不产任何环境提示。</td><td>方向一刚把记录从环境挪开，而区块残留本身就是新的「环境」来源；这一类违规是「实现时顺手就会加」的。</td></tr>
+<tr><td>2</td><td>场地污染的值层不改方块、不破坏建筑、不先造成直接伤害，只写区块数据。</td><td>例外只有外出者：怒行者与秽行者会替换方块，但只写「只有皮」那一层，不写区块数值，也不碰石头类与任何模组方块。</td></tr>
+<tr><td>3</td><td>整条痕迹链必须有全局开关（照神秘时代的 wussMode）。</td><td>08 号纲领要求「强加于人的情绪机制必须可整体关闭」。</td></tr>
+<tr><td>4</td><td>削痕与清洁动作必须走 use 路径、必须亲手，假玩家按自动化处理。</td><td>还账这件事要人来做，假玩家不能替人还。</td></tr>
+<tr><td>5</td><td>个人账与场地账都不给数字读数，个人账默认零显示。唯一例外是「埋痕」这一条写入路径，在写入那一刻给一次数字反馈。</td><td>不写这一条，「永不消退」的账就只是个装饰，而没有反馈玩家也无法判断值不值得做。边界写死：除这一处外任何地方都不给场地账读数——包括查询物、读数台、指南书。</td></tr>
+<tr><td>6</td><td>场地污染不产稀有物、不产可搬运材料。</td><td>场地账只做氛围，不给数字；它一旦变成物资来源，痕迹链就成了收益链。</td></tr>
+<tr><td>7</td><td>结晶只作合成材料，不作施法燃料；且必须一起堵住温养结构「结晶填回心绪值」那条链。</td><td>只堵「直接吃结晶当燃料」的话，「机器 → 结晶 → 心绪值 → 施法」这条链依然通着。已定断法：幽匿角只能把库里的心绪提成结晶，不能反填——温养是单向的提取口。</td></tr>
+<tr><td>8</td><td>任何「惩罚」都不许拿走玩家的物资。惩罚只能落在他看见的、他身上的、他的时间上，不落在他箱子里的。</td><td>判据是玩家事后能不能说清「我损失了什么、为什么」——不能，就不做。所以「箱子里的东西减少」「装备消失」「物资被吸走」一律不做。</td></tr>
+</table></div>
+
+<div class="notice rule"><span class="t">硬约束</span>第 5 条的验收：站在已埋过痕的地上，任何界面都不显示那块地的数字；只有再埋一次时才看得到。</div>
+
+<h2>两条主线</h2>
+
+<h3>记录 ＝ 你经历了什么</h3>
+
+<p>环境给你的、慢的、粗的那条路：环境提示 → 书 → 温养。要攒、要撕、要提炼。</p>
+
+<p>记录与见证是两套（第三十五轮已定）：记录管环境里的情绪提示，记进指南书后变成可利用的资源；见证是装备自己攒的经历，是一套附魔系统（铭刻三条、装备存五条、刻印三条）。</p>
+
+<h3>账 ＝ 它留了什么</h3>
+
+<p>你亲手做的事留下的东西。负面怎么用都留账，正面只在驻场时擦；账的记法按使用方式分：瞬发写个人账 1 点，蓄力写个人账（投入 ÷ 10），驻场写场地账（投入 ÷ 10）。</p>
+
+<div class="scroll"><table>
+<tr><th>路</th><th>什么时候用</th><th>特征</th></tr>
+<tr><td>手边的动作（仪式、施法）</td><td>玩家主动做的、密的、目标专一的</td><td>即时反馈，直接改心绪条</td></tr>
+<tr><td>环境记录（环境提示 → 书 → 温养）</td><td>世界给你的、慢的、粗的</td><td>要攒、要撕、要提炼</td></tr>
+</table></div>
+
+<p>判据的另一半在正面那一侧是反的：负面动作要密、反馈要即时，所以走心绪条；正面要慢、要攒、要到期，所以走时间。证据是正面六条小仪式的代价全是「心绪 ＋ 你的时间」——「约」的代价是等待、「立」的寿命是 30 天、「跃」不投就结束。</p>
+
+<h2>十种心绪的来源</h2>
+
+<p>三个来源：环境提示、仪式、生物。环境只产正面，负面靠仪式，悦灵与恼鬼是微量补充。</p>
+
+<div class="scroll"><table>
+<tr><th>心绪</th><th>环境提示</th><th>仪式</th><th>生物</th></tr>
+<tr><td><span class="chip" style="background:#FFD98A"></span> 快乐</td><td>有</td><td>跃（雕像多方块）／绽放类（满配绽裂能把六类正面各顶到 150）</td><td>悦灵</td></tr>
+<tr><td><span class="chip" style="background:#B8BCC0"></span> 安宁</td><td>有</td><td>洗（雕像多方块）</td><td>悦灵</td></tr>
+<tr><td><span class="chip" style="background:#5A4E7C"></span> 期待</td><td>有</td><td>约（雕像多方块）</td><td>悦灵</td></tr>
+<tr><td><span class="chip" style="background:#6B3A3E"></span> 喜爱</td><td>有</td><td>保险（雕像多方块）</td><td>悦灵</td></tr>
+<tr><td><span class="chip" style="background:#E8C86A"></span> 自豪</td><td>有</td><td>立（雕像多方块）</td><td>悦灵</td></tr>
+<tr><td><span class="chip" style="background:#7FB8A8"></span> 好奇</td><td>有</td><td>抽奖机（雕像多方块）</td><td>悦灵</td></tr>
+<tr><td><span class="chip" style="background:#2E3A4E"></span> 悲伤</td><td>无</td><td>插刀（极端，一次 150 点）；简单仪式：细雪冻僵</td><td>恼鬼</td></tr>
+<tr><td><span class="chip" style="background:#8A8F94"></span> 恐惧</td><td>无</td><td>追幻听（极端，一次 150 点）；简单仪式：自溺</td><td>恼鬼</td></tr>
+<tr><td><span class="chip" style="background:#7A1E1E"></span> 愤怒</td><td>无</td><td>浴血（极端，一次 150 点）；简单仪式：钉子木桩（简单自虐，满档 32 点）</td><td>恼鬼</td></tr>
+<tr><td><span class="chip" style="background:#3F5230"></span> 厌恶</td><td>无</td><td>腐烂之物（极端）；简单仪式：桶装生物</td><td>恼鬼</td></tr>
+</table></div>
+
+<div class="notice"><span class="t">设计约定</span>悦灵与恼鬼是传导体，铜傀儡是容器。它们不指定、不绑定、不给某一种心绪，给的永远是随机的。悦灵传达随机一种正面心绪 2 到 5 点，冷却 90 秒，被冷却限速；恼鬼传达随机一种负面心绪 25 到 40 点，按刚承受的严重程度上浮，冷却 10 分钟是被事件限速。两者的物品形式与 Curios 饰品栏 <span class="tag warn">押后</span>。</div>
+
+<div class="notice"><span class="t">设计约定</span>仪式是否留痕：仪式不留痕，痕迹只来自施法（第四十六轮已定，按原文倾向）。</div>
+
+<div class="notice warn"><span class="t">待定</span>正面「够用」的标准，要等施法系统真正设计出来才能定。</div>
+
+<p class="stamp">内容取自《癫狂构想-心绪与痕迹-设计决策记录》第四十六轮定稿。以设计记录为准，本页只是它的一个读法。</p>
+</main></html>

@@ -1,0 +1,2609 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<title>仪式动画调研 · 癫狂构想设计站</title>
+<link rel="stylesheet" href="style.css">
+<nav><div class="t">设计站</div><a class="" href="index.html">总览与体检</a>
+<a class="" href="kinds.html">雕像种类</a>
+<a class="" href="materials.html">材质 ↔ 方块</a>
+<a class="" href="attributes.html">属性</a>
+<a class="" href="traits.html">特性与特殊功能</a>
+<a class="" href="moods.html">心绪</a>
+<a class="" href="numerics.html">数值与公式</a>
+<a class="" href="rituals.html">仪式</a>
+<a class="" href="storage.html">温养仪式</a>
+<a class="" href="moodstaff.html">情绪之杖</a>
+<a class="on" href="refs.html">参考文档</a>
+<a class="" href="intent.html">设计意图</a>
+<div class="t">说明</div>
+<div class="small dim" style="padding:4px 8px">本页内容由 <code>gen-design-site.mjs</code>
+从源码生成，改完代码重跑即可。</div></nav>
+<main><h1>仪式动画调研</h1><p>﻿# 魔法模组「仪式进行中的动画与表现」调研</p>
+<p>目标：为我们的「唤醒仪式」找出可借鉴的实现方式。</p>
+<p><b>我们的用例（复述，后文简称"用例"）</b>：</p>
+<p>1. 玩家手持书本右键一尊雕像方块</p>
+<p>2. <b>粒子流</b>：像附魔台那样的符文/标准银河字母，<b>从玩家身上流出、飞向目标雕像</b>，持续约 3 秒</p>
+<p>3. <b>物体剧烈抖动</b>：雕像台座上放着的物品在这 3 秒里明显抖动</p>
+<p>4. 3 秒后一声"丁"的提示音</p>
+<p>5. 物品变成法杖，<b>留在雕像的台座上</b>（不是给玩家）</p>
+<p><b>已核对的技术现状</b>：目标方块有自己的 BlockEntity，存着 <code>ItemStack contained</code>，已有</p>
+<p><code>getUpdatePacket()</code> + 手写的 <code>getUpdateTag()</code>；物品由 BER 渲染（<code>extractRenderState</code> / <code>submit</code> 两段式，</p>
+<p><code>SubmitNodeCollector</code>）。</p>
+<div class="card small"><b>版本口径说明（重要）</b>：本机 <code>neoforge-scaffold/project/gradle.properties</code> 写的是</div>
+<div class="card small"><code>minecraft_version=26.1.2</code> / <code>neo_version=26.1.2.112</code>。任务描述里的「NeoForge 1.26.1.2」与它不一致，</div>
+<div class="card small">下面<b>一律以 gradle.properties 的 26.1.2 为准</b>（这也是我实际对照 API 的版本）。</div>
+<div class="card small"><b>未能核对的部分</b>：我在工作区里<b>没有找到</b> <code>EmotionStatueBlock</code> / <code>EmotionStatueBlockEntity</code> /</div>
+<div class="card small"><code>StatueRenderer</code> / <code>StatueRenderState</code> 的源码——<code>neoforge-scaffold/project/src</code> 里只有模板</div>
+<div class="card small"><code>ExampleMod</code>，<code>_modstage</code> 里是另一批文件。所以关于"我们现有代码长什么样"的判断全部来自任务描述，</div>
+<div class="card small">我<b>没有核对过源码</b>。凡是这类地方下面都会标注「未核对」。</div>
+<p><b>素材（只读，未修改任何文件）</b>：</p>
+<table>
+<tr><th>简称</th><th>路径</th><th>版本</th></tr>
+<tr><td>Botania</td><td><code>_ref3/botania/Botania-1.20.x/Xplat/src/main/java/vazkii/botania/</code></td><td>MC 1.20.x</td></tr>
+<tr><td>Ars Nouveau</td><td><code>_ref3/arsnouveau/src/com/hollingsworth/arsnouveau/</code></td><td>MC 1.21.1 NeoForge（5.13.2）</td></tr>
+<tr><td>Thaumcraft</td><td><code>_ref3/thaumcraft/src/Thaumcraft-6-master/thaumcraft/</code></td><td>MC 1.12.2（TC6 BETA26）</td></tr>
+<tr><td>Astral Sorcery</td><td><code>_ref3/astral/src/AstralSorcery-1.12.2/src/main/java/hellfirepvp/astralsorcery/</code></td><td>MC 1.12.2</td></tr>
+<tr><td>原版 26.1.2</td><td><code>D:\mcsrc\</code>（已反编译源码索引）</td><td>MC 26.1.2 / NeoForge 26.1.2.112</td></tr>
+</table>
+<hr>
+<h3>0. 结论速览（先给答案）</h3>
+<table>
+<tr><th>问题</th><th>结论</th></tr>
+<tr><td>原版 <code>ParticleTypes.ENCHANT</code> 自带朝向玩家的速度吗？</td><td><b>没有速度。它不是"飞出去"，而是"从不远处飞回来"。</b> 第 3~5 个参数是<b>位移向量</b>（终点−起点），粒子在存活期内从 <code>pos+offset</code> 线性插值到 <code>pos</code>。见 §1</td></tr>
+<tr><td>能用 <code>sendParticles</code> 的速度参数把它引向别处吗？</td><td><b>可以，但语义是"位移"不是"速度"。</b> 想让它从玩家飞向雕像：<b>在雕像位置 spawn，offset 指向玩家</b>。方向、长度都要自己算。粒子寿命固定 25~30 刻，所以<b>长距离会飞不到</b>，见 §1.4</td></tr>
+<tr><td>有没有"粒子沿路径飞向目标"的做法？</td><td>四家<b>全都有，而且是三种不同流派</b>：&lt;br&gt;• <b>插值撒点</b>（最省事）：Ars Nouveau <code>ParticleUtil.beam()</code> / <code>doParticleBeam()</code>、Botania <code>doParticleBeam()</code>、<code>SPARK_NET_INDICATOR</code>——按固定步长沿直线撒原版/自写粒子&lt;br&gt;• <b>自带目标的粒子类</b>（讲究）：Thaumcraft <code>FXBoreSparkle</code>（每刻朝目标转向 + 抖动）、Ars Nouveau <code>ParticleLine</code>（构造时吃下 dest 坐标，自己 lerp）&lt;br&gt;• <b>真实实体</b>：Ars Nouveau <code>EntityFollowProjectile</code>（服务端实体，朝 <code>BlockPos dest</code> 归航 + 沿轨迹撒粒子）</td></tr>
+<tr><td>方块上物品抖动怎么做的？</td><td><b>全都在 BER/TESR 里改 <code>poseStack</code> 的 translate/mulPose</b>，没有例外，也没有别的层。抖动参数见 §2.3 汇总表</td></tr>
+<tr><td>持续数秒仪式的状态放哪？</td><td><b>四种都放 BlockEntity 字段</b>（Thaumcraft/Astral 把"配方+进度"打包成对象）。没有用 Capability 或独立 SavedData 的</td></tr>
+<tr><td>怎么同步？</td><td><b>两家（Botania / AN）把"是否在仪式中"做成一个同步字段，客户端自己按 tick 算动画</b>；只有需要真实进度条时才同步进度值。Thaumcraft 用 <code>HashMap&lt;key, SourceFX&gt;</code> + 一个 20 字节的小包；Astral 每 4 刻同步一次 <code>serverSyncAttTick</code></td></tr>
+<tr><td>防"半途卡死"？</td><td>Astral 做得最完整：<code>ActiveCraftingTask</code> 有 <b>ACTIVE / WAITING / PAUSED</b> 三态状态机，<code>tryProcess</code> 返回 false 就停在那儿，NBT 全程持久化 → 断电/卸载/重启回来能续；Astral 还专门写了 <code>checkClientEffectIntegrity()</code> 处理客户端残留的镜头动画</td></tr>
+<tr><td>"丁"的一声</td><td><b>Botania 有现成的 <code>BotaniaSounds.ding</code></b>（<code>ding</code>），用在绑定成功等处；Astral 用 <code>Sounds.craftFinish</code> 配 <b>pitch 1.7</b>（比 1.0 清脆得多）；Thaumcraft 在 infusion 期间每 65 刻播一次 <code>SoundsTC.infuser</code></td></tr>
+</table>
+<hr>
+<h3>1. 原版 <code>ParticleTypes.ENCHANT</code> 到底怎么动（最重要，必须先搞清）</h3>
+<h4>1.1 注册：ENCHANT = <code>FlyTowardsPositionParticle.EnchantProvider</code></h4>
+<p><code>D:\mcsrc\net\minecraft\client\particle\ParticleResources.java:85</code></p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+this.register(ParticleTypes.ENCHANT, FlyTowardsPositionParticle.EnchantProvider::new);
+</pre>
+<p>所以 <code>ParticleTypes.ENCHANT</code> 的真实实现类是 <code>FlyTowardsPositionParticle</code>，<b>不是</b> <code>FlyStraightTowardsParticle</code></p>
+<p>（后者是 Ominous Spawn 用的，<code>FlyStraightTowardsParticle.OminousSpawnProvider</code>，名字很像但别搞混）。</p>
+<h4>1.2 它的构造与运动公式（关键）</h4>
+<p><code>D:\mcsrc\net\minecraft\client\particle\FlyTowardsPositionParticle.java:25-60</code>（节选）</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+public FlyTowardsPositionParticle(
+    ClientLevel level, double x, double y, double z,
+    double xd, double yd, double zd,
+    boolean isGlowing, Particle.LifetimeAlpha lifetimeAlpha, TextureAtlasSprite sprite
+) {
+    super(level, x, y, z, sprite);
+    ...
+    this.xd = xd;  this.yd = yd;  this.zd = zd;
+    this.xStart = x;  this.yStart = y;  this.zStart = z;
+    this.xo = x + xd;  this.yo = y + yd;  this.zo = z + zd;
+    this.x  = this.xo; this.y  = this.yo; this.z  = this.zo;   // ← 出生点被挪到 pos+offset
+    ...
+    this.hasPhysics = false;
+    this.lifetime = (int)(this.random.nextFloat() * 10.0F) + 30;   // ← 30~40 刻
+}
+</pre>
+<p><code>FlyTowardsPositionParticle.java:85-102</code>（运动本体）</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+@Override
+public void tick() {
+    this.xo = this.x; this.yo = this.y; this.zo = this.z;
+    if (this.age++ &gt;= this.lifetime) {
+        this.remove();
+    } else {
+        float pos = (float)this.age / this.lifetime;
+        pos = 1.0F - pos;                 // 1 → 0
+        float pp = 1.0F - pos;
+        pp *= pp; pp *= pp;               // pp = pos^4
+        this.x = this.xStart + this.xd * pos;
+        this.y = this.yStart + this.yd * pos - pp * 1.2F;   // ← 唯一的重力项
+        this.z = this.zStart + this.zd * pos;
+    }
+}
+</pre>
+<p><b>逐条回答任务里的问题：</b></p>
+<ul>
+<li><b>它自带朝向玩家的速度吗？</b> —— <b>没有速度，也没有任何"朝向玩家"的逻辑。</b></li>
+</ul>
+<p>  <code>xd/yd/zd</code> <b>不是速度</b>，是 <code>pos</code> 的<b>位移偏移量</b>（<code>xd = startX - spawnX</code>）。</p>
+<p>  粒子出生时就位于 <code>pos + offset</code>，然后用 <code>pos</code> 从 1 线性降到 0 一路插值回 <code>pos</code>。</p>
+<ul>
+<li><b><code>sendParticles</code> 的速度参数能引向别处吗？</b> —— <b>能，而且是它唯一的用法。</b></li>
+</ul>
+<p>  <code>ClientPacketListener.handleParticleEvent</code>（<code>D:\mcsrc\net\minecraft\client\multiplayer\ClientPacketListener.java:2312-2346</code>）</p>
+<p>  把 <code>xa/ya/za</code> 原样当 <code>addParticle</code> 的 <code>xd/yd/zd</code> 传下去：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+  if (packet.getCount() == 0) {
+      double xa = packet.getMaxSpeed() * packet.getXDist();
+      double ya = packet.getMaxSpeed() * packet.getYDist();
+      double za = packet.getMaxSpeed() * packet.getZDist();
+      this.level.addParticle(packet.getParticle(), ...,
+          packet.getX(), packet.getY(), packet.getZ(), xa, ya, za);
+  } else {
+      for (int i = 0; i &lt; packet.getCount(); i++) {
+          double xVarience = this.random.nextGaussian() * packet.getXDist();
+          double yVarience = this.random.nextGaussian() * packet.getYDist();
+          double zVarience = this.random.nextGaussian() * packet.getZDist();
+          double xa = this.random.nextGaussian() * packet.getMaxSpeed();
+          ...
+          this.level.addParticle(packet.getParticle(), ...,
+              packet.getX() + xVarience, packet.getY() + yVarience, packet.getZ() + zVarience,
+              xa, ya, za);
+      }
+  }
+</pre>
+<p>  <code>ServerLevel.sendParticles</code> 的两条重载（<code>D:\mcsrc\net\minecraft\server\level\ServerLevel.java:1333-1365</code>）</p>
+<p>  只是把这些数打包进 <code>ClientboundLevelParticlesPacket</code>（<code>xDist/yDist/zDist</code> 变 <code>float</code>，</p>
+<p>  <code>count</code> 变 <code>int</code>，<b>没有别的地方会消耗速度</b>）。</p>
+<p>  ⚠️ 所以要用 <code>sendParticles</code> 做"从玩家飞向雕像"，必须：</p>
+<p>  <b>spawn 点 = 雕像</b>，<b>xor/yd/zd = （玩家位置 − 雕像位置）</b>。方向反了粒子就飞反。</p>
+<h4>1.3 原版附魔台自己是怎么用的（照抄这个用法就对了）</h4>
+<p><code>D:\mcsrc\net\minecraft\world\level\block\EnchantingTableBlock.java:63-79</code></p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random) {
+    for (BlockPos offset : BOOKSHELF_OFFSETS) {
+        if (random.nextInt(16) == 0 &amp;&amp; isValidBookShelf(level, pos, offset)) {
+            level.addParticle(
+                ParticleTypes.ENCHANT,
+                pos.getX() + 0.5, pos.getY() + 2.0, pos.getZ() + 0.5,   // 出生在附魔台
+                offset.getX() + random.nextFloat() - 0.5,               // 偏移量指向书架
+                offset.getY() - random.nextFloat() - 1.0F,
+                offset.getZ() + random.nextFloat() - 0.5
+            );
+        }
+    }
+}
+</pre>
+<p><b>出生点在附魔台，偏移量指向书架 → 粒子从书架飞回附魔台。</b></p>
+<p>方向是"书架 → 附魔台"，不是"附魔台 → 书架"。这一点很多人会看反。</p>
+<h4>1.4 三个必须知道的限制</h4>
+<p>1. <b>寿命固定 25~40 刻</b>，位移多大都在这段时间内走完 → 长距离时<b>每刻位移很大、看起来是"跳"过去的</b>。</p>
+<p>   算一下：位移 8 格 / 30 刻 ≈ 0.27 格/刻，还算能看；位移 30 格就完全不像"流动"了。</p>
+<p>2. <b><code>hasPhysics = false</code></b>，不会被方块挡住（好事）。</p>
+<p>3. <b><code>count != 0</code> 的那条分支用的是 <code>nextGaussian()</code></b>，只会做随机撒点，<b>不能给每颗粒子独立的精确终点</b>。</p>
+<p>   要精确控制方向就得走 <b><code>count = 0</code></b> 分支（<code>maxSpeed</code> × <code>xDist/yDist/zDist</code> 合成一个统一偏移量），</p>
+<p>   也就是 <code>ServerLevel.sendParticles(particle, false, false, x, y, z, 0, dx, dy, dz, 1.0)</code>。</p>
+<h4>1.5 还有两个"自带走位"的原版粒子（可能更有用）</h4>
+<table>
+<tr><th>粒子</th><th>实现类</th><th>机制</th></tr>
+<tr><td><code>ParticleTypes.SCULK_CHARGE</code></td><td><code>SculkChargeParticle</code></td><td><b>真·速度</b>：<code>setParticleSpeed(xAux, yAux, zAux)</code>，<code>friction = 0.96F</code>，会自然减速。<code>D:\mcsrc\net\minecraft\client\particle\SculkChargeParticle.java:41-51</code></td></tr>
+<tr><td><code>ParticleTypes.OMINOUS_SPAWNING</code></td><td><code>FlyStraightTowardsParticle</code></td><td>与 ENCHANT 同款"offset 插值"，但 <code>lifetime</code> 固定 25，带 start/end 颜色插值</td></tr>
+</table>
+<p><code>SculkChargeParticle</code> 那条路说明：<b>用"真速度"做飞向目标也是可行的</b>（设一次速度让它飞过去），</p>
+<p>但因为没有转向，长距离会因摩擦衰减飞不到，反而不如插值稳。</p>
+<hr>
+<h3>2. 四家模组逐个看</h3>
+<h4>2.1 Botania（1.20.x）——「符文祭坛」最接近我们的用例</h4>
+<h5>(a) Runic Altar：状态与同步</h5>
+<p><code>common/block/block_entity/RunicAltarBlockEntity.java</code></p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+public class RunicAltarBlockEntity extends SimpleInventoryBlockEntity implements ManaReceiver, Wandable {
+    private static final String TAG_MANA = "mana";
+    private static final String TAG_MANA_TO_GET = "manaToGet";
+    private static final int SET_KEEP_TICKS_EVENT = 0;
+    private static final int SET_COOLDOWN_EVENT = 1;
+    private static final int CRAFT_EFFECT_EVENT = 2;
+
+    private RunicAltarRecipe currentRecipe;
+    public int manaToGet = 0;
+    private int mana = 0;
+    private int cooldown = 0;
+    public int signal = 0;
+    private List&lt;ItemStack&gt; lastRecipe = null;
+    private int recipeKeepTicks = 0;
+</pre>
+<p><b>它的"进度"就是一个 <code>mana</code> 整数</b>（0 → <code>manaToGet</code>），没有独立的进度对象，</p>
+<p>"是否在仪式中"= <code>manaToGet &gt; 0</code>。同步 NBT 只发这两个值（<code>RunicAltarBlockEntity.java:330-344</code>）：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+@Override
+public void writePacketNBT(CompoundTag tag) {
+    super.writePacketNBT(tag);
+    tag.putInt(TAG_MANA, mana);
+    tag.putInt(TAG_MANA_TO_GET, manaToGet);
+}
+@Override
+public void readPacketNBT(CompoundTag tag) {
+    super.readPacketNBT(tag);
+    mana = tag.getInt(TAG_MANA);
+    manaToGet = tag.getInt(TAG_MANA_TO_GET);
+}
+</pre>
+<p><b>什么时候发？只在"值真的变了"的时候</b>（<code>RunicAltarBlockEntity.java:210-225</code>）：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+private void updateRecipe() {
+    int manaToGet = this.manaToGet;
+    if (currentRecipe != null) {
+        this.manaToGet = currentRecipe.getManaUsage();
+    } else {
+        this.manaToGet = level.getRecipeManager().getRecipeFor(BotaniaRecipeTypes.RUNE_TYPE, getItemHandler(), level)
+                .map(RunicAltarRecipe::getManaUsage).orElse(0);
+    }
+    if (manaToGet != this.manaToGet) {
+        level.playSound(null, worldPosition, BotaniaSounds.runeAltarStart, SoundSource.BLOCKS, 1F, 1F);
+        VanillaPacketDispatcher.dispatchTEToNearbyPlayers(this);
+    }
+}
+</pre>
+<p><b>这是全篇最值得抄的一条</b>：<code>mana</code> 每刻都可能变，但它<b>不每刻发包</b>；</p>
+<p>客户端只是把<b>收到的 <code>mana / manaToGet</code> 当成一个 0~1 的进度</b>，</p>
+<p>再<b>用自己本地的 tick 时间驱动所有闪烁/旋转</b>（见 (c)）。</p>
+<p>仪式开始/结束这种"状态跳变"才发一次包，并且顺手放了开始音效 <code>runeAltarStart</code>。</p>
+<p><b>完成时的反馈走 <code>blockEvent</code>（方块事件）而不是自定义包</b>（<code>RunicAltarBlockEntity.java:126-151, 296-297</code>）：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+// 服务端发起（玩家用森林法杖触发合成时）
+level.blockEvent(getBlockPos(), BotaniaBlocks.runeAltar, SET_COOLDOWN_EVENT, 60);
+level.blockEvent(getBlockPos(), BotaniaBlocks.runeAltar, CRAFT_EFFECT_EVENT, 0);
+
+// 客户端收到
+@Override
+public boolean triggerEvent(int id, int param) {
+    switch (id) {
+        case SET_KEEP_TICKS_EVENT: recipeKeepTicks = param; return true;
+        case SET_COOLDOWN_EVENT:   cooldown = param;        return true;
+        case CRAFT_EFFECT_EVENT: {
+            if (level.isClientSide) {
+                for (int i = 0; i &lt; 25; i++) {
+                    float red = (float) Math.random();
+                    float green = (float) Math.random();
+                    float blue = (float) Math.random();
+                    SparkleParticleData data = SparkleParticleData.sparkle((float) Math.random(), red, green, blue, 10);
+                    level.addParticle(data,
+                        worldPosition.getX() + 0.5 + Math.random() * 0.4 - 0.2,
+                        worldPosition.getY() + 1,
+                        worldPosition.getZ() + 0.5 + Math.random() * 0.4 - 0.2, 0, 0, 0);
+                }
+                level.playLocalSound(worldPosition.getX(), worldPosition.getY(), worldPosition.getZ(),
+                        BotaniaSounds.runeAltarCraft, SoundSource.BLOCKS, 1F, 1F, false);
+            }
+            return true;
+        }
+        default: return super.triggerEvent(id, param);
+    }
+}
+</pre>
+<p>注意 <b><code>level.playLocalSound(...)</code> 在 <code>triggerEvent</code> 里</b>——因为 <code>blockEvent</code> 是<b>服务端广播给周围玩家</b>的，</p>
+<p>到客户端时已经"确定会有人看到"，所以本地直接放音，<b>音效和粒子严格对齐同一刻</b>。</p>
+<p>Botania 源码里还专门留了注释（<code>network/clientbound/BotaniaEffectPacket.java:38-39</code>）：</p>
+<div class="card small"><code>// Prefer using World.addBlockEvent/Block.eventReceived/TileEntity.receiveClientEvent where possible</code></div>
+<div class="card small"><code>// as those use less network bandwidth (~14 bytes), vs 26+ bytes here</code></div>
+<p><b>结论</b>：一次性发作的表现（爆发粒子 + 音效）用 <code>blockEvent</code> 最划算。</p>
+<p>在 26.1.2 上对应 <code>Level.blockEvent(BlockPos, Block, int, int)</code>（<code>D:\mcsrc\net\minecraft\world\level\Level.java:897</code>）</p>
+<p>+ <code>BlockEntity.triggerEvent(int, int)</code>，是<b>几十字节级</b>的东西，比自定义包省。</p>
+<h5>(b) 防重复触发 &amp; 半途失效</h5>
+<ul>
+<li><code>cooldown</code>：合成后 <code>SET_COOLDOWN_EVENT = 60</code>，<code>addItem</code> 开头就 <code>if (cooldown &gt; 0 ...) return false;</code>（<code>:82</code>）。</li>
+<li><code>manaToGet != 0</code> 时也拒绝加料（<code>:98-100</code>），即<b>仪式中不能再塞东西</b>。</li>
+<li><b>每刻重算配方</b>：<code>serverTick</code> 无条件调 <code>self.updateRecipe()</code>（<code>:192</code>），</li>
+</ul>
+<p>  所以物品被拿走 / 配方不再匹配时，<code>manaToGet</code> 立刻归 0，仪式<b>自动中止</b>。</p>
+<p>  没有"进度持久化"的概念——**它不需要持久化，因为进度是 mana，mana 存在 BE 里、</p>
+<p>  而"能不能继续"是每刻现算的**。</p>
+<ul>
+<li><code>cooldown</code> / <code>recipeKeepTicks</code> <b>不在</b> <code>writePacketNBT</code> 里 → 这两个值<b>不进存档也不进同步包</b>，</li>
+</ul>
+<p>  靠 <code>blockEvent</code> 临时推给客户端。也就是说<b>服务器重启后冷却会丢</b>，作者接受了这个代价。</p>
+<h5>(c) 物品的抖动/浮动（BER 里改 poseStack）</h5>
+<p><code>client/render/block_entity/RunicAltarBlockEntityRenderer.java:50-102</code>（这是 1.20.x 的老式 <code>render(...)</code>，</p>
+<p>26.1.2 要搬到 <code>submit(...)</code>，但<b>算式可以原样搬</b>）</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+for (int i = 0; i &lt; altar.inventorySize(); i++) {
+    ms.pushPose();
+    ms.translate(0.5F, 1.25F, 0.5F);
+    ms.mulPose(VecHelper.rotateY(angles[i] + (float) time));      // 绕方块中心公转
+    ms.translate(1.125F, 0F, 0.25F);
+    ms.mulPose(VecHelper.rotateY(90F));
+    ms.translate(0D, 0.075 * Math.sin((time + i * 10) / 5D), 0F); // ★ 上下浮动
+    ...
+    mc.getItemRenderer().renderStatic(stack, ItemDisplayContext.GROUND, light, overlay, ms, buffers, altar.getLevel(), 0);
+    ms.popPose();
+}
+</pre>
+<p>其中（<code>:69</code>、<code>:63</code>）：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+double time = ClientTickHandler.ticksInGame + partticks;   // ★ 客户端本地 tick + partialTick
+float anglePer = 360F / items;
+</pre>
+<p><b>要点</b>：</p>
+<ul>
+<li><b>浮动的幅度 = 0.075 格，频率 = 每 5 刻一个正弦周期</b>（<code>sin(time/5)</code>），每件物品相位错开 <code>i*10</code>。</li>
+<li><b><code>partialTick</code> 直接加进 <code>time</code></b>，所以是<b>帧间平滑</b>的，不是每刻跳一格。</li>
+<li><code>time</code> 用的是<b>客户端本地 tick（<code>ClientTickHandler.ticksInGame</code>）</b>，<b>完全不需要服务器同步</b>——</li>
+</ul>
+<p>  这是关键设计：动画相位由客户端自己决定，服务端只负责"有没有东西放在上面"。</p>
+<p><b>还有一组"旋转符文立方体"</b>（<code>RunicAltarBlockEntityRenderer.java:104-145</code>），参数写得很清楚：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+private void renderSpinningCubes(PoseStack ms, MultiBufferSource buffers, int overlay, int cubes, int iters) {
+    for (int curIter = iters; curIter &gt; 0; curIter--) {
+        final float modifier = 6F;
+        final float rotationModifier = 0.2F;
+        final float radiusBase = 0.35F;
+        final float radiusMod = 0.05F;
+
+        double ticks = ClientTickHandler.ticksInGame + ClientTickHandler.partialTicks - 1.3 * (iters - curIter);
+        float offsetPerCube = 360 / cubes;
+
+        ms.pushPose();
+        ms.translate(-0.025F, 0.85F, -0.025F);
+        for (int i = 0; i &lt; cubes; i++) {
+            float offset = offsetPerCube * i;
+            float deg = (int) (ticks / rotationModifier % 360F + offset);
+            float rad = VecHelper.toRadians(deg);
+            float radiusX = (float) (radiusBase + radiusMod * Math.sin(ticks / modifier));  // 半径也呼吸
+            float radiusZ = (float) (radiusBase + radiusMod * Math.cos(ticks / modifier));
+            float x = (float) (radiusX * Math.cos(rad));
+            float z = (float) (radiusZ * Math.sin(rad));
+            float y = (float) Math.cos((ticks + 50 * i) / 5F) / 10F;                        // 上下浮动 ±0.1
+
+            ms.pushPose();
+            ms.translate(x, y, z);
+            float xRotate = (float) Math.sin(ticks * rotationModifier) / 2F;
+            float yRotate = (float) Math.max(0.6F, Math.sin(ticks * 0.1F) / 2F + 0.5F);
+            float zRotate = (float) Math.cos(ticks * rotationModifier) / 2F;
+            ms.mulPose(new Quaternionf().rotateAxis(rad, xRotate, yRotate, zRotate));
+            float alpha = 1;
+            if (curIter &lt; iters) { alpha = (float) curIter / (float) iters * 0.4F; }         // 拖尾淡出
+            ...
+        }
+        ms.popPose();
+    }
+}
+</pre>
+<p><b>这就是"绕圈 + 呼吸 + 浮动 + 自转"的完整配方</b>，而且全部是 <code>/5</code>、<code>/6</code>、<code>0.2</code> 这种整数分母，</p>
+<p>好处是<b>周期可整除 20</b>，看起来不"乱"。</p>
+<p><b>进度可视化</b>（<code>:93-99</code>）：用一个星星辉光的大小表示进度：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+float scale = altar.getTargetMana() == 0 ? 0 : (float) altar.getCurrentMana() / (float) altar.getTargetMana() / 75F;
+if (scale != 0) {
+    int seed = altar.getBlockPos().getX() ^ altar.getBlockPos().getY() ^ altar.getBlockPos().getZ();
+    ms.translate(0.5F, 0.7F, 0.5F);
+    RenderHelper.renderStar(ms, buffers, 0x00E4D7, scale, scale, scale, seed);
+}
+</pre>
+<p>注意 <b><code>seed</code> 由方块坐标 XOR 得到</b>——<b>同一方块每帧都不一样但每帧都相同</b>，</p>
+<p>所以星光形状稳定不会闪。这是个很值得学的小技巧。</p>
+<h5>(d) 粒子流：又是"插值撒点"</h5>
+<p><code>common/item/WandOfTheForestItem.java:407-429</code>（<b>最经典的"沿路径撒点"</b>）</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+public static void doParticleBeam(Level world, Vec3 orig, Vec3 end) {
+    if (!world.isClientSide) { return; }
+
+    Vec3 diff = end.subtract(orig);
+    Vec3 movement = diff.normalize().scale(0.05);          // ★ 步长 0.05 格
+    int iters = (int) (diff.length() / movement.length()); // ★ 撒多少颗
+    float huePer = 1F / iters;
+    float hueSum = (float) Math.random();
+
+    Vec3 currentPos = orig;
+    for (int i = 0; i &lt; iters; i++) {
+        float hue = i * huePer + hueSum;
+        int color = Mth.hsvToRgb(Mth.frac(hue), 1F, 1F);
+        float r = (color &gt;&gt; 16 &amp; 0xFF) / 255F;
+        float g = (color &gt;&gt; 8 &amp; 0xFF) / 255F;
+        float b = (color &amp; 0xFF) / 255F;
+
+        SparkleParticleData data = SparkleParticleData.noClip(0.5F, r, g, b, 4);
+        Proxy.INSTANCE.addParticleForceNear(world, data, currentPos.x, currentPos.y, currentPos.z, 0, 0, 0);
+        currentPos = currentPos.add(movement);
+    }
+}
+</pre>
+<p><b>一次调用就把整条线铺满</b>，颜色沿路径做 HSV 渐变（彩虹光束）。</p>
+<p><code>addParticleForceNear</code> 会强制发给附近玩家（绕过服务端 32 格限制）。</p>
+<p>注意它<b>只在客户端跑</b>（<code>if (!world.isClientSide) return;</code>），是服务端用包"通知客户端去画"。</p>
+<p><code>common/entity/ManaSparkEntity.java:300-306</code> + <code>network/clientbound/BotaniaEffectPacket.java:180-206</code></p>
+<p>是<b>用速度做单步直线</b>的做法（每刻撒一颗，朝接收者飞）：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+double rc = 0.45;
+Vec3 thisVec = VecHelper.fromEntityCenter(e1).add((Math.random() - 0.5) * rc, (Math.random() - 0.5) * rc, (Math.random() - 0.5) * rc);
+Vec3 receiverVec = VecHelper.fromEntityCenter(e2).add((Math.random() - 0.5) * rc, (Math.random() - 0.5) * rc, (Math.random() - 0.5) * rc);
+
+Vec3 motion = receiverVec.subtract(thisVec).scale(0.04F);   // ★ 0.04 × 距离 = 约 25 刻到达
+...
+WispParticleData data = WispParticleData.wisp(size, r, g, b).withNoClip(true);
+world.addAlwaysVisibleParticle(data, thisVec.x, thisVec.y, thisVec.z, motion.x, motion.y, motion.z);
+</pre>
+<p><b><code>scale(0.04F)</code> 这个系数值得记</b>：距离 <code>d</code> 的粒子每刻走 <code>0.04d</code>，</p>
+<p>近似就是"<b>25 刻到达</b>"。<code>FXWisp</code> 的寿命正好是 <code>28/(0.7~1.0) ≈ 28~40</code> 刻 → 刚好飞到。</p>
+<p><code>client/fx/FXWisp.java:35-59, 85-101</code></p>
+<h5>(e) Terrestrial Agglomeration Plate（星辉凝聚板）——"进度整数"同步的好样板</h5>
+<p><code>common/block/block_entity/TerrestrialAgglomerationPlateBlockEntity.java:85-136</code></p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+public static void serverTick(Level level, BlockPos worldPosition, BlockState state, TerrestrialAgglomerationPlateBlockEntity self) {
+    boolean removeMana = true;
+    if (self.hasValidPlatform()) {
+        ...
+        TerrestrialAgglomerationRecipe recipe = self.getCurrentRecipe(inv);
+        if (recipe != null) {
+            removeMana = false;
+            ...
+            if (self.mana &gt; 0) {
+                VanillaPacketDispatcher.dispatchTEToNearbyPlayers(self);          // 每刻全量同步（只有 1 个 int）
+                int proportion = Float.floatToIntBits(self.getCompletion());      // ★ float 装进 int
+                XplatAbstractions.INSTANCE.sendToNear(level, worldPosition,
+                        new BotaniaEffectPacket(EffectType.TERRA_PLATE, worldPosition.getX(), worldPosition.getY(),
+                                worldPosition.getZ(), proportion));
+            }
+            if (self.mana &gt;= recipe.getMana()) {
+                ...
+                ItemEntity item = new ItemEntity(level, worldPosition.getX() + 0.5, worldPosition.getY() + 0.2,
+                        worldPosition.getZ() + 0.5, result);
+                item.setDeltaMovement(Vec3.ZERO);
+                level.addFreshEntity(item);                                       // ★ 产物留在台面上
+                level.playSound(null, item.getX(), item.getY(), item.getZ(),
+                        BotaniaSounds.terrasteelCraft, SoundSource.BLOCKS, 1F, 1F);
+                self.mana = 0;
+                level.updateNeighbourForOutputSignal(worldPosition, state.getBlock());
+                VanillaPacketDispatcher.dispatchTEToNearbyPlayers(self);
+            }
+        }
+    }
+    if (removeMana) { self.receiveMana(-1000); }                                  // ★ 条件不满足就漏掉进度
+}
+</pre>
+<p><b>三条可直接抄的东西</b>：</p>
+<p>1. <b>进度用 <code>float</code> 但用 <code>Float.floatToIntBits</code> 塞进 <code>int</code> 参数</b>（因为包只支持 <code>int...</code>）。</p>
+<p>   26.1.2 我们自己发包可以用 <code>ByteBuf</code>/<code>StreamCodec</code>，直接写 float 更干净。</p>
+<p>2. <b>每次只同步 <code>mana</code> 一个 int</b>（<code>writePacketNBT</code> 只写 <code>mana</code>，见 <code>:217-225</code>），</p>
+<p>   进度用 <code>mana / recipe.getMana()</code> 现算 → <code>getCompletion()</code>。</p>
+<p>   <b>包极小，所以哪怕"仪式中每刻发"也可以接受</b>。</p>
+<p>3. <b>产物 <code>ItemEntity</code> 就在方块正上方生成、<code>setDeltaMovement(Vec3.ZERO)</code>，留在台面上。</b></p>
+<p>   这正是我们用例第 5 条要的效果。</p>
+<p><b>加料/中断语义</b>：<code>removeMana = true</code> 时每刻 <code>receiveMana(-1000)</code> 漏掉一些，</p>
+<p>没有硬性"禁止重入"，而是<b>每刻重新验证</b>（<code>getCurrentRecipe == null</code> → <code>removeMana</code> 保持 true）。</p>
+<p>进度存在 BE 的 <code>mana</code> 字段（NBT 里，<code>:218-225</code>），<b>区块卸载再回来会保留</b>。</p>
+<h5>(f) TERRA_PLATE 特效：客户端"按进度自己重建"整个动画</h5>
+<p><code>network/clientbound/BotaniaEffectPacket.java:233-270</code></p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+case TERRA_PLATE -&gt; {
+    BlockEntity te = world.getBlockEntity(BlockPos.containing(x, y, z));
+    if (te instanceof TerrestrialAgglomerationPlateBlockEntity) {
+        float percentage = Float.intBitsToFloat(args[0]);
+        int ticks = (int) (100.0 * percentage);       // 0..100
+
+        int totalSpiritCount = 3;
+        double tickIncrement = 360D / totalSpiritCount;
+
+        int speed = 5;
+        double wticks = ticks * speed - tickIncrement;
+        double r = Math.sin((ticks - 100) / 10D) * 2;  // ← 半径随进度呼吸，从 -2 到 0 附近
+        double g = Math.sin(wticks * Math.PI / 180 * 0.55);
+
+        for (int i = 0; i &lt; totalSpiritCount; i++) {
+            double wx = x + Math.sin(wticks * Math.PI / 180) * r + 0.5;
+            double wy = y + 0.25 + Math.abs(r) * 0.7;
+            double wz = z + Math.cos(wticks * Math.PI / 180) * r + 0.5;
+            wticks += tickIncrement;
+            float[] colorsfx = new float[] { 0F, (float) ticks / 100, 1F - (float) ticks / 100 };  // 蓝→紫渐变
+            WispParticleData data = WispParticleData.wisp(0.85F, colorsfx[0], colorsfx[1], colorsfx[2], 0.25F);
+            Proxy.INSTANCE.addParticleForceNear(world, data, wx, wy, wz, 0, (float) (-g * 0.05), 0);
+            ...
+            if (ticks == 100) {   // ★ 客户端自己判断"满了"就炸
+                for (int j = 0; j &lt; 15; j++) {
+                    data = WispParticleData.wisp((float) Math.random() * 0.15F + 0.15F, colorsfx[0], colorsfx[1], colorsfx[2]);
+                    world.addParticle(data, x + 0.5, y + 0.5, z + 0.5,
+                        (float) (Math.random() - 0.5F) * 0.125F, (float) (Math.random() - 0.5F) * 0.125F, (float) (Math.random() - 0.5F) * 0.125F);
+                }
+            }
+        }
+    }
+}
+</pre>
+<p><b>注意 <code>if (ticks == 100)</code></b> —— 客户端看到进度 100% 就自己放爆发粒子，</p>
+<p><b>服务端不需要额外发一个"完成"包</b>。这是个很省的设计，但<b>有风险</b>（丢包就永远不炸），</p>
+<p>所以 Botania 在服务端完成时确实另有 <code>terrasteelCraft</code> 音效（服务端 <code>playSound</code>，必定到达）。</p>
+<h5>(g) 音效：<b>"丁"就是 <code>BotaniaSounds.ding</code></b></h5>
+<p><code>common/handler/BotaniaSounds.java:23, 35-36, 46, 116</code></p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+public static final SoundEvent altarCraft     = makeSoundEvent("altar_craft");
+public static final SoundEvent manaPoolCraft  = makeSoundEvent("mana_pool_craft");
+public static final SoundEvent runeAltarCraft = makeSoundEvent("rune_altar_craft");
+public static final SoundEvent runeAltarStart = makeSoundEvent("rune_altar_start");
+public static final SoundEvent terrasteelCraft = makeSoundEvent("terrasteel_craft");
+public static final SoundEvent ding           = makeSoundEvent("ding");
+</pre>
+<p><code>ding</code> 的实际用法（<b>全都用很小的 volume + pitch 1.0</b>）：</p>
+<table>
+<tr><th>位置</th><th>调用</th></tr>
+<tr><td><code>common/block/ForceRelayBlock.java:102</code></td><td><code>world.playSound(null, pos, BotaniaSounds.ding, SoundSource.BLOCKS, 0.5F, 1F)</code></td></tr>
+<tr><td><code>common/item/WorldshaperssSextantItem.java:219</code></td><td><code>player.playSound(BotaniaSounds.ding, 0.1F, 1F)</code> ← <b><code>Entity.playSound(SoundEvent, volume, pitch)</code></b></td></tr>
+<tr><td><code>common/item/WandOfTheForestItem.java:152</code></td><td><code>world.playSound(null, x, y, z, BotaniaSounds.ding, SoundSource.PLAYERS, 1F, 1F)</code></td></tr>
+<tr><td><code>WandOfTheForestItem.java:207, 450</code></td><td><code>player.playSound(BotaniaSounds.ding, 0.11F / 0.1F, 1F)</code></td></tr>
+</table>
+<p><b>结论</b>：Botania 里 <code>ding</code> 的语义就是"<b>绑定/确认成功的清脆提示</b>"，</p>
+<p>典型参数是 <b>volume 0.1~1.0、pitch 1.0</b>，而且<b>经常用 <code>player.playSound(...)</code> 而不是 <code>level.playSound</code></b></p>
+<p>（绑定操作是单人行为，只让操作者听见就行）。</p>
+<p><b>我们"丁"的一声直接抄这个语义即可</b>：如果我们的"丁"是自定义音效资源，</p>
+<p>建议 <b><code>SoundSource.BLOCKS</code>（或 <code>PLAYERS</code>）、volume 0.5~1.0、pitch 1.0</b> 起步。</p>
+<hr>
+<h4>2.2 Ars Nouveau（1.21.1 NeoForge）——四家里<b>最现代</b>的一份</h4>
+<div class="card small">⚠️ <b>重要</b>：AN 5.13.2 的 BER 还是<b>老式 <code>BlockEntityRenderer.render(...)</code></b>，</div>
+<div class="card small">全文 grep <code>extractRenderState|SubmitNodeCollector</code> <b>只在一个无关文件里命中</b>。</div>
+<div class="card small">所以<b>它的 BER 写法不能直接抄到 26.1.2</b>，能抄的是<b>算式、状态机、包设计、粒子套路</b>。</div>
+<h5>(a) 仪式状态：整个 <code>AbstractRitual</code> 对象挂在 Tile 上，靠 <code>getUpdateTag</code> 同步</h5>
+<p><code>common/block/tile/RitualBrazierTile.java:51-59</code></p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+public class RitualBrazierTile extends ModdedTile implements ITooltipProvider, GeoBlockEntity,
+        ILightable, ITickable, IInvProvider, IDispellable, IWandable {
+    public AbstractRitual ritual;
+    AnimatableInstanceCache manager = GeckoLibUtil.createInstanceCache(this);
+    public boolean isDecorative;
+    public ParticleColor color = ParticleColor.defaultParticleColor();
+    public boolean isOff;
+    public BlockPos relayPos;
+    public int sourceBackoff;
+</pre>
+<p><b>仪式逻辑实体放在 Tile 字段上，不是 Capability、不是 SavedData。</b></p>
+<p>同步和存档共用一套 <code>saveAdditional</code>（<code>:245-261</code>）：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+@Override
+protected void saveAdditional(CompoundTag tag, HolderLookup.Provider pRegistries) {
+    super.saveAdditional(tag, pRegistries);
+    if (ritual != null) {
+        tag.putString("ritualID", ritual.getRegistryName().toString());
+        ritual.write(pRegistries, tag);          // ← 把 ritual.getContext() 整个塞进 tag
+    } else {
+        tag.remove("ritualID");
+    }
+    tag.put("color", color.serialize());
+    tag.putBoolean("decorative", isDecorative);
+    tag.putBoolean("off", isOff);
+    if (this.relayPos != null) { tag.putLong("relayPos", this.relayPos.asLong()); }
+}
+
+@Override
+protected void loadAdditional(CompoundTag tag, HolderLookup.Provider pRegistries) {
+    super.loadAdditional(tag, pRegistries);
+    String ritualIDString = tag.getString("ritualID");
+    if (!ritualIDString.isEmpty()) {
+        ResourceLocation ritualID = ResourceLocation.tryParse(ritualIDString);
+        ritual = RitualRegistry.getRitual(ritualID);
+        if (ritual != null) {
+            ritual.tile = this;
+            ritual.read(pRegistries, tag);       // ← 进度/已消耗物品全从 NBT 恢复
+        }
+    } else {
+        ritual = null;
+    }
+    ...
+}
+</pre>
+<p><b>"进度"的落点</b>在 <code>RitualContext</code>（由 <code>AbstractRitual</code> 持有）里（<code>api/ritual/AbstractRitual.java:107-130</code>）：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+public void incrementProgress() { getContext().progress++; }
+public int  getProgress()       { return getContext().progress; }
+
+public void onStart(@Nullable Player player) {
+    getContext().isStarted = true;
+    if (player != null) this.playerUUID = player.getUUID();
+}
+public boolean isRunning() { return getContext().isStarted &amp;&amp; !getContext().isDone; }
+public boolean isDone()    { return getContext().isDone; }
+public void setFinished()  { getContext().isDone = true; }
+</pre>
+<p><b>三个布尔/计数够了：<code>isStarted</code> / <code>isDone</code> / <code>progress</code>。</b> 不需要 float 进度百分比。</p>
+<p><code>api/ritual/AbstractRitual.java:36-42</code> 是每刻入口，<b>它自己做了防重入</b>：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+public void tryTick(RitualBrazierTile tickingTile) {
+    if (tickingTile == null || !getContext().isStarted || getContext().isDone) {
+        return;                                   // ★ 只有 started 且未 done 才 tick
+    }
+    this.tile = tickingTile;
+    tick();
+}
+</pre>
+<p><b>同步到客户端的时机 —— 只在状态跳变时 <code>updateBlock()</code></b>（<code>RitualBrazierTile.java:137-177</code>）：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+if (isOff) return;
+if (ritual != null) {
+    if (ritual.getContext().isDone) {
+        ritual.onEnd();
+        ritual = null;
+        getLevel().playSound(null, getBlockPos(), SoundEvents.FIRE_EXTINGUISH, SoundSource.NEUTRAL, 1.0f, 1.0f);
+        getLevel().setBlock(getBlockPos(), getLevel().getBlockState(getBlockPos()).setValue(RitualBrazierBlock.LIT, false), 3);
+        updateBlock();                            // ★ 结束才同步
+        return;
+    }
+    ...
+    if (ritual.consumesSource() &amp;&amp; ritual.needsSourceNow()) {
+        if (this.sourceBackoff-- &lt;= 0) {
+            int cost = ritual.getSourceCost();
+            if (SourceUtil.takeSourceMultipleWithParticles(getBlockPos(), getLevel(), 6, cost) != null) {
+                ritual.setNeedsSource(false);
+                this.sourceBackoff = 0;
+                updateBlock();                    // ★ 拿到资源才同步
+            } else {
+                this.sourceBackoff = 20;
+                return;
+            }
+        } else { return; }
+    }
+    if (this.relayPos != null &amp;&amp; level.isLoaded(this.relayPos) &amp;&amp; ...) {
+        ritual.tryTick(relayTile);
+        relayTile.ticksToLightOff = 2;
+        relayTile.isDecorative = false;
+    } else {
+        ritual.tryTick(this);
+    }
+}
+</pre>
+<p><b>这里没有"每刻同步进度"</b> —— 客户端只需要知道"有没有 ritual、它的颜色/强度是多少"，</p>
+<p><b>动画相位全部客户端自己算</b>（见 (b)）。</p>
+<p><b>"禁止中途再触发"</b>（<code>RitualBrazierTile.java:215-220, 263-265</code>）：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+public void startRitual(@Nullable Player player) {
+    if (ritual == null || !ritual.canStart(player) || ritual.isRunning())
+        return;                                              // ★ 三重门
+    getLevel().playSound(null, getBlockPos(), SoundEvents.ILLUSIONER_CAST_SPELL, SoundSource.NEUTRAL, 1.0f, 1.0f);
+    ritual.onStart(player);
+}
+
+public boolean canTakeAnotherRitual() {
+    return this.ritual == null || this.ritual.isRunning();    // 注意语义：null 或 正在跑 都算"能拿下一个"
+}
+</pre>
+<p><b>AND 的 <code>updateBlock()</code> 就是标准 NeoForge 同步</b>（<code>common/block/tile/ModdedTile.java:26-53</code>）：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+@Override
+public @Nullable ClientboundBlockEntityDataPacket getUpdatePacket() {
+    return ClientboundBlockEntityDataPacket.create(this);
+}
+
+@Override
+public void onDataPacket(@NotNull Connection net, @NotNull ClientboundBlockEntityDataPacket pkt,
+                         HolderLookup.@NotNull Provider lookupProvider) {
+    super.onDataPacket(net, pkt, lookupProvider);
+    handleUpdateTag(pkt.getTag(), lookupProvider);
+}
+
+public boolean updateBlock() {
+    if (level != null) {
+        BlockState state = level.getBlockState(worldPosition);
+        level.sendBlockUpdated(worldPosition, state, state, 3);   // ★ 触发 getUpdatePacket
+        setChanged();
+        return true;
+    }
+    return false;
+}
+
+@Override
+public @NotNull CompoundTag getUpdateTag(HolderLookup.@NotNull Provider pRegistries) {
+    CompoundTag tag = new CompoundTag();
+    this.saveAdditional(tag, pRegistries);                        // ★ 同步包 = 完整存档 NBT
+    return tag;
+}
+</pre>
+<p><b>注意 <code>getUpdateTag</code> 直接调 <code>saveAdditional</code></b> —— 也就是"<b>同步和存档完全同一份数据</b>"，</p>
+<p>简单粗暴但很省事；<b>代价是整个 ritual 对象（含已消耗物品列表）每次状态跳变都全量发一遍</b>。</p>
+<p>对 3 秒的小仪式这完全可以接受。</p>
+<h5>(b) 粒子：客户端在 <code>tick()</code> 里自己撒（<b>不每刻发包</b>）</h5>
+<p><code>RitualBrazierTile.java:127-136</code></p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+@Override
+public void tick() {
+    if (isDecorative &amp;&amp; level.isClientSide) {
+        makeParticle(color.nextColor((int) level.getGameTime() * 20),
+                     color.nextColor((int) level.getGameTime() * 20 + 200), 10);
+        return;
+    }
+    if (level.isClientSide &amp;&amp; ritual != null) {
+        makeParticle(ritual.getCenterColor(), ritual.getOuterColor(), ritual.getParticleIntensity());
+    }
+    ...
+}
+</pre>
+<p><code>RitualBrazierTile.java:100-124</code>（<b>"火盆火苗"本体</b>）</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+public void makeParticle(ParticleColor centerColor, ParticleColor outerColor, int intensity) {
+    Level world = getLevel();
+    BlockPos pos = getBlockPos();
+    double xzOffset = 0.25;
+    boolean isWeakFire = ritual != null &amp;&amp; ritual.needsSourceNow();
+    double centerYMax = isWeakFire ? 0.1 : 0.2;
+    double outerYMax  = isWeakFire ? 0.5 : 0.7;
+    double ySpeed     = isWeakFire ? 0.02f : 0.05f;
+    intensity = isWeakFire ? intensity / 2 : intensity;
+    for (int i = 0; i &lt; intensity; i++) {
+        world.addParticle(
+            GlowParticleData.createData(centerColor.nextColor((int) level.getGameTime() * 10)),
+            pos.getX() + 0.5 + ParticleUtil.inRange(-xzOffset / 2, xzOffset / 2),
+            pos.getY() + 1 + ParticleUtil.inRange(-0.05, centerYMax),
+            pos.getZ() + 0.5 + ParticleUtil.inRange(-xzOffset / 2, xzOffset / 2),
+            0, ParticleUtil.inRange(0.0, ySpeed), 0);
+    }
+    // 外层再来一圈更大的
+    for (int i = 0; i &lt; intensity; i++) { ... outerColor ... }
+    if (relayPos != null &amp;&amp; level.getBlockEntity(relayPos) instanceof BrazierRelayTile relayTile) {
+        relayTile.makeParticle(centerColor, outerColor, intensity);      // ★ 递归到中继火盆
+    }
+}
+</pre>
+<p>**关键模式：客户端每刻无条件撒粒子，颜色用 <code>level.getGameTime()*10</code> 从调色板取。**</p>
+<p>"缺源"时（<code>needsSourceNow</code>）自动<b>减半强度、降低高度和速度</b> —— 用视觉表达"能量不足"，</p>
+<p>这是个很好的可读性技巧。</p>
+<h5>(c) <b><code>ParticleUtil.beam()</code> —— 原版 ENCHANT 的"沿路径撒点"（直接对应我们的用例！）</b></h5>
+<p><code>client/particle/ParticleUtil.java:69-96</code></p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+public static void beam(BlockPos toThisBlock, BlockPos fromThisBlock, Level world) {
+    double x2 = getCenterOfBlock(toThisBlock.getX());
+    double z2 = getCenterOfBlock(toThisBlock.getZ());
+    double y2 = getCenterOfBlock(toThisBlock.getY());
+    double x1 = getCenterOfBlock(fromThisBlock.getX());
+    double z1 = getCenterOfBlock(fromThisBlock.getZ());
+    double y1 = getCenterOfBlock(fromThisBlock.getY());
+    double d5 = 1.2;
+    double d0 = x2 - x1;
+    double d1 = y2 - y1;
+    double d2 = z2 - z1;
+    double d3 = Math.sqrt(d0 * d0 + d1 * d1 + d2 * d2);      // 直线长度
+    d0 = d0 / d3;  d1 = d1 / d3;  d2 = d2 / d3;              // 单位方向
+
+    double d4 = r.nextDouble();                              // ★ 随机起点，避免每次都从同一处开始
+
+    while ((d4 + .65) &lt; d3) {                                // ★ 沿路径推进，步长 1.5~2.1 格且带随机
+        d4 += 1.8D - d5 + r.nextDouble() * (1.5D - d5);
+        if (world.isClientSide)
+            world.addAlwaysVisibleParticle(ParticleTypes.ENCHANT, true,
+                x1 + d0 * d4, y1 + d1 * d4, z1 + d2 * d4, 0.0D, 0.0D, 0.0D);   // ★ 速度传 0
+        if (world instanceof ServerLevel) {
+            ((ServerLevel) world).sendParticles(ParticleTypes.WITCH,
+                x1 + d0 * d4, y1 + d1 * d4, z1 + d2 * d4, r.nextInt(4), 0, 0.0, 0, 0.0);
+        }
+    }
+}
+</pre>
+<p><b>这段几乎是给我们量身定做的：</b></p>
+<ul>
+<li>用<b>原版 <code>ParticleTypes.ENCHANT</code></b>（就是"附魔台那种符文/标准银河字母"）；</li>
+<li><b>速度传 0</b>（<code>0.0D, 0.0D, 0.0D</code>）——因为它知道 ENCHANT 的 aux 是<b>位移</b>不是速度，</li>
+</ul>
+<p>  传 0 就等于"<b>把它当成一颗不动的贴图，直接摆在路径上的那个点</b>"，靠<b>撒点密度</b>造流向感；</p>
+<ul>
+<li>路径是<b>起点到终点的直线</b>，<code>d4</code> 每次推进 <code>1.5~2.1</code> 格，所以一条 4 格的线大约撒 2~3 颗；</li>
+<li><b><code>d4 = r.nextDouble()</code> 让每条线的起点随机错开</b>，多撒几帧就看不出"同一批点"；</li>
+<li><b><code>isClientSide</code> 走 <code>addAlwaysVisibleParticle</code>，<code>ServerLevel</code> 走 <code>sendParticles</code></b> —— 一份代码两端都能用。</li>
+</ul>
+<div class="card small">对照 §1：ENCHANT 粒子自身也会"飞回来"，但 <code>beam</code> 只撒一个点、速度 0，</div>
+<div class="card small">所以它飞不了（位移 0）—— <b>它根本不依赖粒子自身的运动</b>，纯粹靠撒点。</div>
+<div class="card small">这就是"<b>更省的做法</b>"的答案：<b>沿路径插值撒原版粒子，靠密度造流向感。</b></div>
+<h5>(d) 自写"带目标坐标"的粒子：<code>ParticleLine</code></h5>
+<p><code>client/particle/ParticleLine.java:9-66</code></p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+public class ParticleLine extends TextureSheetParticle {
+    public float initX, initY, initZ;
+    public float destX, destY, destZ;
+
+    protected ParticleLine(Level worldIn, double x, double y, double z,
+                          double vx, double vy, double vz,       // ★ 后三个不是速度，是"目标坐标"
+                          float r, float g, float b, float scale, int lifetime, SpriteSet sprite) {
+        super((ClientLevel) worldIn, x, y, z, 0, 0, 0);
+        ...
+        this.xd = 0; this.yd = 0; this.zd = 0;                   // 不用 MC 的速度系统
+        this.initX = (float) x;  this.initY = (float) y;  this.initZ = (float) z;
+        this.destX = (float) vx; this.destY = (float) vy; this.destZ = (float) vz;
+        this.roll = 2.0f * (float) Math.PI;
+        this.pickSprite(sprite);
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        if (level.random.nextInt(6) == 0) { this.age++; }         // ★ 1/6 概率加速老化 → 寿命拉长 6 倍
+        float lifeCoeff = (float) this.age / (float) this.lifetime;
+        this.x = ((1.0f - lifeCoeff) * initX + (lifeCoeff) * destX);   // ★ 纯线性插值
+        this.y = ((1.0f - lifeCoeff) * initY + (lifeCoeff) * destY);
+        this.z = ((1.0f - lifeCoeff) * initZ + (lifeCoeff) * destZ);
+        this.quadSize = initScale - initScale * lifeCoeff;         // 越来越小
+        this.alpha = 1.0f - lifeCoeff;                            // 越来越淡
+    }
+
+    @Override
+    public boolean isAlive() { return this.age &lt; lifetime; }
+    @Override
+    public int getLightColor(float pTicks) { return 255; }         // 满亮度
+}
+</pre>
+<p><b>要点</b>：</p>
+<ul>
+<li><b>自定义 <code>ParticleOptions</code> 的第 4~6 个参数当"目标坐标"用</b>，这是 26.1.2 上做"飞向目标"的<b>教科书式办法</b></li>
+</ul>
+<p>  （把目标位置编进 <code>ParticleOptions</code> 的 <code>StreamCodec</code> 里）。</p>
+<ul>
+<li><b><code>if (level.random.nextInt(6) == 0) age++</code></b> —— MC 每刻都会调 <code>tick()</code>，</li>
+</ul>
+<p>  但这里只以 1/6 概率推进 <code>age</code>，等于<b>把粒子的存活时间拉长 6 倍</b>。</p>
+<p>  这是个非常实用的技巧：<b>不改 <code>lifetime</code> 数值，就让它变慢</b>（看起来更"飘"）。</p>
+<ul>
+<li><b><code>getLightColor</code> 返回 255（满亮）</b> —— 魔法粒子不该被环境光影响。</li>
+</ul>
+<p>用法示例（<code>common/block/tile/EnchantingApparatusTile.java:74-78</code>，<b>从随机球内一点飞向方块中心</b>）：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+Vec3 particlePos = new Vec3(pos.getX(), pos.getY(), pos.getZ())
+        .add(0.5 + step.x * 0.5, 0.5 + step.y * 0.5, 0.5 + step.z * 0.5);
+particlePos = particlePos.add(ParticleUtil.pointInSphere());          // ★ 球内均匀采样
+world.addParticle(ParticleLineData.createData(new ParticleColor(rand.nextInt(255), rand.nextInt(255), rand.nextInt(255))),
+        particlePos.x(), particlePos.y(), particlePos.z(),
+        pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);        // ★ 目标 = 方块中心
+</pre>
+<p><code>ParticleUtil.pointInSphere()</code>（<code>ParticleUtil.java:40-54</code>）是<b>球内均匀采样</b>（用 <code>Math.cbrt</code> 修正半径分布），</p>
+<p>不是简单的 <code>random*2-1</code> —— 这个细节值得抄，否则粒子会"挤在球心"。</p>
+<h5>(e) 真正"归航"的实体：<code>EntityFollowProjectile</code></h5>
+<p><code>common/entity/EntityFollowProjectile.java:100-163</code>（<b>每刻朝 <code>dest</code> 转向，并沿走过的轨迹撒发光粒子</b>）</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+public void tick() {
+    super.tick();
+    this.age++;
+    if (age &gt; maxAge) { this.remove(RemovalReason.DISCARDED); return; }
+    BlockPos dest = this.entityData.get(EntityFollowProjectile.to);
+    if (BlockUtil.distanceFrom(level, this.blockPosition(), dest) &lt; 1 || this.age &gt; 1000
+            || BlockUtil.distanceFrom(level, this.blockPosition(), dest) &gt; this.entityData.get(DESPAWN)) {
+        if (level.isClientSide &amp;&amp; entityData.get(SPAWN_TOUCH)) {
+            ParticleUtil.spawnTouch((ClientLevel) level, this.getOnPos(), new ParticleColor(...));
+        }
+        this.remove(RemovalReason.DISCARDED);
+        return;
+    }
+    double posX = getX(), posY = getY(), posZ = getZ();
+    double motionX = this.getDeltaMovement().x, motionY = ..., motionZ = ...;
+
+    if (dest.getX() != 0 || dest.getY() != 0 || dest.getZ() != 0) {
+        double targetX = dest.getX() + 0.5, targetY = dest.getY() + 0.5, targetZ = dest.getZ() + 0.5;
+        Vec3 targetVector = new Vec3(targetX - posX, targetY - posY, targetZ - posZ);
+        double length = targetVector.length();
+        targetVector = targetVector.scale(0.3 / length);            // ★ 期望速度大小固定 0.3 格/刻
+        double weight = 0;
+        if (length &lt;= 3) {
+            weight = 0.9 * ((3.0 - length) / 3.0);                  // ★ 越近越"吸"，避免在目标附近抖动
+        }
+        motionX = (0.9 - weight) * motionX + (0.1 + weight) * targetVector.x;   // ★ 惯性 + 转向
+        motionY = (0.9 - weight) * motionY + (0.1 + weight) * targetVector.y;
+        motionZ = (0.9 - weight) * motionZ + (0.1 + weight) * targetVector.z;
+    }
+    posX += motionX; posY += motionY; posZ += motionZ;
+    this.setPos(posX, posY, posZ);
+    this.setDeltaMovement(motionX, motionY, motionZ);
+
+    if (level.isClientSide &amp;&amp; this.age &gt; 1) {
+        double deltaX = getX() - xOld, deltaY = getY() - yOld, deltaZ = getZ() - zOld;
+        float dist = (float) (Math.sqrt(deltaX*deltaX + deltaY*deltaY + deltaZ*deltaZ) * 8.0f);
+        for (double i = 0.0; i &lt;= dist; i++) {                       // ★ 把这一帧的位移"铺满"粒子
+            double coeff = (i / dist);
+            level.addAlwaysVisibleParticle(GlowParticleData.createData(new ParticleColor(...)),
+                true,
+                (getX() + deltaX * coeff), (getY() + deltaY * coeff), (getZ() + deltaZ * coeff),
+                0.0125f * (random.nextFloat() - 0.5f), ...);
+        }
+    }
+}
+</pre>
+<p><b>三条精髓</b>：</p>
+<p>1. <b><code>targetVector.scale(0.3 / length)</code></b> —— 期望速度恒定 0.3 格/刻（≈ 6 格/秒），</p>
+<p>   所以无论多远，<b>飞行时间都正比于距离</b>，速度感一致。</p>
+<p>2. <b><code>weight</code> 项</b>：距离 ≤3 格时逐渐加大"朝目标"的权重（最多 0.9），</p>
+<p>   即<b>近处强吸附</b>，避免粒子在目标附近打转。这是"归航"类算法最容易踩的坑（终点抖动）。</p>
+<p>3. <b>每帧沿 <code>old→new</code> 位移按 <code>×8</code> 的密度 <code>addAlwaysVisibleParticle</code> 插值撒点</b></p>
+<p>   —— <b>实体只负责"算轨迹"，视觉观感完全来自轨迹插值撒点</b>。</p>
+<p>   这解释了为什么 AN 的投射物看起来是连续光带。</p>
+<p><b>生命周期管理</b>（<code>:67-74, 166-170</code>）：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+public static void spawn(ServerLevel level, BlockPos from, BlockPos to, int r, int g, int b) {
+    boolean canSpawn = NearbyPlayerCache.isPlayerNearby(from, level, 64);
+    if (!canSpawn) { return; }                    // ★ 没玩家在附近就不生成，省服务端实体
+    EntityFollowProjectile entity = new EntityFollowProjectile(level, from, to, r, g, b);
+    level.addFreshEntity(entity);
+}
+
+@Override
+public void setRemoved(RemovalReason reason) {
+    if (reason == RemovalReason.UNLOADED_TO_CHUNK)
+        reason = RemovalReason.DISCARDED;         // ★ 区块卸载时把"暂时卸载"改判为"永久移除"
+    super.setRemoved(reason);
+}
+</pre>
+<p><b>最后这两行非常关键</b>：<code>UNLOADED_TO_CHUNK</code> 被改成 <code>DISCARDED</code>，</p>
+<p>意思是"<b>区块卸载 = 这东西就当没发生过</b>"，<b>绝不留下一个卡住的半成品</b>。</p>
+<p>对我们"玩家中途退出"的场景是直接可用的策略。</p>
+<h5>(f) 完整"仪式"样板：Enchanting Apparatus（210 刻 = 10.5 秒）</h5>
+<p><code>common/block/tile/EnchantingApparatusTile.java:48-116</code></p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+public class EnchantingApparatusTile extends SingleItemTile implements Container, IPedestalMachine, ITickable, GeoBlockEntity {
+    private int counter;
+    public boolean isCrafting;
+    public static final int craftingLength = 210;
+
+    @Override
+    public void tick() {
+        if (level.isClientSide) {
+            if (this.isCrafting) {                                     // ★ 客户端：只有"是否在合成"一个布尔
+                Level world = getLevel();
+                BlockPos pos = getBlockPos();
+                RandomSource rand = world.getRandom();
+                Direction facing = this.getBlockState().getValue(BlockStateProperties.FACING);
+                Vector3f step = facing.step();
+
+                Vec3 particlePos = new Vec3(pos.getX(), pos.getY(), pos.getZ())
+                        .add(0.5 + step.x * 0.5, 0.5 + step.y * 0.5, 0.5 + step.z * 0.5);
+                particlePos = particlePos.add(ParticleUtil.pointInSphere());
+                world.addParticle(ParticleLineData.createData(new ParticleColor(rand.nextInt(255), rand.nextInt(255), rand.nextInt(255))),
+                        particlePos.x(), particlePos.y(), particlePos.z(),
+                        pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
+
+                for (BlockPos p : pedestalList()) {
+                    if (level.getBlockEntity(p) instanceof ArcanePedestalTile pedestalTile
+                            &amp;&amp; pedestalTile.getStack() != null &amp;&amp; !pedestalTile.getStack().isEmpty()) {
+                        spawnParticlesForPedestal(level, p);           // ★ 每个基座也喷
+                    }
+                }
+            }
+            return;                                                    // ★ 客户端到此为止，不做逻辑
+        }
+
+        if (isCrafting) {
+            if (this.getRecipe(stack, null) == null) {                 // ★ 每刻复核配方
+                this.isCrafting = false;                               //    不匹配就中止
+                setChanged();
+            }
+            counter += 1;
+        }
+
+        if (counter &gt;= craftingLength) {
+            counter = 0;
+            if (this.isCrafting) {
+                IEnchantingRecipe recipe = this.getRecipe(stack, null);
+                if (recipe != null) {
+                    this.stack = recipe.assemble(new ApparatusRecipeInput(this), level.registryAccess());
+                    clearItems();
+                    setChanged();
+                    ParticleUtil.spawnPoof((ServerLevel) level, worldPosition);
+                    level.playSound(null, getBlockPos(), SoundRegistry.APPARATUS_FINISH.get(), SoundSource.BLOCKS, 1, 1);
+                }
+                this.isCrafting = false;
+                setChanged();
+            }
+            updateBlock();                                             // ★ 结束才发包
+        }
+    }
+
+    public boolean attemptCraft(ItemStack catalyst, @Nullable Player playerEntity) {
+        if (isCrafting) return false;                                  // ★ 防重入
+        if (!craftingPossible(catalyst, playerEntity)) return false;
+        IEnchantingRecipe recipe = this.getRecipe(catalyst, playerEntity);
+        if (recipe.consumesSource())
+            SourceUtil.takeSourceMultipleWithParticles(worldPosition, level, 10, recipe.sourceCost());
+        this.isCrafting = true;
+        updateBlock();                                                 // ★ 开始发包
+        Networking.sendToNearbyClient(level, worldPosition, new PacketOneShotAnimation(worldPosition));  // ★ 一次性动画包
+        level.playSound(null, getBlockPos(), SoundRegistry.APPARATUS_CHANNEL.get(), SoundSource.BLOCKS, 1, 1);
+        return true;
+    }
+}
+</pre>
+<p><b>这是"持续数秒仪式"的教科书实现，而且它选的方案是最省的：</b></p>
+<table>
+<tr><th>数据</th><th>存哪</th><th>怎么同步</th><th>客户端怎么用</th></tr>
+<tr><td><code>isCrafting</code></td><td><code>public boolean</code> 字段</td><td><code>saveAdditional</code>/<code>loadAdditional</code> 存 NBT（<code>:188-197</code> <code>"is_crafting"</code>）+ <code>updateBlock()</code> <b>只在开始/结束/中止时发</b></td><td>当成"现在要不要画画"的总开关</td></tr>
+<tr><td><code>counter</code>（0→210）</td><td><code>private int</code>，<b>不同步、不存档</b></td><td>不发送</td><td><b>客户端不用它</b></td></tr>
+<tr><td>动画细节</td><td>——</td><td><b>不发</b></td><td>客户端每刻自己 <code>addParticle</code> + GeckoLib 模型动画（<code>PacketOneShotAnimation</code> 只发一次"播动画"）</td></tr>
+</table>
+<p><b>"客户端只用布尔、进度只在服务端"是本篇最省事、也最适合我们 3 秒仪式的方案。</b></p>
+<h5>(g) 音效清单</h5>
+<p><code>setup/registry/SoundRegistry.java</code></p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+public static DeferredHolder&lt;SoundEvent, SoundEvent&gt; APPARATUS_CHANNEL = SOUND_REG.register(EA_CHANNEL, () -&gt; makeSound(EA_CHANNEL));
+public static DeferredHolder&lt;SoundEvent, SoundEvent&gt; APPARATUS_FINISH  = SOUND_REG.register(EA_FINISH,  () -&gt; makeSound(EA_FINISH));
+</pre>
+<p>调用处（都在 <code>EnchantingApparatusTile</code>）：</p>
+<table>
+<tr><th>时机</th><th>调用</th></tr>
+<tr><td>开始</td><td><code>level.playSound(null, getBlockPos(), SoundRegistry.APPARATUS_CHANNEL.get(), SoundSource.BLOCKS, 1, 1)</code></td></tr>
+<tr><td>完成</td><td><code>level.playSound(null, getBlockPos(), SoundRegistry.APPARATUS_FINISH.get(), SoundSource.BLOCKS, 1, 1)</code></td></tr>
+<tr><td>火盆点火</td><td><code>level.playSound(null, getBlockPos(), SoundEvents.FLINTANDSTEEL_USE, SoundSource.NEUTRAL, 1.0f, 1.0f)</code>（<code>RitualBrazierTile.java:276</code>）</td></tr>
+<tr><td>火盆开始仪式</td><td><code>level.playSound(null, getBlockPos(), SoundEvents.ILLUSIONER_CAST_SPELL, SoundSource.NEUTRAL, 1.0f, 1.0f)</code>（<code>:218</code>）</td></tr>
+<tr><td>仪式结束/熄灭</td><td><code>SoundEvents.FIRE_EXTINGUISH</code>（<code>:144</code>）</td></tr>
+<tr><td>销毁仪式</td><td><code>SoundEvents.FIRECHARGE_USE</code>，volume 0.3（<code>:195</code>）</td></tr>
+</table>
+<p><b>"开始 / 进行 / 结束"三个阶段各一个声音</b>，而且"开始"用的是<b>原版现成音效</b></p>
+<p>（<code>ILLUSIONER_CAST_SPELL</code> = 幻术师施法，很符合"仪式启动"的语感）——<b>不一定要自制音效</b>。</p>
+<p><b>AN 也提供了一批原版清脆音效可直接引用</b>（<code>SoundRegistry.java:55, 68-69, 115, 155</code>）：</p>
+<p><code>AMETHYST_BLOCK_CHIME</code>（紫水晶叮）、<code>BELL_BLOCK</code>（钟）、<code>BELL_RESONATE</code>、<code>EXPERIENCE_ORB_PICKUP</code>、<code>PLAYER_LEVELUP</code>。</p>
+<p><b><code>SoundEvents.AMETHYST_BLOCK_CHIME</code> 是我们"丁"的首选候选</b>（pitch 可再调高）。</p>
+<hr>
+<h4>2.3 Thaumcraft 6（1.12.2）——「注魔祭坛」：抖动与归航粒子的教科书</h4>
+<h5>(a) 抖动参数（<b>全篇最精确的一段</b>）</h5>
+<p><code>client/renderers/tile/TileInfusionMatrixRenderer.java:141-175</code>（<b>注魔台方块的抖动</b>）</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+float instability = Math.min(6.0F, 1.0F + ((inst &lt; 0.0F) ? (-inst * 0.66F) : 1.0F) * Math.min(craftcount, 50) / 50.0F);
+...
+for (int a = 0; a &lt; 2; a++) {
+  for (int b = 0; b &lt; 2; b++) {
+    for (int c = 0; c &lt; 2; c++) {
+      if (active) {
+        b1 = MathHelper.func_76126_a((ticks + (a * 10)) / 15.0F) * 0.01F * startup * instability;
+        b2 = MathHelper.func_76126_a((ticks + (b * 10)) / 14.0F) * 0.01F * startup * instability;
+        b3 = MathHelper.func_76126_a((ticks + (c * 10)) / 13.0F) * 0.01F * startup * instability;
+      }
+      aa = (a == 0) ? -1 : 1;
+      bb = (b == 0) ? -1 : 1;
+      cc = (c == 0) ? -1 : 1;
+      GL11.glPushMatrix();
+      GL11.glTranslatef(b1 + aa * 0.25F, b2 + bb * 0.25F, b3 + cc * 0.25F);
+      if (a &gt; 0) GL11.glRotatef(90.0F, a, 0.0F, 0.0F);
+      if (b &gt; 0) GL11.glRotatef(90.0F, 0.0F, b, 0.0F);
+      if (c &gt; 0) GL11.glRotatef(90.0F, 0.0F, 0.0F, c);
+      GL11.glScaled(0.45D, 0.45D, 0.45D);
+      this.model.render();
+      GL11.glPopMatrix();
+    }
+  }
+}
+</pre>
+<p>其中 <code>ticks</code> 的算法（<code>:105</code>）：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+float ticks = (Minecraft.func_71410_x().func_175606_aa()).field_70173_aa + par8;   // 玩家 tick + partialTick
+</pre>
+<p><b>这就是"抖动"的完整公式，三个轴用不同的分母（15 / 14 / 13）避免同步：</b></p>
+<table>
+<tr><th>参数</th><th>值</th><th>含义</th></tr>
+<tr><td>幅度</td><td><code>0.01F × startup × instability</code></td><td>基准 0.01 格，最大 <code>instability = 6</code> → <b>最大 0.06 格（≈1/16 格）</b></td></tr>
+<tr><td>频率分子</td><td><code>/15.0F</code>、<code>/14.0F</code>、<code>/13.0F</code>（分轴不同）</td><td>X/Y/Z 周期不一致 → <b>看起来像乱抖而不是整体平移</b></td></tr>
+<tr><td>相位</td><td><code>+(a*10)</code>、<code>+(b*10)</code>、<code>+(c*10)</code></td><td>8 个副本各自错开</td></tr>
+<tr><td>包络</td><td><code>startup</code>（0→1 缓入）</td><td><code>startUp += max(startUp/10, 0.001)</code>（<code>:878</code>）——<b>指数缓入</b></td></tr>
+<tr><td>增益</td><td><code>instability</code>（1→6，随注魔进行到 50 刻封顶）</td><td><code>Math.min(craftcount, 50)/50</code> —— <b>仪式越进行抖得越凶</b></td></tr>
+<tr><td><code>partialTick</code></td><td><b>加进 <code>ticks</code></b></td><td>帧间平滑</td></tr>
+</table>
+<p><b>注意幅度只有 0.06 格</b>——但"用三轴不同频率 + <code>startup</code>/<code>instability</code> 双包络"让它<b>看起来很剧烈</b>。</p>
+<p>我们如果想"明显抖动"，可以把这个数量级调大（比如 <code>0.02~0.03</code> 基准、<code>instability</code> 上限 8），</p>
+<p>但<b>务必保留"三轴不同分母"和"包络"这两招</b>，否则会像整体平移而不像发抖。</p>
+<p><b>旋转也是"缓入 + 累积"</b>（<code>:116-118</code>）：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+GL11.glRotatef(ticks % 360.0F * is.startUp, 0.0F, 1.0F, 0.0F);   // Y：越转越快
+GL11.glRotatef(35.0F * is.startUp, 1.0F, 0.0F, 0.0F);
+GL11.glRotatef(45.0F * is.startUp, 0.0F, 0.0F, 1.0F);
+</pre>
+<p><b>用 <code>startUp</code> 同时控制转速和倾角</b>——启动时慢慢倾斜起来，非常自然。</p>
+<p><b>"光晕"用的是"每帧新建 <code>Random(245L)</code>"</b>（<code>:47, 56-75</code>）：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+Random random = new Random(245L);                              // ★ 固定种子
+...
+for (int i = 0; i &lt; q; i++) {
+    GL11.glRotatef(random.nextFloat() * 360.0F, 1.0F, 0.0F, 0.0F);
+    ...  // 24 次随机旋转堆叠
+    float f1 = count / 500.0F;                                  // craftCount 驱动
+    float fa = random.nextFloat() * 20.0F + 5.0F + f2 * 10.0F;
+    float f4 = random.nextFloat() * 2.0F + 1.0F + f2 * 2.0F;
+    ...
+}
+</pre>
+<p><b>固定种子的 <code>Random</code> 每帧重建</b> → 形状<b>每帧都一样</b>，但 <code>f1</code> 随 <code>craftCount</code> 变化 → <b>光锥随时间"长高"</b>。</p>
+<p>（和 Botania 的 <code>seed = x^y^z</code> 是同一个思路：<b>用确定性伪随机得到稳定的形状</b>。）</p>
+<h5>(b) 物品在基座上的渲染（<b>没有抖动，只有匀速自转 + 悬浮</b>）</h5>
+<p><code>client/renderers/tile/TilePedestalRenderer.java:18-34</code></p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+public void render(TilePedestal ped, double x, double y, double z, float partialTicks, int destroyStage, float alpha) {
+    super.func_192841_a(ped, x, y, z, partialTicks, destroyStage, alpha);
+    if (ped != null &amp;&amp; !ped.getSyncedStackInSlot(0).func_190926_b()) {
+        EntityItem entityitem = null;
+        float ticks = (Minecraft.func_71410_x().func_175606_aa()).field_70173_aa + partialTicks;
+        GL11.glPushMatrix();
+        GL11.glTranslatef((float)x + 0.5F, (float)y + 0.75F, (float)z + 0.5F);   // ★ 抬高 0.75 格
+        GL11.glScaled(1.25D, 1.25D, 1.25D);
+        GL11.glRotatef(ticks % 360.0F, 0.0F, 1.0F, 0.0F);                        // ★ 1°/刻 匀速自转
+        ItemStack is = ped.getSyncedStackInSlot(0).func_77946_l();
+        is.func_190920_e(1);
+        entityitem = new EntityItem((Minecraft.func_71410_x()).field_71441_e, 0.0D, 0.0D, 0.0D, is);
+        entityitem.field_70290_d = 0.0F;
+        RenderManager rendermanager = Minecraft.func_71410_x().func_175598_ae();
+        rendermanager.func_188391_a(entityitem, 0.0D, 0.0D, 0.0D, 0.0F, 0.0F, false);   // ★ 直接渲染一个"假 EntityItem"
+        GL11.glPopMatrix();
+    }
+}
+</pre>
+<p><b>注意</b>：</p>
+<ul>
+<li><b>物品的抖动不在这个渲染器里</b>——<code>TilePedestalRenderer</code> 只有匀速自转。</li>
+</ul>
+<p>  "抖动"实际发生在<b>注魔台方块自己</b>（§a），或者由 <code>drawInfusionParticles*</code> 的粒子表达。</p>
+<p>  <b>这符合我们的用例：抖动的是"台座上的物品"，那就在渲染物品的 BER 里加偏移。</b></p>
+<ul>
+<li><b><code>getSyncedStackInSlot(0)</code></b> —— 物品是通过"同步槽位"机制传到客户端的，<b>渲染完全在客户端</b>。</li>
+<li><b>用 <code>RenderManager.func_188391_a(entityitem, ...)</code> 渲染一个临时 <code>EntityItem</code></b>（1.12.2 老 API）；</li>
+</ul>
+<p>  1.21+/26.1.2 上对应的就是 <code>ItemModelResolver</code> + <code>ItemStackRenderState</code>（见 §4 的 26.1.2 写法）。</p>
+<h5>(c) 归航粒子：<code>FXBoreSparkle</code>（<b>"从玩家飞向目标"的最直接参考</b>）</h5>
+<p><code>client/fx/particles/FXBoreSparkle.java:16-178</code>（构造）</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+public FXBoreSparkle(World par1World, double par2, double par4, double par6, double tx, double ty, double tz) {
+    super(par1World, par2, par4, par6, 0.0D, 0.0D, 0.0D);
+    ...
+    this.targetX = tx;  this.targetY = ty;  this.targetZ = tz;    // ★ 目标坐标直接存进粒子
+    double dx = tx - this.field_187126_f;
+    double dy = ty - this.field_187127_g;
+    double dz = tz - this.field_187128_h;
+    int base = (int)(MathHelper.func_76133_a(dx * dx + dy * dy + dz * dz) * 10.0F);   // ★ 寿命 ∝ 距离
+    if (base &lt; 1) base = 1;
+    this.field_70547_e = base / 2 + this.field_187136_p.nextInt(base);               // 寿命 = base/2 + rand(base)
+    float f3 = 0.01F;
+    this.field_187129_i = ((float)this.field_187136_p.nextGaussian() * f3);           // 初始速度只是微小抖动
+    this.field_187130_j = ((float)this.field_187136_p.nextGaussian() * f3);
+    this.field_187131_k = ((float)this.field_187136_p.nextGaussian() * f3);
+    this.field_70552_h = 0.2F;
+    this.field_70553_i = 0.6F + this.field_187136_p.nextFloat() * 0.3F;
+    this.field_70551_j = 0.2F;
+    this.field_70545_g = 0.2F;
+    // 超出可见距离直接自杀
+    Entity renderentity = FMLClientHandler.instance().getClient().func_175606_aa();
+    int visibleDistance = 64;
+    if (!(FMLClientHandler.instance().getClient()).field_71474_y.field_74347_j) visibleDistance = 32;
+    if (renderentity.func_70011_f(this.field_187126_f, this.field_187127_g, this.field_187128_h) &gt; visibleDistance)
+        this.field_70547_e = 0;                                                    // ★ lifetime=0 立即消失
+}
+</pre>
+<p><code>FXBoreSparkle.java:211-247</code>（<b>运动本体 —— 这是"归航"最纯粹的写法</b>）</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+public void func_189213_a() {          // tick()
+    this.field_187123_c = this.field_187126_f;    // xo
+    this.field_187124_d = this.field_187127_g;    // yo
+    this.field_187125_e = this.field_187128_h;    // zo
+    if (this.target != null) {                     // 目标可以是实体 → 实时跟随
+        this.targetX = this.target.field_70165_t;
+        this.targetY = this.target.field_70163_u + this.target.func_70047_e();   // 眼睛高度
+        this.targetZ = this.target.field_70161_v;
+    }
+    // 到格子级别就算到了，或者寿命用尽
+    if (this.field_70546_d++ &gt;= this.field_70547_e
+        || (MathHelper.func_76128_c(this.field_187126_f) == MathHelper.func_76128_c(this.targetX)
+         &amp;&amp; MathHelper.func_76128_c(this.field_187127_g) == MathHelper.func_76128_c(this.targetY)
+         &amp;&amp; MathHelper.func_76128_c(this.field_187128_h) == MathHelper.func_76128_c(this.targetZ))) {
+        func_187112_i();                           // remove
+        return;
+    }
+    func_187110_a(this.field_187129_i, this.field_187130_j, this.field_187131_k);   // move()
+    this.field_187129_i *= 0.985D;                 // ★ 阻尼
+    this.field_187130_j *= 0.95D;                  //   Y 阻尼更强（往下沉一点）
+    this.field_187131_k *= 0.985D;
+
+    double dx = this.targetX - this.field_187126_f;
+    double dy = this.targetY - this.field_187127_g;
+    double dz = this.targetZ - this.field_187128_h;
+    double d11 = MathHelper.func_76133_a(dx * dx + dy * dy + dz * dz);      // 剩余距离
+    double clamp = Math.min(0.25D, d11 / 15.0D);                            // ★ 转向力上限，且近处变弱
+    if (d11 &lt; 2.0D) this.field_70544_f *= 0.9F;                             // ★ 最后 2 格开始缩小
+    dx /= d11; dy /= d11; dz /= d11;
+    this.field_187129_i += dx * clamp;                                      // ★ 朝目标加速
+    this.field_187130_j += dy * clamp;
+    this.field_187131_k += dz * clamp;
+    this.field_187129_i = MathHelper.func_151237_a((float)this.field_187129_i, -clamp, clamp);   // ★ 三轴各自夹到 ±clamp
+    this.field_187130_j = MathHelper.func_151237_a((float)this.field_187130_j, -clamp, clamp);
+    this.field_187131_k = MathHelper.func_151237_a((float)this.field_187131_k, -clamp, clamp);
+    // ★ 每刻叠加高斯抖动 → 轨迹有"游丝"感
+    this.field_187129_i += this.field_187136_p.nextGaussian() * 0.01D;
+    this.field_187130_j += this.field_187136_p.nextGaussian() * 0.01D;
+    this.field_187131_k += this.field_187136_p.nextGaussian() * 0.01D;
+}
+</pre>
+<p><b>逐条拆解（这就是"归航粒子"的核心算法）：</b></p>
+<table>
+<tr><th>步骤</th><th>代码</th><th>作用</th></tr>
+<tr><td>寿命 = 距离 × 10 / 2 + rand</td><td><code>base = dist * 10; lifetime = base/2 + rand(base)</code></td><td><b>距离越远活得越久</b>，保证能飞到</td></tr>
+<tr><td>初始速度</td><td><code>nextGaussian() * 0.01</code></td><td>几乎静止，全靠转向力推进</td></tr>
+<tr><td>阻尼</td><td><code>*= 0.985</code>（Y <code>*= 0.95</code>）</td><td>速度不会无限累积</td></tr>
+<tr><td>转向力</td><td><code>clamp = min(0.25, dist/15)</code></td><td><b>15 格以内按距离给力，超过就封顶 0.25</b></td></tr>
+<tr><td>加速</td><td><code>v += dir * clamp</code></td><td>朝目标</td></tr>
+<tr><td><b>夹紧</b></td><td><code>v = clamp(v, -clamp, +clamp)</code></td><td><b>三轴速度各自不超过 <code>clamp</code></b> → 速度与距离成比例，越近越慢</td></tr>
+<tr><td>抖动</td><td><code>v += gauss * 0.01</code></td><td>轨迹不呆板</td></tr>
+<tr><td>缩小</td><td><code>dist &lt; 2</code> → <code>scale *= 0.9</code></td><td>快到终点时收缩</td></tr>
+<tr><td>可见性剔除</td><td>距摄像机 &gt; 64 格 → <code>lifetime = 0</code></td><td>省渲染</td></tr>
+</table>
+<p><b>对比 ENCHANT 的"offset 插值"</b>：</p>
+<ul>
+<li>ENCHANT 是<b>匀速直线插值</b>（<code>pos</code> 线性 1→0），<b>没有任何抖动</b>，看起来"很规整"。</li>
+<li><code>FXBoreSparkle</code> 是<b>带阻尼的加速归航 + 高斯抖动</b>，看起来"活"。</li>
+<li><b>两者渲染的都是同一个"符文/字母"贴图族</b>，所以视觉上都可以说"像附魔台"。</li>
+</ul>
+<h5>(d) 大规模粒子流：<code>FXEssentiaStream</code>（曲线管道 + 去重合并）</h5>
+<p>如果做"<b>同时从多个基座/多个玩家流出</b>"，<code>FXEssentiaStream</code> 是最讲究的做法。</p>
+<p><code>client/fx/other/FXEssentiaStream.java:30-48</code>（字段）</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+public class FXEssentiaStream extends Particle {
+    private double targetX, targetY, targetZ;
+    private double startX, startY, startZ;
+    private int count = 0;
+    public int length = 20;
+    private String key = "";
+    private BlockPos startPos = null;
+    private BlockPos endPos = null;
+    static HashMap&lt;String, FXEssentiaStream&gt; pt = new HashMap();   // ★ 全局去重表
+    CoreGLE gle;
+    double[][] points;
+    float[][] colours;
+</pre>
+<p><b>去重合并</b>（<code>:165-171</code>）——<b>同一对起点/终点/颜色的流只保留一条，并不断加长</b>：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+String k = bp1.func_177986_g() + "" + bp2.func_177986_g() + "" + color;
+if (pt.containsKey(k)) {
+    FXEssentiaStream trail2 = (FXEssentiaStream)pt.get(k);
+    if (!trail2.field_187133_m &amp;&amp; trail2.vecs.size() &lt; trail2.length) {
+        trail2.length += Math.max(extend, 5);
+        trail2.field_70547_e += Math.max(extend, 5);
+        this.field_70547_e = 0;                     // ★ 自己寿命设 0 → 本帧就消失，不新建
+    }
+}
+if (this.field_70547_e &gt; 0) { pt.put(k, this); this.key = k; }
+</pre>
+<p><b>归航方式</b>（<code>:205-217</code>）——<b>"距离越近力越大"的归一化拉拽</b>（和 <code>FXBoreSparkle</code> 不同！）：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+double dx = this.targetX - this.field_187126_f;
+double dy = this.targetY - this.field_187127_g;
+double dz = this.targetZ - this.field_187128_h;
+double d13 = 0.01D;
+double d11 = MathHelper.func_76133_a(dx * dx + dy * dy + dz * dz);
+
+dx /= d11; dy /= d11; dz /= d11;                    // 单位向量
+this.field_187129_i += dx * d13 / Math.min(1.0D, d11);    // ★ 除以 min(1, dist)
+this.field_187130_j += dy * d13 / Math.min(1.0D, d11);
+this.field_187131_k += dz * d13 / Math.min(1.0D, d11);
+</pre>
+<p><b><code>/ Math.min(1.0, dist)</code> 的含义</b>：距离 &gt;1 格时是常数拉拽 <code>0.01</code>；</p>
+<p>距离 &lt;1 格时拉拽力<b>急剧增大</b>（除以小于 1 的数）→ <b>最后一段"吸"进去</b>，不会在目标附近打转。</p>
+<p>这和 <code>FXBoreSparkle</code> 的"近处变弱 + 夹紧"是<b>两种相反的收尾策略</b>，都可行；</p>
+<p><code>FXEssentiaStream</code> 这种"近处猛吸"更适合"流入容器"的语义。</p>
+<p><b>轨迹历史 + 管道渲染</b>（<code>:227-245, 286-288</code>）：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+if (this.field_70544_f &gt; 0.001D) {
+    this.vecs.add(new Quat(scale, this.field_187126_f - this.startX,
+                                   this.field_187127_g - this.startY,
+                                   this.field_187128_h - this.startZ));   // ★ 存"相对起点的偏移"
+} else {
+    if (this.growing &lt; 0) this.growing = this.field_70546_d;
+    this.length--;
+    FXDispatcher.INSTANCE.essentiaDropFx(...);          // 到目标了 → 溅射
+}
+if (this.vecs.size() &gt; this.length) { this.vecs.remove(0); }   // ★ 滑动窗口
+...
+// 用 CoreGLE 沿 vecs 画一根管：
+this.gle.glePolyCone(this.points.length, this.points, this.colours, this.radii, 0.075F,
+        (this.growing &lt; 0) ? 0.0F : (0.075F * ((this.field_70546_d - this.growing) + f)));
+</pre>
+<p><b>"存历史点 → 画管道"</b> 是所有"能量流/触手"类效果的标准做法。</p>
+<p>26.1.2 上如果不想画管道，<b>把 <code>vecs</code> 里的点改成每帧撒粒子也一样好看，而且简单得多</b>。</p>
+<p><code>FXDispatcher.essentiaTrailFx</code>（<code>:1060-1063</code>）+ <code>essentiaDropFx</code>（<code>:1074-1086</code>）是入口与"到达溅射"。</p>
+<h5>(e) 归航粒子的"分发"：<code>FXDispatcher.drawInfusionParticles4</code></h5>
+<p><code>client/fx/FXDispatcher.java:863-873</code></p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+public void drawInfusionParticles3(double x, double y, double z, int x2, int y2, int z2) {
+    FXBoreSparkle fb = new FXBoreSparkle(getWorld(), x, y, z, x2 + 0.5D, y2 - 0.5D, z2 + 0.5D);
+    fb.func_70538_b(0.4F + (getWorld()).field_73012_v.nextFloat() * 0.2F, 0.2F, 0.6F + (getWorld()).field_73012_v.nextFloat() * 0.3F);
+    ParticleEngine.addEffect(getWorld(), fb);
+}
+
+public void drawInfusionParticles4(double x, double y, double z, int x2, int y2, int z2) {
+    FXBoreSparkle fb = new FXBoreSparkle(getWorld(), x, y, z, x2 + 0.5D, y2 - 0.5D, z2 + 0.5D);
+    fb.func_70538_b(0.2F, 0.6F + (getWorld()).field_73012_v.nextFloat() * 0.3F, 0.3F);
+    ParticleEngine.addEffect(getWorld(), fb);
+}
+</pre>
+<p><b><code>drawInfusionParticles4</code> 就是"从玩家身上出来、飞向祭坛"的那一个</b>（绿色调）。</p>
+<p><code>drawInfusionParticles3</code> 是基座版（蓝紫色）。</p>
+<h5>(f) <b><code>SourceFX</code> —— "玩家/基座 → 祭坛"的状态化粒子源（直接对应我们的用例！）</b></h5>
+<p><code>common/tiles/crafting/TileInfusionMatrix.java:103-118</code></p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+public class SourceFX {
+    public BlockPos loc;
+    public int ticks;
+    public int color;
+    public int entity;
+    public SourceFX(BlockPos loc, int ticks, int color) { ... }
+}
+public HashMap&lt;String, SourceFX&gt; sourceFX = new HashMap();
+</pre>
+<p><b><code>color</code> 字段装的是"实体 ID 或颜色"</b>，双关复用 —— 因为 <code>BlockPos</code> 只能表示方块，</p>
+<p>但"源"可能是<b>玩家实体</b>。发到客户端后由客户端解码（见下）。</p>
+<p><code>TileInfusionMatrix.java:886-937</code>（<b>每刻遍历所有源，按 tick 倒计时喷粒子</b>）</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+for (String fxk : (String[])this.sourceFX.keySet().toArray(new String[0])) {
+    SourceFX fx = (SourceFX)this.sourceFX.get(fxk);
+    if (fx.ticks &lt;= 0) {
+        this.sourceFX.remove(fxk);
+    } else {
+        if (fx.loc.equals(this.field_174879_c)) {
+            // ★★ 源 == 祭坛自身的位置 → 说明这是个"实体源"，color 里存的是 entityId
+            Entity player = this.field_145850_b.func_73045_a(fx.color);      // getEntityByID
+            if (player != null) {
+                for (int a = 0; a &lt; 4; a++) {
+                    FXDispatcher.INSTANCE.drawInfusionParticles4(
+                        player.field_70165_t + ((rnd.nextFloat() - rnd.nextFloat()) * player.field_70130_N),  // 玩家包围盒内随机
+                        (player.func_174813_aQ()).field_72338_b + (rnd.nextFloat() * player.field_70131_O),
+                        player.field_70161_v + ((rnd.nextFloat() - rnd.nextFloat()) * player.field_70130_N),
+                        this.field_174879_c.func_177958_n(), this.field_174879_c.func_177956_o(),
+                        this.field_174879_c.func_177952_p());            // ★ 目标 = 祭坛
+                }
+            }
+        } else {
+            TileEntity tile = this.field_145850_b.func_175625_s(fx.loc);
+            if (tile instanceof TilePedestal) {
+                ItemStack is = ((TilePedestal)tile).getSyncedStackInSlot(0);
+                if (is != null &amp;&amp; !is.func_190926_b()) {
+                    if (rnd.nextInt(3) == 0) {
+                        FXDispatcher.INSTANCE.drawInfusionParticles3(                 // 每 3 刻 1 颗
+                            fx.loc.func_177958_n() + rnd.nextFloat(),
+                            fx.loc.func_177956_o() + rnd.nextFloat() + 1.0F,
+                            fx.loc.func_177952_p() + rnd.nextFloat(),
+                            this.field_174879_c.func_177958_n(), ...);                // 目标 = 祭坛
+                    } else {
+                        Item bi = is.func_77973_b();
+                        if (bi instanceof ItemBlock) {
+                            for (int a = 0; a &lt; 4; a++) {
+                                FXDispatcher.INSTANCE.drawInfusionParticles2(..., this.field_174879_c, Block.func_149634_a(bi).func_176223_P(), is.func_77952_i());
+                            }
+                        } else {
+                            for (int a = 0; a &lt; 4; a++) {
+                                FXDispatcher.INSTANCE.drawInfusionParticles1(
+                                    fx.loc.func_177958_n() + 0.4F + rnd.nextFloat() * 0.2F,
+                                    fx.loc.func_177956_o() + 1.23F + rnd.nextFloat() * 0.2F,
+                                    fx.loc.func_177952_p() + 0.4F + rnd.nextFloat() * 0.2F,
+                                    this.field_174879_c, is);           // ★ 粒子的贴图用"被搬运物品"的材质！
+                            }
+                        }
+                    }
+                }
+            } else {
+                fx.ticks = 0;                                              // ★ 源没了 → 当场作废
+            }
+        }
+        fx.ticks--;
+        this.sourceFX.put(fxk, fx);
+    }
+}
+</pre>
+<p><b>这就是"从玩家身上流出、飞向目标方块"最完整的参考实现</b>，而且比我们需要的更讲究：</p>
+<p>1. <b><code>sourceFX</code> 是 <code>HashMap&lt;key, SourceFX&gt;</code>，不是单一字段</b> → 天然支持"多个源同时往祭坛流"。</p>
+<p>2. <b><code>ticks</code> 是倒计时</b>，每刻喷一次，<code>ticks</code> 归零就移除 → <b>"持续 N 刻的粒子流"就是一个倒计数字段</b>。</p>
+<p>3. <b><code>loc == 祭坛自身</code> 这个约定用来表示"源是实体"</b>（因为 <code>BlockPos</code> 装不下实体）。</p>
+<p>   另一种做法（更干净）是<b>在 <code>SourceFX</code> 里再加一个 <code>int entityId</code> 字段</b>。</p>
+<div class="card small"><code>SourceFX</code> 类里其实<b>已经声明了 <code>public int entity;</code> 字段</b>（<code>:115</code>），</div>
+<div class="card small">但上面 <code>doEffects()</code> 里读的是 <code>fx.color</code> 当 entityId —— 这是反编译产物里的不一致，</div>
+<div class="card small"><b>以"字段声明了 entity 但代码读 color"为准，属于原码可疑点，未核对</b>。</div>
+<p>4. <b><code>fx.ticks = 0</code>（源方块消失）+ <code>sourceFX.remove</code>（倒计时归零）双重清理</b> → 不会卡死。</p>
+<p>5. <b>粒子贴图直接用被搬运物品的材质</b>（<code>drawInfusionParticles1(..., is)</code>）→ "物品化作粒子飞过去"。</p>
+<p>   这个效果我们不一定需要，但很值得知道。</p>
+<h5>(g) 同步：一个 20 字节的小包（<code>PacketFXInfusionSource</code>）</h5>
+<p><code>common/lib/network/fx/PacketFXInfusionSource.java:16-63</code></p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+private long p1;
+private long p2;
+private int color;
+
+public PacketFXInfusionSource(BlockPos pos, BlockPos pos2, int color) {
+    this.p1 = pos.func_177986_g();     // BlockPos.asLong()
+    this.p2 = pos2.func_177986_g();
+    this.color = color;
+}
+
+public void toBytes(ByteBuf buffer) {
+    buffer.writeLong(this.p1);
+    buffer.writeLong(this.p2);
+    buffer.writeInt(this.color);       // ★ 总共 8 + 8 + 4 = 20 字节
+}
+
+public IMessage onMessage(PacketFXInfusionSource message, MessageContext ctx) {
+    BlockPos p1 = BlockPos.func_177969_a(message.p1);
+    BlockPos p2 = BlockPos.func_177969_a(message.p2);
+    String key = p2.func_177958_n() + ":" + p2.func_177956_o() + ":" + p2.func_177952_p() + ":" + message.color;
+    TileEntity tile = Thaumcraft.proxy.getClientWorld().func_175625_s(p1);
+    if (tile != null &amp;&amp; tile instanceof TileInfusionMatrix) {
+        int count = 15;
+        if (Thaumcraft.proxy.getClientWorld().func_175625_s(p2) != null
+            &amp;&amp; Thaumcraft.proxy.getClientWorld().func_175625_s(p2) instanceof thaumcraft.common.tiles.crafting.TilePedestal)
+            count = 60;                                   // ★ 基座源持续 60 刻，其它 15 刻
+        TileInfusionMatrix is = (TileInfusionMatrix)tile;
+        if (is.sourceFX.containsKey(key)) {
+            TileInfusionMatrix.SourceFX sf = (TileInfusionMatrix.SourceFX)is.sourceFX.get(key);
+            sf.ticks = count;                             // ★ 已存在就"续期"，不新建
+            is.sourceFX.put(key, sf);
+        } else {
+            is.sourceFX.put(key, new TileInfusionMatrix.SourceFX(is, p2, count, message.color));
+        }
+    }
+}
+</pre>
+<p><b>这就是"从玩家流向方块"的同步方案，20 字节，客户端收到后自己每刻撒粒子。</b></p>
+<p><b>要点</b>：</p>
+<ul>
+<li>包只发"<b>起点、终点、颜色/实体ID</b>"三样，<b>不持续发包</b>；</li>
+</ul>
+<p>  客户端收到一次就<b>自己维持 15（或 60）刻的粒子流</b>。</p>
+<ul>
+<li><b>天然幂等</b>：同一个 key 再来就 <code>sf.ticks = count</code> 续期，不会堆出第二条流。</li>
+<li><code>count</code> 按源类型区分（基座 60 刻 vs 其他 15 刻）。</li>
+</ul>
+<h5>(h) 完成反馈：产物留在台座 + 清脆音效</h5>
+<p><code>TileInfusionMatrix.java:652-696</code>（<b>注魔完成</b>）</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+public void craftingFinish(Object out, String label) {
+    TileEntity te = this.field_145850_b.func_175625_s(this.field_174879_c.func_177979_c(2));   // ★ 祭坛下方 2 格
+    if (te != null &amp;&amp; te instanceof TilePedestal) {
+        float dmg = 1.0F;
+        if (out instanceof ItemStack) {
+            ItemStack qs = ((ItemStack)out).func_77946_l();
+            if (((TilePedestal)te).func_70301_a(0).func_77984_f() &amp;&amp; ((TilePedestal)te).func_70301_a(0).func_77951_h()) {
+                dmg = ...;                                   // 继承原物品的耐久百分比
+                if (qs.func_77984_f() &amp;&amp; !qs.func_77951_h()) {
+                    qs.func_77964_b((int)(qs.func_77958_k() * dmg));
+                }
+            }
+            ((TilePedestal)te).setInventorySlotContentsFromInfusion(0, qs);   // ★★ 产物放进台座，不给玩家
+        }
+        else if (out instanceof NBTBase) { ... }
+        else if (out instanceof Enchantment) { ... }
+
+        if (this.recipePlayer != null) {
+            EntityPlayer p = this.field_145850_b.func_72924_a(this.recipePlayer);   // getPlayerEntityByName
+            if (p != null) {
+                FMLCommonHandler.instance().firePlayerCraftingEvent(p,
+                        ((TilePedestal)te).func_70301_a(0), new InventoryFake(this.recipeIngredients));
+            }
+        }
+        this.recipeEssentia = new AspectList();
+        this.recipeInstability = 0;
+        syncTile(false);
+        func_70296_d();
+        this.field_145850_b.func_175641_c(this.field_174879_c.func_177979_c(2),
+                this.field_145850_b.func_180495_p(this.field_174879_c.func_177979_c(2)).func_177230_c(), 12, 0);   // ★ 台座方块事件 12 = 完成特效
+        this.field_145850_b.func_184133_a(null, this.field_174879_c, SoundsTC.wand, SoundCategory.BLOCKS, 0.5F, 1.0F);
+    }
+}
+</pre>
+<p><b>★★ 这正是我们用例第 5 条要的效果</b>：产物 <code>ItemStack</code> <b>直接塞进下方台座的槽位</b></p>
+<p>（<code>setInventorySlotContentsFromInfusion</code>），<b>不给玩家</b>，而且<b>继承了原物品的耐久百分比</b>。</p>
+<p><code>field_174879_c.func_177979_c(2)</code> = <code>worldPosition.below(2)</code>（祭坛下方两格的基座）。</p>
+<p><b>音效时间线</b>（<code>TileInfusionMatrix.java:360, 425, 694, 861-866</code>）：</p>
+<table>
+<tr><th>时机</th><th>音效</th><th>参数</th></tr>
+<tr><td>注魔开始</td><td><code>SoundsTC.craftstart</code></td><td><code>BLOCKS, 0.5F, 1.0F</code></td></tr>
+<tr><td>进行中（每 65 刻一次）</td><td><code>SoundsTC.infuser</code></td><td><code>0.5F, 1.0F</code></td></tr>
+<tr><td>进行中第一刻</td><td><code>SoundsTC.infuserstart</code></td><td><code>0.5F, 1.0F</code></td></tr>
+<tr><td>注魔失败</td><td><code>SoundsTC.craftfail</code></td><td><code>BLOCKS, 1.0F, 0.6F</code>（<b>低音 = 失败</b>）</td></tr>
+<tr><td><b>注魔完成</b></td><td><b><code>SoundsTC.wand</code></b></td><td><code>BLOCKS, 0.5F, 1.0F</code></td></tr>
+<tr><td>注魔进行中的符文粒子</td><td><code>FXDispatcher.blockRunes(x, y-2, z, 0.5+rnd*0.2, 0.1, 0.7+rnd*0.3, 25, -0.03F)</code></td><td>每刻撒</td></tr>
+</table>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+// doEffects() 开头（:862-870）
+if (this.crafting) {
+    if (this.craftCount == 0) {
+        this.field_145850_b.func_184134_a(..., SoundsTC.infuserstart, SoundCategory.BLOCKS, 0.5F, 1.0F, false);
+    } else if (this.craftCount == 0 || this.craftCount % 65 == 0) {
+        this.field_145850_b.func_184134_a(..., SoundsTC.infuser, SoundCategory.BLOCKS, 0.5F, 1.0F, false);
+    }
+    this.craftCount++;
+    FXDispatcher.INSTANCE.blockRunes(x, y - 2, z, 0.5F + rnd.nextFloat() * 0.2F, 0.1F,
+                                     0.7F + rnd.nextFloat() * 0.3F, 25, -0.03F);
+} else if (this.craftCount &gt; 0) {
+    this.craftCount -= 2;                       // ★ 停止时"倒退"回 0，让光晕平滑消失
+    if (this.craftCount &lt; 0) this.craftCount = 0;
+    if (this.craftCount &gt; 50) this.craftCount = 50;
+}
+</pre>
+<p><b><code>craftCount</code> 递减回退</b>（<code>:871-874</code>）是个好东西：仪式被打断时<b>不瞬间黑掉，而是"退潮"</b>。</p>
+<h5>(i) 同步字段 &amp; 进度计数</h5>
+<p><code>TileInfusionMatrix.java:130-146</code>（<b>哪些字段进同步包</b>）</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+public void readSyncNBT(NBTTagCompound nbtCompound) {
+    this.active   = nbtCompound.func_74767_n("active");
+    this.crafting = nbtCompound.func_74767_n("crafting");
+    this.stability = nbtCompound.func_74760_g("stability");
+    this.recipeInstability = nbtCompound.func_74762_e("recipeinst");
+    this.recipeEssentia.readFromNBT(nbtCompound);
+}
+public NBTTagCompound writeSyncNBT(NBTTagCompound nbtCompound) {
+    nbtCompound.func_74757_a("active", this.active);
+    nbtCompound.func_74757_a("crafting", this.crafting);
+    nbtCompound.func_74776_a("stability", this.stability);
+    nbtCompound.func_74768_a("recipeinst", this.recipeInstability);
+    this.recipeEssentia.writeToNBT(nbtCompound);
+    return nbtCompound;
+}
+</pre>
+<p><b><code>active</code> / <code>crafting</code> 两个布尔 + <code>stability</code> 浮点 + 配方要素表。</b></p>
+<p><b><code>count</code> / <code>craftCount</code> 这两个进度计数不在里面</b> —— 但注意：</p>
+<p><code>craftCount</code> <b>被渲染器读了</b>（<code>TileInfusionMatrixRenderer.java:123</code> <code>craftcount = is.craftCount;</code>），</p>
+<p>所以它<b>必须</b>在客户端有值。<code>craftCount</code> 是在 <code>doEffects()</code> 里<b>客户端自己 ++</b> 的</p>
+<p>（<code>doEffects()</code> 两端都跑：<code>if (this.crafting) { ... this.craftCount++; ... }</code>）——</p>
+<p><b>即"客户端根据同步过来的 <code>crafting</code> 布尔，自己数到 50 封顶"</b>。这和 AN 的 <code>counter</code> 是同一个套路。</p>
+<p><b>入场/离场包络</b>（<code>:877-885</code>）：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+if (this.active &amp;&amp; this.startUp != 1.0F) {
+    if (this.startUp &lt; 1.0F) this.startUp += Math.max(this.startUp / 10.0F, 0.001F);
+    if (this.startUp &gt; 0.999D) this.startUp = 1.0F;
+}
+if (!this.active &amp;&amp; this.startUp &gt; 0.0F) {
+    if (this.startUp &gt; 0.0F) this.startUp -= this.startUp / 10.0F;
+    if (this.startUp &lt; 0.001D) this.startUp = 0.0F;
+}
+</pre>
+<p><b><code>startUp += max(startUp/10, 0.001)</code> 是"指数缓入"</b>：每刻增加当前的 1/10，</p>
+<p>所以 <code>startUp</code> 从 0 只会在约 60 刻内达到 0.999。<b>这是"仪式启动要 1 秒左右缓缓起来"的标准做法。</b></p>
+<p><code>startUp</code> 也在同步 NBT 之外 —— 它同样由客户端自己按 <code>active</code> 布尔算。</p>
+<h5>(j) 记录：注魔的<b>进度持久化</b>在 <code>readFromNBT</code> 里</h5>
+<p><code>TileInfusionMatrix.java:151-178</code> —— "配方 + 已消耗材料 + 输出 + 玩家名"<b>全部写进存档 NBT</b></p>
+<p>（<code>recipein</code> / <code>rotype</code> / <code>recipeout</code> / <code>recipeinput</code> / <code>recipetype</code> / <code>recipexp</code> / <code>recipeplayer</code>）。</p>
+<p><b>所以注魔中途关服，回来能继续。</b> 这是"讲究"档的做法。</p>
+<hr>
+<h4>2.4 Astral Sorcery（1.12.2）——「共鸣祭坛」：<b>状态机 + 节流同步</b>最值得学</h4>
+<h5>(a) 最值得抄的一条：<code>ActiveCraftingTask</code> 三态状态机</h5>
+<p><code>common/crafting/altar/ActiveCraftingTask.java:42-166</code></p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+private int ticksCrafting = 0;
+...
+public boolean tick(TileAltar altar) {
+    if (state == CraftingState.ACTIVE) {
+        if (!((ICraftingProgress) recipeToCraft).tryProcess(altar, this, craftingData, ticksCrafting, totalCraftingTime)) {
+            return false;                    // ★ 处理失败 → 返回 false，ticksCrafting 不 ++
+        }
+    }
+    ticksCrafting++;
+    return true;
+}
+public boolean isFinished() { return ticksCrafting &gt;= totalCraftingTime; }
+
+public static ActiveCraftingTask deserialize(NBTTagCompound compound, @Nullable ActiveCraftingTask previous) {
+    ...
+    int tick = compound.getInteger("recipeTick");
+    ...
+    task.ticksCrafting = tick;
+    ...
+    task.setState(state);
+    ...
+}
+
+public NBTTagCompound serialize() {
+    ...
+    compound.setInteger("craftingState", getState().ordinal());
+    ...
+}
+
+public static enum CraftingState {
+    ACTIVE,   // All valid, continuing to craft.              一切正常，继续合成
+    WAITING,  // Potentially waiting for user interaction.     等玩家操作
+    PAUSED    // Something of the recipe is not valid, waiting
+              // with continuation; nothing user-related.      前置条件不满足，暂停但保留进度
+}
+</pre>
+<p><b>状态机的用法</b>（<code>common/tile/TileAltar.java:266, 283-290</code>）：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+craftingTask.setState(ActiveCraftingTask.CraftingState.PAUSED);
+...
+craftingTask.setState(ActiveCraftingTask.CraftingState.WAITING);
+...
+ActiveCraftingTask.CraftingState prev = craftingTask.getState();
+craftingTask.setState(ActiveCraftingTask.CraftingState.ACTIVE);
+</pre>
+<p><b>持久化</b>（<code>TileAltar.java:537, 561</code>）：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+this.craftingTask = ActiveCraftingTask.deserialize(compound.getCompoundTag("craftingTask"), this.craftingTask);
+...
+compound.setTag("craftingTask", craftingTask.serialize());
+</pre>
+<p><b>这是"防半途卡死"的正确答案</b>：</p>
+<ul>
+<li><b>进度不是"过了多少刻就算完成"，而是"每刻都要重新验证前置条件"</b>；</li>
+</ul>
+<p>  <code>tryProcess</code> 返回 false → <b>tick 计数原地不动</b> → 条件恢复后<b>从原地继续</b>。</p>
+<ul>
+<li><b>状态在 NBT 里（含 <code>recipeTick</code>）</b> → 区块卸载、服务器重启都能续。</li>
+<li><b>三态把"为什么停了"区分开</b>：<code>WAITING</code> 是等玩家（该给提示），<code>PAUSED</code> 是环境不满足（该给红字）。</li>
+</ul>
+<h5>(b) Attunement Altar：共鸣祭坛（<b>最像我们用例的那一个</b>）</h5>
+<p><b>状态字段</b>（<code>common/tile/TileAttunementAltar.java:108-141</code>）</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+private static final int TICKS_PLAYER_ATTUNEMENT = 800;
+private static final int TICKS_CRYSTAL_ATTUNEMENT = 500;
+
+private IConstellation activeFound = null;
+private boolean doesSeeSky = false, hasMultiblock = false;
+private int mode = 0;                 // 0 == idle, 1 == att_player, 2 == att_crystal
+private int serverSyncAttTick = 0;
+private int entityIdActive = -1;
+private Entity activeEntity = null;   // Unsynced                          ★ 实体本身不同步
+private int playerAttunementWaitTick = -1;
+private Map&lt;BlockPos, Boolean&gt; unloadCache = new HashMap&lt;&gt;();
+private Object activeSound = null;
+private List&lt;Object&gt; starSprites = new LinkedList&lt;&gt;();
+...
+public static final int MAX_START_ANIMATION_TICK = 60;
+public static final int MAX_START_ANIMATION_SPIN = 100;
+public int activationTick = 0;        // ★ 公开字段，客户端渲染要读
+public int prevActivationTick = 0;
+public boolean animate = false, tesrLocked = true;
+private boolean cameraFlightActive = false;
+private Object clientActiveCameraFlight = null;
+</pre>
+<p>**注意 <code>animate</code> / <code>activationTick</code> / <code>prevActivationTick</code> 是 <code>public</code> 且带 <code>prev*</code>** ——</p>
+<p>这是<b>每刻存上一刻的值 + 就绪 <code>partialTick</code> 插值</b>的老式标准套路</p>
+<p>（等价于 26.1.2 里把 <code>partialTick</code> 交给 <code>extractRenderState</code>）。</p>
+<p><b>同步：只发 3 个 int，并且"每 4 刻才发一次"</b>（<code>TileAttunementAltar.java:196-219, 981-995</code>）</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+// 晶体共鸣路径
+this.serverSyncAttTick++;
+if(serverSyncAttTick % 4 == 0) {       // ★★ 节流：每 4 刻同步一次
+    markForUpdate();
+}
+</pre>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+@Override
+public void readNetNBT(NBTTagCompound compound) {
+    this.mode = compound.getInteger("modeId");
+    this.entityIdActive = compound.getInteger("entityId");
+    this.serverSyncAttTick = compound.getInteger("sSync");
+    checkClientEffectIntegrity();      // ★★ 客户端拿到新同步值后校验特效一致性
+}
+
+@Override
+public void writeNetNBT(NBTTagCompound compound) {
+    compound.setInteger("modeId", mode);
+    compound.setInteger("entityId", entityIdActive);
+    compound.setInteger("sSync", serverSyncAttTick);
+}
+</pre>
+<p><b>存档 NBT（<code>writeCustomNBT</code> / <code>readCustomNBT</code>，<code>:997-1026</code>）只存 <code>mbState</code> / <code>skState</code> / 星座</b>，</p>
+<p><b><code>serverSyncAttTick</code> 不进存档</b> —— 重启后计时重来，作者接受了。</p>
+<p><b>客户端特效一致性检查（"防半途卡死"的客户端侧）</b>（<code>:510-531</code>）</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+@SideOnly(Side.CLIENT)
+private boolean isClientCloseEnough() {
+    List&lt;EntityPlayer&gt; players = world.getEntitiesWithinAABB(EntityPlayer.class,
+            new AxisAlignedBB(0, 0, 0, 1, 1, 1).grow(1).offset(getPos()));
+    return !players.isEmpty() &amp;&amp; players.contains(Minecraft.getMinecraft().player);
+}
+
+private void checkClientEffectIntegrity() {
+    if(clientActiveCameraFlight != null) {
+        checkCameraClient();
+    }
+    if(spawnedOrbitalsForCrystal != entityIdActive) {
+        spawnedOrbitalsForCrystal = -1;
+    }
+}
+
+@SideOnly(Side.CLIENT)
+private void checkCameraClient() {
+    if(mode != 1 || entityIdActive != Minecraft.getMinecraft().player.getEntityId()) {
+        ((ClientCameraFlightHelper.CameraFlight) clientActiveCameraFlight).forceStop();   // ★ 强制停掉残留镜头动画
+        clientActiveCameraFlight = null;
+    }
+}
+</pre>
+<p><b>★★ 这一段回答了"玩家中途退出会怎样"</b>：</p>
+<p>如果客户端正在播一段<b>长达 800 刻（40 秒）的上升镜头动画</b>，而服务端那边已经取消了，</p>
+<p><b>客户端必须在每次收到同步包时校验"我播的这段还成立吗"，不成立就 <code>forceStop()</code></b>。</p>
+<p>否则玩家会<b>卡在一个永远结束不了的镜头里</b> —— 这就是"半途卡死"的典型形态。</p>
+<p><b>我们的 3 秒仪式没有镜头动画，但如果将来加"视角拉近"，一定要照抄这个 <code>checkClientEffectIntegrity</code> 模式。</b></p>
+<p><b>"物品在上面悬浮"用真 <code>ItemEntity</code></b>（<code>TileAttunementAltar.java:221-257</code>）</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+Vector3 crystalHoverPos = new Vector3(this).add(0.5, 1.4, 0.5);
+activeEntity.setPosition(crystalHoverPos.getX(), crystalHoverPos.getY(), crystalHoverPos.getZ());   // ★ 每刻强行摆位
+((EntityItem) activeEntity).setNoDespawn();
+
+if(serverSyncAttTick &gt;= TICKS_CRYSTAL_ATTUNEMENT) {
+    ItemStack tunedStack;
+    if(EntityUtils.selectItemStack(crystalAcceptor).apply(activeEntity) &amp;&amp; activeFound instanceof IWeakConstellation) {
+        ItemStack current = ((EntityItem) activeEntity).getItem();
+        Item tuned = ((ItemRockCrystalBase) current.getItem()).getTunedItemVariant();
+        tunedStack = new ItemStack(tuned);
+        ItemTunedCrystalBase.applyMainConstellation(tunedStack, activeFound);
+        CrystalProperties.applyCrystalProperties(tunedStack, CrystalProperties.getCrystalProperties(current));
+    } else if (...) { ... }
+      else {
+        activeEntity.setDead();
+        setAttunementState(0, null);
+        return;
+    }
+    ...
+    activeEntity.setDead();
+    ItemUtils.dropItem(world, crystalHoverPos.getX(), crystalHoverPos.getY(), crystalHoverPos.getZ(), tunedStack);  // ★ 产物落在原地
+    setAttunementState(0, null);
+    EntityFlare.spawnAmbient(world, new Vector3(this).add(-3 + rand.nextFloat() * 7, 0.6, -3 + rand.nextFloat() * 7));
+    EntityFlare.spawnAmbient(world, new Vector3(this).add(-3 + rand.nextFloat() * 7, 0.6, -3 + rand.nextFloat() * 7));
+    SoundHelper.playSoundAround(Sounds.craftFinish, world, pos, 2.5F, 1.6F);      // ★★ "丁"
+}
+</pre>
+<p><b>三条可直接抄的</b>：</p>
+<p>1. <b>"悬浮"就是每刻 <code>setPosition()</code> 到固定高度</b>（<code>y + 1.4</code>）—— 用真实体时最简单；<b>抖动</b>则是在这个高度上叠正弦。</p>
+<p>2. <b>产物 <code>ItemUtils.dropItem(world, crystalHoverPos...)</code> 落在原悬浮点</b>（≈台座上方）→ 就是我们"留在台座上"。</p>
+<p>3. <b><code>SoundHelper.playSoundAround(Sounds.craftFinish, world, pos, 2.5F, 1.6F)</code></b> ——</p>
+<p>   <b>volume 2.5（传得远）、pitch 1.6（清脆）</b>。<b>这就是"丁"的一声的调法。</b></p>
+<h5>(c) TESR 的插值与动画锁定</h5>
+<p><code>client/render/tile/TESRAttunementAltar.java:54-105</code></p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+float startY = -1.5F;
+float endY   = -0.5F;
+float tickPartY = (endY - startY) / ((float) TileAttunementAltar.MAX_START_ANIMATION_TICK);
+
+float prevPosY = endY + (te.prevActivationTick * tickPartY);
+float posY     = endY + (te.activationTick     * tickPartY);
+double framePosY = RenderingUtils.interpolate(prevPosY, posY, partialTicks);      // ★ prev/cur + partialTick
+
+double generalAnimationTick = ClientScheduler.getClientTick() / 4D;               // ★ 客户端本地时间 /4 = 慢放
+if(te.animate) {
+    if(te.tesrLocked) { te.tesrLocked = false; }
+} else {
+    if(te.tesrLocked) {
+        generalAnimationTick = 7.25D;                                             // ★ 锁到"归位"相位
+    } else {
+        if(Math.abs((generalAnimationTick % TileAttunementAltar.MAX_START_ANIMATION_SPIN) - 7.25D) &lt;= 0.3125) {
+            generalAnimationTick = 7.25D;
+            te.tesrLocked = true;                                                 // ★ 转到位就锁定
+        }
+    }
+}
+
+float spinDur = TileAttunementAltar.MAX_START_ANIMATION_SPIN;
+
+for (int i = 1; i &lt; 9; i++) {
+    float incrementer = (spinDur / 8) * i;
+    double aFrame     = generalAnimationTick + incrementer;
+    double prevAFrame = generalAnimationTick + incrementer - 1;
+    double renderFrame = RenderingUtils.interpolate(prevAFrame, aFrame, 0);
+
+    double partRenderFrame = (renderFrame % spinDur) / spinDur;
+    float normalized = (float) (partRenderFrame * 2F * Math.PI);
+
+    float xOffset = MathHelper.cos(normalized);        // ★ 圆周
+    float zOffset = MathHelper.sin(normalized);
+    ...
+    modelAttunementAltar.renderHovering(xOffset, zOffset, (float) RenderingUtils.interpolate(...));
+    ...
+}
+</pre>
+<p><b>两个精髓</b>：</p>
+<p>1. **8 个悬浮符文的相位差 = <code>(spinDur/8)*i</code>**，同一个 <code>generalAnimationTick</code> 基准 → 均匀分布成一圈。</p>
+<p>2. <b><code>tesrLocked</code>：动画停止时不是"啪"地停，而是"转到最近的归位角度（7.25）再锁住"</b> ——</p>
+<p>   <b>收尾动画（settle）</b>。这一招让"仪式结束"看起来是"归位"而不是"卡住"。</p>
+<p>   如果我们的 3 秒仪式结束时物品要"落定"，这个模式值得抄。</p>
+<p><code>client/render/tile/TESRAltar.java:102-105</code> 还有个值得注意的模式 ——</p>
+<p><b>把"配方特有的渲染"委托给配方对象</b>：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+ActiveCraftingTask task = te.getActiveCraftingTask();
+if(task != null) {
+    task.getRecipeToCraft().onCraftTESRRender(te, x, y, z, partialTicks);
+}
+</pre>
+<p><b>"不同配方可以有自己的渲染"</b> —— 我们要做多种仪式时可以这样留扩展点。</p>
+<h5>(d) 粒子网络：一个统一的"特效包" + 枚举</h5>
+<p><code>common/network/packet/server/PktParticleEvent.java:45-53, 85-103, 129-...</code></p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+public class PktParticleEvent implements IMessage, IMessageHandler&lt;PktParticleEvent, IMessage&gt; {
+    private int typeOrdinal;
+    private double xCoord, yCoord, zCoord;
+    private double additionalDataDouble = 0.0D;
+    private long additionalDataLong = 0L;
+
+    public void fromBytes(ByteBuf buf) {
+        this.typeOrdinal = buf.readInt();
+        this.xCoord = buf.readDouble();  this.yCoord = buf.readDouble();  this.zCoord = buf.readDouble();
+        this.additionalDataDouble = buf.readDouble();
+        this.additionalDataLong = buf.readLong();
+    }
+    ...
+    public static enum ParticleEventType {
+        COLLECTOR_BURST, GEM_CRYSTAL_BURST, CELESTIAL_CRYSTAL_BURST, CELESTIAL_CRYSTAL_FORM,
+        CRAFT_FINISH_BURST, STARMETAL_ORE_CHARGE, ... RT_DEBUG;
+</pre>
+<p><b>设计评价</b>：Astral <b>用一个包 + 一个枚举 + <code>(x,y,z, double, long)</code> 万能参数解决了所有特效</b>。</p>
+<p>省包类型，但<b>可读性差</b>（作者自己在源码里吐槽：<code>//GOD I HATE THIS PART</code>，<code>:167</code>）。</p>
+<p><b>26.1.2 上不要抄这个</b> —— 用 <code>CustomPacketPayload</code> + <code>StreamCodec</code>，一个特效一个 record 更清楚。</p>
+<p><b>Astral 还有个粒子节流工具</b>（<code>common/util/ParticleEffectWatcher.java:29-47</code>）：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+public class ParticleEffectWatcher implements ITickHandler {
+    public static final ParticleEffectWatcher INSTANCE = new ParticleEffectWatcher();
+    private Map&lt;Integer, List&lt;BlockPos&gt;&gt; worldWatch = Maps.newHashMap();
+
+    @Override
+    public void tick(TickEvent.Type type, Object... context) {
+        worldWatch.getOrDefault(((World) context[0]).provider.getDimension(), Lists.newArrayList()).clear();
+    }
+
+    public boolean mayFire(World world, BlockPos pos) {
+        int dimId = world.provider.getDimension();
+        worldWatch.putIfAbsent(dimId, Lists.newArrayList());
+        List&lt;BlockPos&gt; worldPos = worldWatch.get(dimId);
+        return !worldPos.contains(pos) &amp;&amp; worldPos.add(pos);      // ★ 同一位置每刻最多一次
+    }
+}
+</pre>
+<p><b>"同一个方块每刻最多触发一次特效"</b> —— 防止多个逻辑路径重复撒同一批粒子。</p>
+<p><b>我们的仪式如果有多处代码都调 <code>spawnFlow()</code>，值得加一个这个。</b></p>
+<h5>(e) 完成反馈：自定义 sprite 平面爆发 + 高音 chime</h5>
+<p><code>common/tile/TileAltar.java:319-338</code>（完成时发特效包 + 音效）</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+if (!recipe.allowsForChaining() || !doesRecipeMatch(recipe, false) || matchDownMultiblocks(...) == null) {
+    if(getAltarLevel().ordinal() &gt;= AltarLevel.CONSTELLATION_CRAFT.ordinal()) {
+        Vector3 pos = new Vector3(getPos()).add(0.5, 0, 0.5);
+        PktParticleEvent ev = new PktParticleEvent(PktParticleEvent.ParticleEventType.CRAFT_FINISH_BURST,
+                pos.getX(), pos.getY() + 0.05, pos.getZ());
+        PacketChannel.CHANNEL.sendToAllAround(ev, PacketChannel.pointFromPos(getWorld(), getPos(), 32));   // ★ 32 格内
+    }
+    craftingTask.getRecipeToCraft().onCraftServerFinish(this, rand);
+    ...
+    SoundHelper.playSoundAround(Sounds.craftFinish, world, getPos(), 1F, 1.7F);    // ★★ pitch 1.7
+    EntityFlare.spawnAmbient(world, new Vector3(this).add(-3 + rand.nextFloat() * 7, 0.6, -3 + rand.nextFloat() * 7));
+    craftingTask = null;
+}
+markForUpdate();
+</pre>
+<p><code>common/tile/TileAltar.java:582-585</code>（客户端的爆发实现）</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+@SideOnly(Side.CLIENT)
+public static void finishBurst(PktParticleEvent event) {
+    EffectHandler.getInstance().textureSpritePlane(SpriteLibrary.spriteCraftBurst, Vector3.RotAxis.Y_AXIS.clone())
+            .setPosition(event.getVec())
+            .setScale(5 + rand.nextInt(2))          // ★ 大小随机 5~6
+            .setNoRotation(rand.nextInt(360));      // ★ 随机朝向
+}
+</pre>
+<p><b>注意它不是撒粒子，而是加一个"贴图平面"当爆发闪光</b>（<code>EffectHandler</code> 是 Astral 自己的特效系统）。</p>
+<p>在 26.1.2 上我们不需要这套 —— <b><code>level.sendParticles(...)</code> 撒一圈粒子 + 一个音效就够了</b>。</p>
+<p>但"<b>爆发用一张随机旋转/缩放的贴图</b>"这个思路（比粒子省得多）值得记住。</p>
+<p><code>common/lib/Sounds.java:23-24</code>：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+public static SoundUtils.CategorizedSoundEvent craftFinish;
+public static SoundUtils.CategorizedSoundEvent attunement;
+</pre>
+<p><code>TileAltar.java:182</code> 还有一个<b>循环音</b>：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+clientCraftSound = SoundHelper.playSoundLoopClient(Sounds.attunement, new Vector3(this), 0.25F, 1F, ...);
+</pre>
+<p><b>"仪式进行中有一个低音量循环音"</b> —— 3 秒的仪式加上会更有氛围（可选）。</p>
+<hr>
+<h3>3. 四家横向对照表</h3>
+<h4>3.1 状态与同步</h4>
+<table>
+<tr><th>项</th><th>Botania</th><th>Ars Nouveau</th><th>Thaumcraft</th><th>Astral Sorcery</th></tr>
+<tr><td>状态存哪</td><td>BE 字段 <code>mana</code> / <code>manaToGet</code></td><td>BE 字段 <code>AbstractRitual ritual</code>（含 <code>RitualContext</code>）</td><td>BE 字段 <code>crafting</code> / <code>craftCount</code> / <code>startUp</code> / <code>sourceFX</code></td><td>BE 字段 <code>ActiveCraftingTask craftingTask</code>（三态状态机）</td></tr>
+<tr><td>"进行中"如何表达</td><td><code>manaToGet &gt; 0</code></td><td><code>ritual.isRunning()</code> = <code>isStarted &amp;&amp; !isDone</code></td><td><code>boolean crafting</code></td><td><code>craftingTask != null &amp;&amp; state == ACTIVE</code></td></tr>
+<tr><td>进度表达</td><td><code>mana / manaToGet</code>（float 现算）</td><td><code>context.progress</code>（int 计数）</td><td><code>craftCount</code>（int，<b>客户端自己 ++</b>）</td><td><code>ticksCrafting</code>（int，<b>每刻验证后才 ++</b>）</td></tr>
+<tr><td>同步时机</td><td>值变化才发；<b>TERRA_PLATE 每刻发 1 个 int</b></td><td><b>只在状态跳变发</b>（开始/结束/拿资源）</td><td>发 20 字节的 sourceFX 包；<code>crafting</code> 布尔走 tile sync</td><td><b>每 4 刻发一次</b>（3 个 int）</td></tr>
+<tr><td>客户端动画驱动</td><td>本地 tick + partialTick，进度比例只用来定大小</td><td>本地 tick（<code>level.getGameTime()</code>），颜色从调色板取</td><td><b>本地 <code>craftCount</code> 自己 ++</b>、<code>startUp</code> 自己缓入</td><td>本地 <code>ClientScheduler.getClientTick()</code> + <code>prev/cur</code> 插值</td></tr>
+<tr><td>进度持久化</td><td><code>mana</code> 在 NBT</td><td><code>RitualContext</code> 在 NBT</td><td>配方+材料+输出 全在 NBT</td><td><code>ActiveCraftingTask</code>（含 tick）在 NBT</td></tr>
+<tr><td>防重入</td><td><code>cooldown</code> + <code>manaToGet != 0</code> 拒绝</td><td><code>isRunning()</code> 三重门</td><td><code>crafting</code> 布尔 + <code>recipe != null</code></td><td><code>craftingTask != null</code> + <code>state</code></td></tr>
+<tr><td>半途失效</td><td>每刻 <code>updateRecipe()</code>，不匹配 → <code>manaToGet = 0</code></td><td>每刻 <code>tryTick</code> 由 <code>isStarted/isDone</code> 把关</td><td><code>recipeHolder</code> 找不到 → 失败回滚</td><td><b><code>tryProcess</code> 返回 false → tick 停住 → 可续</b></td></tr>
+<tr><td>区块卸载/重启</td><td>进度在 BE NBT → 保留</td><td><code>RitualContext</code> 在 NBT → 保留</td><td>配方在 NBT → 保留</td><td><code>&lt;b&gt;完整续做&lt;/b&gt;</code></td></tr>
+<tr><td>客户端残留动画处理</td><td>无（本地算，无残留）</td><td>无</td><td><code>craftCount -= 2</code> 渐退</td><td><b><code>checkClientEffectIntegrity()</code> forceStop</b></td></tr>
+</table>
+<h4>3.2 抖动 / 浮动 / 旋转参数汇总</h4>
+<table>
+<tr><th>出处</th><th>幅度</th><th>频率</th><th>partialTick</th><th>备注</th></tr>
+<tr><td>Botania Runic Altar 物品浮动</td><td><code>0.075</code> 格</td><td><code>sin(time/5)</code>，每件相位 <code>i*10</code></td><td><b>直接加进 <code>time</code></b></td><td>外加 <code>anglePer = 360/items</code> 公转</td></tr>
+<tr><td>Botania Runic Altar 符文立方体</td><td>半径呼吸 <code>±0.05</code>，Y <code>±0.1</code></td><td><code>sin(ticks/6)</code>、<code>cos(ticks/5)</code></td><td><code>+ partialTicks</code></td><td>转速 <code>ticks/0.2</code>（约 5°/刻）</td></tr>
+<tr><td>AN Arcane Pedestal 物品</td><td>无浮动</td><td>自转 <code>(partialTick + ticksInGame)*3f</code> 度/刻</td><td>显式用</td><td>缩放 0.5</td></tr>
+<tr><td>AN Imbuement 物品</td><td>无浮动</td><td>自转 <code>(partialTick + ticksInGame)*3f</code> 度/刻</td><td>显式用</td><td>缩放 0.5</td></tr>
+<tr><td>AN Alteration Table 物品</td><td><code>smoothstepDerivative(...) * 0.0625</code></td><td><code>sin((ticksInGame+ticks)/20)</code></td><td>显式用</td><td>用了 <b>smoothstep 导数</b>做"停顿感"浮动</td></tr>
+<tr><td>AN Scribes 悬浮物品</td><td><code>((i%2==0?-i:i) * sin(ticks/60) * 0.0625)</code></td><td><code>sin(ticks/60)</code></td><td><code>ticks = partialTicks + ticksInGame</code></td><td>交替方向</td></tr>
+<tr><td>Thaumcraft 注魔台方块抖动</td><td><b><code>0.01 × startUp × instability</code></b>（最大 0.06 格）</td><td><b>X <code>/15</code>、Y <code>/14</code>、Z <code>/13</code></b></td><td>加进 <code>ticks</code></td><td>8 个副本相位 <code>a*10</code>；<code>instability</code> 随进度 1→6</td></tr>
+<tr><td>Thaumcraft 注魔台旋转</td><td>Y <code>ticks%360 * startUp</code>；X <code>35*startUp</code>；Z <code>45*startUp</code></td><td>——</td><td>加进 <code>ticks</code></td><td><b>用同一个 <code>startUp</code> 控制转速和倾角</b></td></tr>
+<tr><td>Thaumcraft 基座物品</td><td>无浮动（抬 0.75 格）</td><td>自转 1°/刻</td><td>加进 <code>ticks</code></td><td>匀速，不抖</td></tr>
+<tr><td>Astral 共鸣祭坛悬浮</td><td><code>startY=-1.5 → endY=-0.5</code> 线性</td><td><code>prev/cur + partialTicks</code> 插值</td><td><b>规范的 prev/cur 插值</b></td><td>8 个符文相位 <code>spinDur/8*i</code>；结束 <code>tesrLocked</code> 归位</td></tr>
+</table>
+<p><b>给我们的抖动参数建议（从这张表推）</b>：</p>
+<ul>
+<li><b>要"明显抖动"</b>（用例说"剧烈"）：把 Thaumcraft 的基准放大到 <b>0.02~0.04 格</b>，并且</li>
+<li><b>三轴用不同分母</b>（比如 <code>/10</code>、<code>/9</code>、<code>/11</code>）→ 才不会看起来像整体平移；</li>
+<li><b>一定要有包络</b>（<code>startUp</code> 指数缓入 / <code>instability</code> 随进度上升），否则"一直抖"很廉价；</li>
+<li><b><code>partialTick</code> 必须用</b>，否则抖动会以 20Hz 跳格，看起来像卡顿而不是抖。</li>
+</ul>
+<h4>3.3 "粒子飞向目标"的四种手法</h4>
+<table>
+<tr><th>手法</th><th>代表</th><th>网络成本</th><th>长距离表现</th><th>实现难度</th></tr>
+<tr><td><b>① 沿直线插值撒点</b></td><td>AN <code>ParticleUtil.beam</code>、Botania <code>doParticleBeam</code>、<code>SPARK_NET_INDICATOR</code></td><td><b>0</b>（客户端自己算）/ 或 1 包线路</td><td><b>好</b>（步长固定，点数随距离线性增长）</td><td>★ 最低</td></tr>
+<tr><td><b>② 客户端粒子 + 每刻服务端发包指定源/终点</b></td><td>TC <code>PacketFXInfusionSource</code> + <code>sourceFX</code></td><td>20 字节 <b>×1 次</b>（之后客户端自己维持 N 刻）</td><td>好</td><td>★★</td></tr>
+<tr><td><b>③ 自写"自带终点"的粒子类</b></td><td>TC <code>FXBoreSparkle</code>、AN <code>ParticleLine</code></td><td>1 包/粒子（<code>ParticleOptions</code> 携带终点）</td><td><b>最好</b>（可加抖动/阻尼/曲线）</td><td>★★★</td></tr>
+<tr><td><b>④ 真实实体归航</b></td><td>AN <code>EntityFollowProjectile</code>、Botania <code>ManaSpark</code></td><td>实体生成 + 每刻移动同步</td><td>好</td><td>★★★★（最重）</td></tr>
+</table>
+<p><b>⭐ 对我们最合适的是 ②</b>：服务端在仪式开始时<b>发一次</b>"从玩家到雕像"的包，客户端<b>自己维持 60 刻的粒子流</b>。</p>
+<p>这正是 Thaumcraft 的做法，而且 <code>loc == 自己在的位置</code> 表示"实体源"这个技巧刚好对应"玩家是源"。</p>
+<hr>
+<h3>4. 给我们用例的具体建议</h3>
+<h4>4.1 先明确 26.1.2 的 API 事实（全部来自本机反编译源码，已核对）</h4>
+<h5>(a) BER 是两段式，<code>ItemStackRenderState</code> 必须在 <code>extract</code> 阶段造</h5>
+<p><code>D:\mcsrc\net\minecraft\client\renderer\blockentity\BlockEntityRenderer.java</code>（<b>注意是两个泛型参数</b>）</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+public interface BlockEntityRenderer&lt;T extends BlockEntity, S extends BlockEntityRenderState&gt;
+        extends net.neoforged.neoforge.client.extensions.IBlockEntityRendererExtension&lt;T&gt; {
+    S createRenderState();
+
+    default void extractRenderState(T blockEntity, S state, float partialTicks,
+            Vec3 cameraPosition, ModelFeatureRenderer.@Nullable CrumblingOverlay breakProgress) {
+        BlockEntityRenderState.extractBase(blockEntity, state, breakProgress);
+    }
+
+    void submit(final S state, final PoseStack poseStack,
+                final SubmitNodeCollector submitNodeCollector, final CameraRenderState camera);
+
+    default boolean shouldRenderOffScreen() { return false; }
+    default int getViewDistance() { return 64; }
+    default boolean shouldRender(T blockEntity, Vec3 cameraPosition) { ... }
+}
+</pre>
+<p><b>权威范例（26.1.2 原版 <code>ShelfRenderer</code>，<code>D:\mcsrc\net\minecraft\client\renderer\blockentity\ShelfRenderer.java</code>）</b></p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+public class ShelfRenderer implements BlockEntityRenderer&lt;ShelfBlockEntity, ShelfRenderState&gt; {
+    private final ItemModelResolver itemModelResolver;
+
+    public ShelfRenderer(BlockEntityRendererProvider.Context context) {
+        this.itemModelResolver = context.itemModelResolver();          // ★ 从 Context 取
+    }
+
+    public ShelfRenderState createRenderState() { return new ShelfRenderState(); }
+
+    public void extractRenderState(ShelfBlockEntity blockEntity, ShelfRenderState state, float partialTicks,
+                                   Vec3 cameraPosition, ModelFeatureRenderer.@Nullable CrumblingOverlay breakProgress) {
+        BlockEntityRenderer.super.extractRenderState(blockEntity, state, partialTicks, cameraPosition, breakProgress);
+        state.alignToBottom = blockEntity.getAlignItemsToBottom();
+        state.facing = blockEntity.getBlockState().getValue(ShelfBlock.FACING);
+        NonNullList&lt;ItemStack&gt; items = blockEntity.getItems();
+        int seed = HashCommon.long2int(blockEntity.getBlockPos().asLong());      // ★ seed 从坐标来
+
+        for (int slot = 0; slot &lt; items.size(); slot++) {
+            ItemStack itemStack = items.get(slot);
+            if (!itemStack.isEmpty()) {
+                ItemStackRenderState itemStackRenderState = new ItemStackRenderState();     // ★ 在 extract 里 new
+                this.itemModelResolver.updateForTopItem(itemStackRenderState, itemStack,
+                        ItemDisplayContext.ON_SHELF, blockEntity.level(), blockEntity, seed + slot);
+                state.items[slot] = itemStackRenderState;
+            }
+        }
+    }
+
+    public void submit(ShelfRenderState state, PoseStack poseStack, SubmitNodeCollector submitNodeCollector, CameraRenderState camera) {
+        float yRot = state.facing.getAxis().isHorizontal() ? -state.facing.toYRot() : 180.0F;
+        for (int slot = 0; slot &lt; state.items.length; slot++) {
+            ItemStackRenderState itemStackRenderState = state.items[slot];
+            if (itemStackRenderState != null) {
+                this.submitItem(state, itemStackRenderState, poseStack, submitNodeCollector, slot, yRot);
+            }
+        }
+    }
+
+    private void submitItem(ShelfRenderState state, ItemStackRenderState itemStackRenderState, PoseStack poseStack,
+                            SubmitNodeCollector submitNodeCollector, int slot, float yRot) {
+        poseStack.pushPose();
+        poseStack.translate(0.5F, 0.5F, 0.5F);
+        poseStack.mulPose(Axis.YP.rotationDegrees(yRot));
+        poseStack.translate(itemOffset);
+        poseStack.scale(0.25F, 0.25F, 0.25F);
+        AABB box = itemStackRenderState.getModelBoundingBox();
+        double offsetY = -box.minY;                                              // ★ 用包围盒对齐底部
+        poseStack.translate(0.0, offsetY, 0.0);
+
+        itemStackRenderState.submit(poseStack, submitNodeCollector, state.lightCoords, OverlayTexture.NO_OVERLAY, 0);   // ★★ 提交
+        poseStack.popPose();
+    }
+}
+</pre>
+<p><b>⭐ 三条铁律</b>：</p>
+<p>1. <b><code>extractRenderState</code> 每帧都会调用，且带 <code>blockEntity</code></b> → <b>所有"读 BE 数据"和"创建 <code>ItemStackRenderState</code>"都在这里做</b>；</p>
+<p>2. <b><code>submit</code> 里只能提交，不能再读 BE</b>（<code>state</code> 里该有的都得在 extract 阶段装好）→</p>
+<p>   <b>所以 <code>StatueRenderState</code> 里要放：<code>containedStack</code> 的 <code>ItemStackRenderState</code>、仪式剩余 tick、玩家位置等</b>；</p>
+<p>3. <b>动画的时间基准</b>：<code>extractRenderState</code> 只给 <code>partialTicks</code>，<b>没给 <code>gameTime</code></b>。</p>
+<p>   要拿时间基准就得：</p>
+<ul>
+<li>在 <code>extractRenderState</code> 里从 <code>blockEntity.getLevel().getGameTime()</code> 读出（推荐），或</li>
+<li>用 <code>Minecraft.getInstance().level.getGameTime()</code>（不推荐，耦合），或</li>
+<li><b>在 <code>state</code> 里存一个 <code>float animationTime = level.getGameTime() + partialTicks</code></b>（推荐）。</li>
+</ul>
+<div class="card small"><b>注意 <code>ShelfRenderer</code> 里没有出现 partialTick 驱动的旋转</b>，也就是说 26.1.2 的原版物品渲染不带自转。</div>
+<div class="card small"><b>自转/抖动必须我们自己加</b>：在 <code>submit</code> 里 <code>poseStack.mulPose(Axis.YP.rotationDegrees(state.animationTime * 3f))</code></div>
+<div class="card small">和 <code>poseStack.translate(0, state.jitterY, 0)</code>。</div>
+<p><b><code>SubmitNodeCollector</code> 的接口</b>（<code>D:\mcsrc\net\minecraft\client\renderer\SubmitNodeCollector.java</code>）只有 4 个成员：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+OrderedSubmitNodeCollector order(int order);
+void render(PoseStack.Pose pose, VertexConsumer buffer);
+boolean isEmpty();
+void render(...);
+</pre>
+<p><b>所以我们不需要直接调它</b> —— 一律通过 <code>ItemStackRenderState.submit(poseStack, collector, light, overlay, outlineColor)</code></p>
+<p>（<code>ItemStackRenderState.java:113</code>）把物品交出去就好。</p>
+<h5>(b) <code>saveAdditional</code> / <code>loadAdditional</code> 用的是 <code>ValueOutput</code> / <code>ValueInput</code>，<b>不是 <code>CompoundTag</code></b></h5>
+<p><code>D:\mcsrc\net\minecraft\world\level\block\entity\BlockEntity.java:101, 115</code></p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+protected void loadAdditional(ValueInput input)  { ... }
+protected void saveAdditional(ValueOutput output) { ... }
+</pre>
+<p><b>vanilla 标准写法</b>（<code>AbstractFurnaceBlockEntity.java:131-145</code>、<code>ComparatorBlockEntity.java:19-25</code>）：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+@Override
+protected void loadAdditional(ValueInput input) {
+    super.loadAdditional(input);
+    this.craftTicks = input.getIntOr("craft_ticks", 0);       // ★ getIntOr(name, default)
+    this.crafting = input.getBooleanOr("crafting", false);
+}
+
+@Override
+protected void saveAdditional(ValueOutput output) {
+    super.saveAdditional(output);
+    output.putInt("craft_ticks", this.craftTicks);            // ★ putInt
+    output.putBoolean("crafting", this.crafting);
+}
+</pre>
+<p><b>这跟 1.21 之前的 <code>CompoundTag</code> 写法完全不同</b> —— 如果你的 <code>EmotionStatueBlockEntity</code> 是在旧版本写的，</p>
+<p><b><code>saveAdditional(CompoundTag)</code> 编译不过</b>。已核对。</p>
+<h5>(c) <code>getUpdateTag</code> 仍然返回 <code>CompoundTag</code> —— 这里有个"不对称陷阱"</h5>
+<p><code>BlockEntity.java:244</code>（<b>这个签名没变</b>）</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+public CompoundTag getUpdateTag(HolderLookup.Provider registries) { return new CompoundTag(); }
+</pre>
+<p>由于 <code>saveAdditional</code> 现在吃 <code>ValueOutput</code>，<b>不能直接把 <code>getUpdateTag</code> 转调 <code>saveAdditional</code></b></p>
+<p>（Botania/AN 那种 <code>saveAdditional(tag, registries)</code> 的老写法在这里不存在了）。</p>
+<p><b>vanilla 26.1.2 的做法是用 <code>TagValueOutput</code></b>（<code>ShelfBlockEntity.java:61-72</code>）：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+@Override
+public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+    CompoundTag var4;
+    try (ProblemReporter.ScopedCollector reporter = new ProblemReporter.ScopedCollector(this.problemPath(), LOGGER)) {
+        TagValueOutput output = TagValueOutput.createWithContext(reporter, registries);
+        ContainerHelper.saveAllItems(output, this.items, true);
+        output.putBoolean("align_items_to_bottom", this.alignItemsToBottom);
+        var4 = output.buildResult();
+    }
+    return var4;
+}
+</pre>
+<p><b>更省事的做法</b>（<code>BlockEntity.java:144-153</code>）—— <b><code>saveWithoutMetadata(registries)</code> 直接给你 <code>CompoundTag</code></b>：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+public final CompoundTag saveWithoutMetadata(HolderLookup.Provider registries) {
+    CompoundTag var4;
+    try (ProblemReporter.ScopedCollector reporter = new ProblemReporter.ScopedCollector(this.problemPath(), LOGGER)) {
+        TagValueOutput output = TagValueOutput.createWithContext(reporter, registries);
+        this.saveWithoutMetadata(output);      // → saveAdditional(output) + components
+        var4 = output.buildResult();
+    }
+    return var4;
+}
+</pre>
+<p>所以我们的 <code>getUpdateTag</code> 可以就一行：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+@Override
+public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+    return this.saveWithoutMetadata(registries);      // ★ 存了什么就同步什么
+}
+</pre>
+<div class="card small">⚠️ <b>但任务描述说我们"已有手写的 <code>getUpdateTag()</code>"</b> —— 那么<b>很可能它已经正确处理了这个问题</b>，</div>
+<div class="card small">也可能是从旧版本带过来的、需要改成 <code>TagValueOutput</code> 的写法。<b>这一点我未核对源码，请务必自己看一眼。</b></div>
+<h5>(d) 客户端的 <code>onDataPacket</code> / <code>handleUpdateTag</code> 现在吃 <code>ValueInput</code></h5>
+<p><code>D:\mcsrc\net\neoforged\neoforge\common\extensions\IBlockEntityExtension.java:36-48</code></p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+default void onDataPacket(Connection net, ValueInput valueInput) {
+    self().loadWithComponents(valueInput);
+}
+default void handleUpdateTag(ValueInput input) {
+    self().loadWithComponents(input);
+}
+</pre>
+<p><b>注意签名变了</b>：</p>
+<ul>
+<li>老（Botania/AN 1.21.1）：<code>onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt, HolderLookup.Provider lookup)</code>，</li>
+</ul>
+<p>  然后手动 <code>handleUpdateTag(pkt.getTag(), lookupProvider)</code>。</p>
+<ul>
+<li><b>26.1.2：<code>onDataPacket(Connection net, ValueInput valueInput)</code></b>，<code>ClientboundBlockEntityDataPacket.getTag()</code></li>
+</ul>
+<p>  仍然返回 <code>CompoundTag</code>（<code>ClientboundBlockEntityDataPacket.java:62</code>），</p>
+<p>  但默认实现已经自动 <code>loadWithComponents</code> —— <b>多数情况下你什么都不用写</b>。</p>
+<p><b>对我们最省事的结论</b>：</p>
+<p><code>contained</code>（<code>ItemStack</code>）照旧走 <code>saveAdditional</code>/<code>getUpdateTag</code>；</p>
+<p><b>再往 <code>saveAdditional</code> 里加两个字段就能同步仪式状态</b>：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+// 服务端：仪式状态（也进同步包，因为 getUpdateTag 走同一份 NBT）
+private int ritualTicks = 0;        // &gt; 0 表示仪式进行中，倒数到 0
+private int ritualTotalTicks = 0;
+private UUID ritualPlayer = null;   // 或者用 int playerEntityId 更省（见下）
+
+@Override
+protected void saveAdditional(ValueOutput output) {
+    super.saveAdditional(output);
+    output.store("contained", ItemStack.CODEC, this.contained);   // 你现有的写法（未核对）
+    output.putInt("ritual_ticks", this.ritualTicks);
+    output.putInt("ritual_total", this.ritualTotalTicks);
+    if (this.ritualPlayer != null) output.putString("ritual_player", this.ritualPlayer.toString());
+}
+
+@Override
+protected void loadAdditional(ValueInput input) {
+    super.loadAdditional(input);
+    this.contained = input.read("contained", ItemStack.CODEC).orElse(ItemStack.EMPTY);  // 未核对
+    this.ritualTicks  = input.getIntOr("ritual_ticks", 0);
+    this.ritualTotalTicks = input.getIntOr("ritual_total", 0);
+    this.ritualPlayer = input.getString("ritual_player").map(UUID::fromString).orElse(null);  // 方法名未核对
+}
+</pre>
+<div class="card small"><code>input.getString(name)</code> 的返回类型（<code>Optional&lt;String&gt;</code> 还是 <code>String</code>）<b>我未核对</b>，</div>
+<div class="card small">请以 <code>ValueInput</code> 的实际成员为准（<code>getIntOr</code> / <code>getBooleanOr</code> 已核对）。</div>
+<h5>(e) <code>getUpdatePacket</code> 仍然这样写（已核对）</h5>
+<p><code>CopperGolemStatueBlockEntity.java:45-47</code>（<b>原版雕像 BE，写法跟我们几乎一样</b>）</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+public ClientboundBlockEntityDataPacket getUpdatePacket() {
+    return ClientboundBlockEntityDataPacket.create(this);
+}
+</pre>
+<p><code>BlockEntity.getUpdatePacket()</code> 默认返回 <code>null</code>（<code>BlockEntity.java:240</code>），</p>
+<p><b><code>null</code> 就不发包</b>；<code>ClientboundBlockEntityDataPacket.create(this)</code> 是 26.1.2 里的标准写法。</p>
+<p><code>sendBlockUpdated(pos, state, state, 3)</code> 仍然存在（<code>Level.java:333</code>）。</p>
+<h5>(f) 粒子：<code>addParticle</code> 的 aux 参数<b>只对部分粒子是速度</b></h5>
+<p><b>26.1.2 的 <code>Level.addParticle</code></b>（<code>D:\mcsrc\net\minecraft\world\level\Level.java:470-473</code>）：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+public void addParticle(ParticleOptions particle, double x, double y, double z,
+                        double xd, double yd, double zd) { ... }
+</pre>
+<p><b>同一个签名，语义由粒子自己的 Provider 决定</b>：</p>
+<ul>
+<li><code>SculkChargeParticle</code>：<code>setParticleSpeed(xAux, yAux, zAux)</code> → <b>真速度</b></li>
+<li><code>FlyTowardsPositionParticle</code>（ENCHANT）：<code>this.xd = xd</code> 当作 <b><code>start - spawn</code> 的位移</b> → <b>不是速度</b></li>
+</ul>
+<p><b><code>ServerLevel.sendParticles</code> 的两条路</b>（<code>ServerLevel.java:1333-1365</code>，已核对）：</p>
+<table>
+<tr><th>参数</th><th>count == 0 时</th><th>count != 0 时</th></tr>
+<tr><td><code>xDist/yDist/zDist</code></td><td><b>不用于位置</b>，只用来乘 <code>speed</code> 得 aux</td><td>位置 = <code>pos + nextGaussian() * dist</code></td></tr>
+<tr><td><code>speed</code></td><td>aux = <code>speed * dist</code>（<b>精确方向</b>）</td><td>每颗 aux = <code>nextGaussian() * speed</code>（<b>随机</b>）</td></tr>
+<tr><td>结果</td><td><b>1 颗，方向可控</b></td><td><code>count</code> 颗，随机撒</td></tr>
+</table>
+<p><b>要精确控制方向必须用 <code>count = 0</code>。</b> 已核对（<code>ClientPacketListener.java:2312-2346</code>）。</p>
+<h5>(g) <code>sendParticles</code> 的 32 格距离限制</h5>
+<p><code>ServerLevel.java:1387-1394</code>：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+private boolean sendParticles(ServerPlayer player, boolean overrideLimiter, double x, double y, double z, Packet&lt;?&gt; packet) {
+    if (player.level() != this) { return false; }
+    BlockPos pos = player.blockPosition();
+    if (pos.closerToCenterThan(new Vec3(x, y, z), overrideLimiter ? 512.0 : 32.0)) {   // ★ 默认 32 格
+        player.connection.send(packet);
+        return true;
+    }
+}
+</pre>
+<p><b>默认只发给 32 格内的玩家</b>；要发更远就 <code>overrideLimiter = true</code>（对应 Botania 的 <code>addParticleForceNear</code>）。</p>
+<p><b>客户端版是 <code>ClientLevel.addAlwaysVisibleParticle(particle, x, y, z, xd, yd, zd)</code></b></p>
+<p>（<code>ClientLevel.java:756</code>，已核对）。</p>
+<h5>(h) 音效</h5>
+<p><code>Level.playSound(@Nullable Entity except, BlockPos pos, SoundEvent sound, SoundSource source, float volume, float pitch)</code></p>
+<p>（<code>Level.java:408</code>，已核对，仍然存在）。</p>
+<p><b>"丁"的候选</b>：</p>
+<ul>
+<li><b>自制音效</b>：<code>SoundEvent.createVariableRangeEvent(...)</code> + 注册（AN 的 <code>makeSound</code> 写法，<code>SoundRegistry.java:238-239</code>）</li>
+<li><b>原版现成</b>：<code>SoundEvents.AMETHYST_BLOCK_CHIME</code>（最清脆）、<code>SoundEvents.BELL_BLOCK</code>、<code>SoundEvents.EXPERIENCE_ORB_PICKUP</code></li>
+<li><b>参数</b>：抄 Astral 的 <b><code>volume 1.0~2.5</code>、<code>pitch 1.6~1.7</code></b>（比默认 1.0 明显更"脆"）</li>
+</ul>
+<hr>
+<h4>4.2 三种可行方案（从省事到讲究）</h4>
+<h5>【方案 A】"最省事"：服务端 60 刻倒计时 + 客户端插值撒 ENCHANT + 同步块更新</h5>
+<p><b>适用</b>：只要能跑起来、效果"够看"，不想碰自定义包和自定义粒子。</p>
+<p><b>服务端</b>（<code>EmotionStatueBlockEntity</code>）：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+private static final int RITUAL_TICKS = 60;      // 3 秒
+private int ritualTicks = 0;                      // &gt; 0 表示进行中
+private int ritualPlayerId = -1;                  // 用实体 id 而不是 UUID，省字节（见下）
+
+public boolean tryStartRitual(ServerPlayer player) {
+    if (this.ritualTicks &gt; 0) return false;       // ★ 防重入
+    this.ritualTicks = RITUAL_TICKS;
+    this.ritualPlayerId = player.getId();         // ★ 只存 id，客户端自己 level.getEntity(id) 取位置
+    this.setChanged();
+    this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 3);
+    // 起始音（可选）
+    this.level.playSound(null, this.worldPosition, SoundEvents.ILLUSIONER_CAST_SPELL,
+            SoundSource.BLOCKS, 1.0F, 1.0F);
+    return true;
+}
+
+public static void serverTick(Level level, BlockPos pos, BlockState state, EmotionStatueBlockEntity be) {
+    if (be.ritualTicks &lt;= 0) return;
+
+    Entity src = be.ritualPlayerId &gt;= 0 ? level.getEntity(be.ritualPlayerId) : null;
+    if (src == null || !src.isAlive() || src.distanceToSqr(Vec3.atCenterOf(pos)) &gt; 64 * 64) {
+        be.abortRitual("源消失/太远");             // ★★ 防半途卡死：源不在就直接中止
+        return;
+    }
+
+    if (--be.ritualTicks == 0) {
+        be.finishRitual();                        // 变法杖 + 留在台座 + 播"丁"
+    }
+    // 注意：故意不 setChanged()/不发包 —— 进度客户端自己数
+}
+
+private void abortRitual(String why) {
+    this.ritualTicks = 0;
+    this.ritualPlayerId = -1;
+    this.setChanged();
+    this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 3);
+}
+
+private void finishRitual() {
+    this.contained = new ItemStack(ModItems.EMOTION_STAFF.get());   // ★ 留在台座（contained 就是台座内容）
+    this.ritualPlayerId = -1;
+    this.setChanged();
+    this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 3);
+    this.level.playSound(null, this.worldPosition, SoundEvents.AMETHYST_BLOCK_CHIME,
+            SoundSource.BLOCKS, 1.5F, 1.7F);                        // ★★ "丁"
+    // 完成爆发粒子（服务端发，必定到达）
+    if (this.level instanceof ServerLevel sl) {
+        sl.sendParticles(ParticleTypes.END_ROD,
+                pos.getX() + 0.5, pos.getY() + 1.2, pos.getZ() + 0.5,
+                25, 0.35, 0.35, 0.35, 0.05);
+    }
+}
+</pre>
+<p><b>客户端粒子</b>（放在 <code>StatueRenderer.extractRenderState</code> 里，因为它每帧都跑且有 <code>blockEntity</code>）：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+@Override
+public void extractRenderState(EmotionStatueBlockEntity be, StatueRenderState state,
+                               float partialTicks, Vec3 cameraPos, ModelFeatureRenderer.@Nullable CrumblingOverlay breakProgress) {
+    BlockEntityRenderer.super.extractRenderState(be, state, partialTicks, cameraPos, breakProgress);
+
+    // ── 物品渲染状态（★ 必须在 extract 阶段造）
+    state.containedModel = new ItemStackRenderState();
+    this.itemModelResolver.updateForTopItem(state.containedModel, be.getContained(),
+            ItemDisplayContext.FIXED, be.getLevel(), be, HashCommon.long2int(be.getBlockPos().asLong()));
+
+    // ── 动画时间基准：客户端本地时间，整段零同步
+    Level lvl = be.getLevel();
+    float time = (lvl == null ? 0F : lvl.getGameTime()) + partialTicks;
+    state.animationTime = time;
+
+    // ── 抖动幅度：以"剩余 tick"做包络，越接近完成抖得越凶
+    int remain = be.getRitualTicks();
+    state.isRitualActive = remain &gt; 0;
+    if (state.isRitualActive) {
+        float progress = 1.0F - (float) remain / (float) EmotionStatueBlockEntity.RITUAL_TICKS;
+        float envelope = 0.35F + 0.65F * progress;          // 0.35 → 1.0
+        // ★★ 三轴不同分母 + 大相位错开 = 看起来像"抖"而不是"平移"
+        state.jitterX = Mth.sin(time / 10.0F) * 0.030F * envelope;
+        state.jitterY = Mth.sin(time /  9.0F) * 0.030F * envelope;
+        state.jitterZ = Mth.sin(time / 11.0F) * 0.030F * envelope;
+        state.extraSpin = 6.0F * progress;                  // 越到后面转得越快（度/刻）
+
+        // ── ★★ 粒子流：从玩家流向雕像（原版 ENCHANT，靠"沿线撒点"造流向感）
+        Entity src = lvl.getEntity(be.getRitualPlayerId());
+        if (src != null) {
+            Vec3 from = src.getEyePosition(partialTicks);                       // 玩家眼睛
+            Vec3 to   = Vec3.atCenterOf(be.getBlockPos()).add(0, 1.0, 0);       // 雕像台座上方
+            spawnFlow(lvl, from, to, time);
+        }
+    } else {
+        state.jitterX = state.jitterY = state.jitterZ = 0F;
+        state.extraSpin = 0F;
+    }
+}
+
+/** 沿线撒 ENCHANT：位移参数必须传 0（ENCHANT 的 aux 是"位移"不是"速度"，见 §1） */
+private void spawnFlow(Level level, Vec3 from, Vec3 to, float time) {
+    Vec3 diff = to.subtract(from);
+    double len = diff.length();
+    if (len &lt; 0.05) return;
+    Vec3 dir = diff.scale(1.0 / len);
+
+    double step = 0.6;                                  // 每 0.6 格一颗
+    // ★ 起点相位随时间推进 → 肉眼看到"在流"而不是"一片静止的点"
+    double offset = (time * 0.25) % step;
+    // ★ 分几股，避免所有粒子挤在一条直线上
+    int strands = 3;
+    for (int s = 0; s &lt; strands; s++) {
+        double lateral = (s - (strands - 1) / 2.0) * 0.25;
+        Vec3 perp = new Vec3(-dir.z, 0, dir.x).scale(lateral);          // 水平垂直方向
+        for (double d = offset; d &lt; len; d += step) {
+            Vec3 p = from.add(dir.scale(d)).add(perp);
+            // 少量随机抖动，看起来不像"一条几何线"
+            level.addParticle(ParticleTypes.ENCHANT,
+                    p.x + (level.random.nextDouble() - 0.5) * 0.15,
+                    p.y + (level.random.nextDouble() - 0.5) * 0.15,
+                    p.z + (level.random.nextDouble() - 0.5) * 0.15,
+                    0.0, 0.0, 0.0);                                  // ★★ 位移传 0
+        }
+    }
+}
+</pre>
+<p><b><code>submit</code></b>：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+@Override
+public void submit(StatueRenderState state, PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState camera) {
+    poseStack.pushPose();
+    poseStack.translate(0.5F, 1.0F, 0.5F);                       // 台座上方（按你的模型调）
+    poseStack.translate(state.jitterX, state.jitterY, state.jitterZ);
+    poseStack.mulPose(Axis.YP.rotationDegrees(state.animationTime * (1.5F + state.extraSpin)));
+    poseStack.scale(0.6F, 0.6F, 0.6F);
+    if (state.containedModel != null &amp;&amp; !state.containedModel.isEmpty()) {
+        state.containedModel.submit(poseStack, collector, state.lightCoords, OverlayTexture.NO_OVERLAY, 0);
+    }
+    poseStack.popPose();
+}
+</pre>
+<p><b>方案 A 的取舍</b>：</p>
+<table>
+<tr><th>✅ 好处</th><th>⚠️ 代价 / 风险</th></tr>
+<tr><td><b>不写任何自定义包</b>，全靠已有的 <code>getUpdatePacket</code>/<code>getUpdateTag</code></td><td>客户端需要 <code>ritualPlayerId</code> → <b>要加一个 <code>int</code> 到同步 NBT</b></td></tr>
+<tr><td>进度完全由客户端数 tick，<b>零持续同步流量</b></td><td><b>客户端和服务端的 <code>ritualTicks</code> 会漂</b>（客户端没有 tick 计数，只有"是否 active"）。用"是否有 ritual + 时间基准"就够了，不必真的同步剩余刻数。<b>A 方案实际是"客户端只拿一个 active 布尔 + 玩家 id"</b></td></tr>
+<tr><td>粒子<b>在客户端直接 <code>level.addParticle</code></b>，无网络成本</td><td>需要 <code>extractRenderState</code> 里做副作用（撒粒子）——<b>不算优雅，但 26.1.2 的 API 就是这样</b>（没有"render"钩子）</td></tr>
+<tr><td>抖动参数可随时调，纯客户端</td><td>客户端看不到玩家时（玩家跑远/换维度）粒子会断</td></tr>
+<tr><td>结束表现走 <code>sendParticles</code> + <code>playSound</code>（服务端权威，必定到达）</td><td>——</td></tr>
+</table>
+<div class="card small"><b>关于"客户端要拿 active 布尔"</b>：如果 <code>ritualTicks</code> 也进同步 NBT，那它每次 <code>sendBlockUpdated</code></div>
+<div class="card small">时是某个时刻的快照，客户端拿到后<b>自己倒计数</b>就行（不需要服务端继续发包）。</div>
+<div class="card small">这样客户端能算出<b>真实剩余刻数</b>，<code>envelope</code> 更准。<b>推荐就这么做</b>。</div>
+<hr>
+<h5>【方案 B】"稳妥"：抄 Thaumcraft —— 仪式开始时发一次"源→目标"的包，客户端自己维持 60 刻</h5>
+<p><b>适用</b>：不想让 <code>extractRenderState</code> 承担"撒粒子"的副作用，或者粒子源不止一个（多个玩家/多个物品）。</p>
+<p><b>思路</b>：完全照搬 TC 的 <code>PacketFXInfusionSource</code> + <code>sourceFX</code>，但用 26.1.2 的 <code>CustomPacketPayload</code>。</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+// ── 包定义（26.1.2 / NeoForge：CustomPacketPayload + StreamCodec）
+public record RitualFlowPayload(BlockPos statuePos, int sourceEntityId, int totalTicks) implements CustomPacketPayload {
+    public static final Type&lt;RitualFlowPayload&gt; TYPE = new Type&lt;&gt;(ResourceLocation.fromNamespaceAndPath(MODID, "ritual_flow"));
+    public static final StreamCodec&lt;RegistryFriendlyByteBuf, RitualFlowPayload&gt; STREAM_CODEC = StreamCodec.composite(
+            BlockPos.STREAM_CODEC, RitualFlowPayload::statuePos,
+            ByteBufCodecs.VAR_INT,  RitualFlowPayload::sourceEntityId,
+            ByteBufCodecs.VAR_INT,  RitualFlowPayload::totalTicks,
+            RitualFlowPayload::new);
+
+    @Override public Type&lt;? extends CustomPacketPayload&gt; type() { return TYPE; }
+
+    public static void handle(RitualFlowPayload p, IPayloadContext ctx) {
+        ctx.enqueueWork(() -&gt; ClientFlowCache.start(p));   // ★ 客户端收到就登记，之后自己维持
+    }
+}
+</pre>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+// ── 客户端缓存（等价于 TC 的 TileInfusionMatrix.sourceFX）
+public final class ClientFlowCache {
+    private static final Map&lt;BlockPos, Flow&gt; FLOWS = new HashMap&lt;&gt;();
+
+    private record Flow(int sourceEntityId, int ticks, int totalTicks) {}
+
+    public static void start(RitualFlowPayload p) {
+        FLOWS.put(p.statuePos(), new Flow(p.sourceEntityId(), p.totalTicks(), p.totalTicks()));
+    }
+
+    /** 在 StatueRenderer.extractRenderState 里每帧调一次 */
+    public static void tickAndRender(Level level, float partialTicks, float time) {
+        Iterator&lt;Map.Entry&lt;BlockPos, Flow&gt;&gt; it = FLOWS.entrySet().iterator();
+        while (it.hasNext()) {
+            var e = it.next();
+            Flow f = e.getValue();
+            BlockPos statuePos = e.getKey();
+
+            Entity src = level.getEntity(f.sourceEntityId());
+            if (src == null || f.ticks() &lt;= 0 || !level.isLoaded(statuePos)) {
+                it.remove();                                    // ★★ 双保险清理，绝不卡死
+                continue;
+            }
+            Vec3 from = src.getEyePosition(partialTicks);
+            Vec3 to   = Vec3.atCenterOf(statuePos).add(0, 1.0, 0);
+            // ★ 进度来自"这个缓存自己的 ticks"，和雕像 BE 解耦
+            float progress = 1.0F - (float) f.ticks() / (float) f.totalTicks();
+            spawnFlow(level, from, to, time, progress);         // 同方案 A 的 spawnFlow
+            e.setValue(new Flow(f.sourceEntityId(), f.ticks() - 1, f.totalTicks()));
+        }
+    }
+}
+</pre>
+<p><b>方案 B 相对 A 的取舍</b>：</p>
+<table>
+<tr><th>✅ 好处</th><th>⚠️ 代价</th></tr>
+<tr><td><b>粒子撒点从 BER 里搬走</b>，BER 只管渲染 → 职责清晰</td><td>要写一个 <code>CustomPacketPayload</code> + 注册</td></tr>
+<tr><td><b>客户端"自己维持 60 刻"</b>，服务端<b>只发一次包</b></td><td>多一套"客户端缓存要靠 tick 递减来清理"的逻辑</td></tr>
+<tr><td>天然支持<b>多个源</b>（每个源一个 key），将来加"多个玩家一起唤醒"不用改架构</td><td>客户端缓存和 BE 状态可能不同步（包丢了就一直有/一直没有）——所以<b>方案 B 建议同时保留 A 的 <code>ritualTicks</code> 同步</b>，两者互为兜底</td></tr>
+<tr><td><b><code>level.getEntity(id)</code> 拿源位置</b>，玩家会动也能跟上（TC 就是这么做的）</td><td>——</td></tr>
+</table>
+<div class="card small"><b>⚠️ 用 <code>int entityId</code> 而不是 <code>UUID</code> 的重要理由</b>：<code>UUID</code> 是 16 字节且需要 <code>ServerLevel.getEntity(UUID)</code></div>
+<div class="card small">在 26.1.2 里查表；<b><code>int</code> id 只需 4 字节（varint 更少）</b>，而且 <b><code>Level.getEntity(int)</code> 是 O(1)</b></div>
+<div class="card small">（Astral 也用 <code>entityIdActive</code> 而不是 UUID，<code>TileAttunementAltar.java:118</code>）。</div>
+<div class="card small"><b>唯一注意</b>：实体 id 只在"客户端已知该实体的范围"内有效 —— 所以<b>必须保证包发给了会看到雕像的玩家</b></div>
+<div class="card small">（用 <code>PacketDistributor.sendToPlayersNear(...)</code>），否则 <code>level.getEntity(id)</code> 返回 <code>null</code>。</div>
+<div class="card small"><b>这正好是 TC 的 <code>PacketFXInfusionSource</code> 要挂在 client world 的 tile 上的原因。</b></div>
+<hr>
+<h5>【方案 C】"讲究"：自定义 <code>ParticleOptions</code> + 自写归航粒子</h5>
+<p><b>适用</b>：想要<b>真正的曲线飞行</b>、粒子之间有长短快慢差异、以及<b>长距离也不衰减</b>的效果。</p>
+<p><b>照抄 Thaumcraft <code>FXBoreSparkle</code> 的归航公式</b>（§2.3(c)），把目标坐标装进 <code>ParticleOptions</code>：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+// ── 1. ParticleOptions：把"目标坐标"编进网络流（照抄 AN ParticleLine 的思路）
+public record SeekParticleOptions(Vec3 target, int color, float scale) implements ParticleOptions {
+    public static final MapCodec&lt;SeekParticleOptions&gt; CODEC = RecordCodecBuilder.mapCodec(i -&gt; i.group(
+            Vec3.CODEC.fieldOf("target").forGetter(SeekParticleOptions::target),
+            Codec.INT.fieldOf("color").forGetter(SeekParticleOptions::color),
+            Codec.FLOAT.fieldOf("scale").forGetter(SeekParticleOptions::scale)
+    ).apply(i, SeekParticleOptions::new));
+
+    public static final StreamCodec&lt;RegistryFriendlyByteBuf, SeekParticleOptions&gt; STREAM_CODEC = StreamCodec.composite(
+            Vec3.STREAM_CODEC, SeekParticleOptions::target,
+            ByteBufCodecs.INT, SeekParticleOptions::color,
+            ByteBufCodecs.FLOAT, SeekParticleOptions::scale,
+            SeekParticleOptions::new);
+
+    @Override public ParticleType&lt;?&gt; getType() { return ModParticles.SEEK.get(); }
+}
+</pre>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+// ── 2. 客户端粒子：归航（参数全部来自 §2.3(c) 的 FXBoreSparkle）
+public class SeekParticle extends SingleQuadParticle {
+    private final Vec3 target;
+
+    protected SeekParticle(ClientLevel level, double x, double y, double z,
+                           double vx, double vy, double vz, Vec3 target, SpriteSet sprites) {
+        super(level, x, y, z, vx, vy, vz, sprites.get(level.random));   // ★ 这里 aux 是真初速
+        this.target = target;
+        // ★ 寿命 ∝ 距离（FXBoreSparkle: base = dist*10; lifetime = base/2 + rand(base)）
+        double dist = target.distanceTo(new Vec3(x, y, z));
+        this.lifetime = (int) (dist * 5) / 2 + this.random.nextInt(Math.max(1, (int) (dist * 5)));
+        this.hasPhysics = false;
+        this.friction = 0.985F;
+        this.quadSize = 0.1F;
+    }
+
+    @Override
+    protected int getLightColor(float partialTick) { return 0xF000F0; }   // 满亮度（抄 AN ParticleLine）
+
+    @Override
+    public void tick() {
+        this.xo = this.x; this.yo = this.y; this.zo = this.z;
+        if (this.age++ &gt;= this.lifetime) { this.remove(); return; }
+
+        // 阻尼（Y 更强，抄 FXBoreSparkle）
+        this.xd *= 0.985; this.yd *= 0.95; this.zd *= 0.985;
+
+        double dx = target.x - this.x, dy = target.y - this.y, dz = target.z - this.z;
+        double d = Math.sqrt(dx*dx + dy*dy + dz*dz);
+        if (d &lt; 0.3) { this.remove(); return; }
+        double clamp = Math.min(0.25, d / 15.0);                 // ★ 转向力上限，近处变弱
+        if (d &lt; 2.0) this.quadSize *= 0.9F;                       // ★ 快到终点缩小
+        dx /= d; dy /= d; dz /= d;
+        this.xd += dx * clamp; this.yd += dy * clamp; this.zd += dz * clamp;
+        // ★ 三轴各自夹到 ±clamp
+        this.xd = Mth.clamp(this.xd, -clamp, clamp);
+        this.yd = Mth.clamp(this.yd, -clamp, clamp);
+        this.zd = Mth.clamp(this.zd, -clamp, clamp);
+        // ★ 高斯抖动 → 轨迹有"游丝"感
+        this.xd += this.random.nextGaussian() * 0.01;
+        this.yd += this.random.nextGaussian() * 0.01;
+        this.zd += this.random.nextGaussian() * 0.01;
+
+        this.move(this.xd, this.yd, this.zd);
+    }
+}
+</pre>
+<p><b>服务端只需在仪式开始时撒一把</b>（用 <code>count = 0</code> 或多次调用）：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+if (this.level instanceof ServerLevel sl) {
+    Vec3 to = Vec3.atCenterOf(this.worldPosition).add(0, 1.0, 0);
+    for (int i = 0; i &lt; 8; i++) {
+        // 从玩家周围球内采样起点（抄 AN ParticleUtil.pointInSphere）
+        Vec3 from = player.getEyePosition(1.0F).add(ParticleUtil.pointInSphere().scale(0.7));
+        // ★★ count=0 时，speed 与 xDist/yDist/zDist 相乘得到 aux（初速）
+        Vec3 v = to.subtract(from).normalize().scale(0.05);
+        sl.sendParticles(new SeekParticleOptions(to, 0xFFFFFF, 0.1F), false, false,
+                from.x, from.y, from.z, 0, v.x, v.y, v.z, 1.0F);
+    }
+}
+</pre>
+<div class="card small">⚠️ **注意 <code>count = 0</code> 时 aux = <code>speed * (xDist, yDist, zDist)</code>**</div>
+<div class="card small">（<code>ServerLevel.java:1353</code> 打包 → <code>ClientPacketListener.java:2315-2317</code> 解包）。</div>
+<div class="card small"><code>xDist/yDist/zDist</code> 是 <b><code>float</code></b>，<code>speed</code> 也是 <b><code>float</code></b> —— <b>两次 float 截断</b>，</div>
+<div class="card small">方向会有约 1e-7 的误差，<b>完全够用</b>，但不要指望"精确到 double"。</div>
+<p><b>方案 C 的取舍</b>：</p>
+<table>
+<tr><th>✅ 好处</th><th>⚠️ 代价</th></tr>
+<tr><td><b>真正可控</b>：曲线、抖动、阻尼、逐粒子差异、长距离不衰减</td><td>要注册 <code>ParticleType</code> + <code>ParticleProvider</code> + 两个 codec（<code>MapCodec</code> + <code>StreamCodec</code>）</td></tr>
+<tr><td><b>服务端开销最小</b>（仪式开始发一把就完事，之后零网络）</td><td>客户端粒子数量 = 服务端发出去的颗数，<b>不能"客户端自己加密"</b></td></tr>
+<tr><td>视觉上限最高</td><td><code>ParticleType</code> 注册 + 资源 <code>particles/*.json</code>（如果不用原版贴图）</td></tr>
+</table>
+<hr>
+<h4>4.3 我的推荐</h4>
+<p><b>分两步走：先落方案 A，看效果再决定要不要演进到 B/C。</b></p>
+<p>理由：</p>
+<p>1. <b>方案 A 已经能满足用例的全部 5 条</b>：</p>
+<ul>
+<li>粒子流 ✅（ENCHANT 沿路径撒点，<code>extractRenderState</code> 里做）</li>
+<li>剧烈抖动 ✅（三轴不同频率正弦 + 进度包络 + <code>partialTick</code>）</li>
+<li>3 秒后"丁" ✅（<code>AMETHYST_BLOCK_CHIME</code> + pitch 1.7，或自制音效）</li>
+<li>物品留台座 ✅（<code>contained</code> 就是台座内容，<code>finishRitual()</code> 里直接替换）</li>
+<li>禁重复触发 ✅（<code>ritualTicks &gt; 0</code> 早退）</li>
+</ul>
+<p>2. <b>A 不引入任何新的注册项/包类型</b>，改动面只有 <code>EmotionStatueBlockEntity</code> + <code>StatueRenderer</code> + <code>StatueRenderState</code> 三个文件。</p>
+<p>3. <b>A → B 是纯增量</b>（把撒点逻辑从 BER 搬到 <code>ClientFlowCache</code>），</p>
+<p>   <b>A → C 也是纯增量</b>（把 <code>level.addParticle(ParticleTypes.ENCHANT, ...)</code> 换成自定义粒子）。</p>
+<p>   所以<b>不值得一开始就上 C</b>。</p>
+<p>4. <b>唯一建议在 A 里就做对的</b>：</p>
+<ul>
+<li><b><code>extractRenderState</code> 里只做"读 + 组装 state + 撒粒子"，<code>submit</code> 里只做"摆 pose + submit"</b> —— 保持这个纪律，</li>
+</ul>
+<p>     将来如果 NeoForge 改了 <code>extractRenderState</code> 的调用时机（比如加"离屏时也调用"），迁移成本最小；</p>
+<ul>
+<li><b><code>ritualPlayerId</code> 用 <code>int</code> 而不是 <code>UUID</code></b>（存进同步 NBT 时省空间，且 <code>Level.getEntity(int)</code> 是 O(1)）；</li>
+<li><b>"源不在/太远/区块卸载"三种情况的清理一定要写</b>（抄 AN 的 <code>UNLOADED_TO_CHUNK → DISCARDED</code> 思路）；</li>
+<li><b>绝对不要让 <code>ritualTicks</code> 只在客户端数</b>（客户端 tick 会在暂停/断线时停）——</li>
+</ul>
+<p>     以<b>服务端 tick 为准，客户端只拿一个"剩余刻数快照"然后自己插值</b>。</p>
+<p><b>当且仅当以下情况发生，才升级到 B 或 C</b>：</p>
+<ul>
+<li>粒子源不止一个（"多个玩家一起唤醒"）→ <b>升 B</b>；</li>
+<li>玩家和雕像距离可能超过 ~10 格，"撒点"开始显得稀疏/像一条虚线 → <b>升 C</b>（归航粒子会自适应距离）；</li>
+<li>想做"粒子从玩家身上螺旋飞出去再撞进雕像"这种曲线 → <b>只能升 C</b>。</li>
+</ul>
+<hr>
+<h3>5. 在 26.1.2 上需要注意的 API 差异（清单）</h3>
+<div class="card small">下面每一条都<b>从本机 <code>D:\mcsrc</code> 反编译源码核对过</b>（该索引为 26.1.2 / NeoForge 26.1.2.112）。</div>
+<div class="card small">四家模组都是 1.12.2 / 1.20.x / 1.21.1，<b>代码不能直接复制</b>。</div>
+<table>
+<tr><th>#</th><th>事项</th><th>老写法（四家模组里有）</th><th>26.1.2 正确写法</th></tr>
+<tr><td>1</td><td><b>BER 接口</b></td><td><code>BlockEntityRenderer&lt;T&gt;</code> + <code>render(T, float, PoseStack, MultiBufferSource, int, int)</code></td><td><b><code>BlockEntityRenderer&lt;T, S extends BlockEntityRenderState&gt;</code></b> + <code>createRenderState()</code> + <code>extractRenderState(T, S, float, Vec3, CrumblingOverlay)</code> + <code>submit(S, PoseStack, SubmitNodeCollector, CameraRenderState)</code></td></tr>
+<tr><td>2</td><td><b>物品渲染</b></td><td><code>Minecraft.getInstance().getItemRenderer().renderStatic(stack, ItemDisplayContext.X, light, overlay, poseStack, buffers, level, seed)</code></td><td><b><code>ItemModelResolver.updateForTopItem(ItemStackRenderState, stack, ctx, level, owner, seed)</code>（在 extract 里）→ <code>ItemStackRenderState.submit(poseStack, collector, light, overlay, outlineColor)</code>（在 submit 里）</b></td></tr>
+<tr><td>3</td><td><b><code>ItemModelResolver</code> 从哪来</b></td><td>——</td><td><b><code>BlockEntityRendererProvider.Context.itemModelResolver()</code></b>（<code>ShelfRenderer.java:31</code>）</td></tr>
+<tr><td>4</td><td><b>自转/抖动怎么做</b></td><td>在 <code>render</code> 里直接 <code>poseStack.translate/mulPose</code></td><td><b>一样，但要搬到 <code>submit</code>；时间基准在 extract 阶段算好放进 state</b>（<code>extractRenderState</code> 只给 <code>partialTicks</code>，没有 <code>gameTime</code>）</td></tr>
+<tr><td>5</td><td><b><code>saveAdditional</code> 签名</b></td><td><code>saveAdditional(CompoundTag tag, HolderLookup.Provider registries)</code>（AN 1.21.1）</td><td><b><code>saveAdditional(ValueOutput output)</code></b> —— 用 <code>output.putInt/putBoolean/putString/store</code></td></tr>
+<tr><td>6</td><td><b><code>loadAdditional</code> 签名</b></td><td><code>loadAdditional(CompoundTag tag, HolderLookup.Provider registries)</code></td><td><b><code>loadAdditional(ValueInput input)</code></b> —— 用 <code>input.getIntOr("k", def)</code> / <code>getBooleanOr(...)</code></td></tr>
+<tr><td>7</td><td><b><code>getUpdateTag</code> 与 <code>saveAdditional</code> 不对称</b></td><td>一行 <code>saveAdditional(tag, registries)</code> 就完事</td><td><code>getUpdateTag</code> <b>仍返回 <code>CompoundTag</code></b>，<b>不能</b>直接调 <code>saveAdditional</code>。&lt;br&gt;最省事：<b><code>return this.saveWithoutMetadata(registries);</code></b>&lt;br&gt;或抄 <code>ShelfBlockEntity</code> 用 <code>TagValueOutput.createWithContext(reporter, registries)</code></td></tr>
+<tr><td>8</td><td><b><code>onDataPacket</code> 签名</b></td><td><code>onDataPacket(Connection, ClientboundBlockEntityDataPacket, HolderLookup.Provider)</code> + 手动 <code>handleUpdateTag(pkt.getTag(), ...)</code></td><td><b><code>onDataPacket(Connection, ValueInput)</code></b>；<code>IBlockEntityExtension</code> 的默认实现已经 <code>loadWithComponents(input)</code>，<b>多数情况什么都不用写</b></td></tr>
+<tr><td>9</td><td><b><code>getUpdatePacket</code></b></td><td>有（1.12.2 是 <code>getUpdatePacket()</code>/<code>getUpdateTag()</code>）</td><td><b>一样能用</b>：<code>return ClientboundBlockEntityDataPacket.create(this);</code>（<code>CopperGolemStatueBlockEntity.java:45</code>）；默认是 <code>null</code>（<code>BlockEntity.java:240</code>），返回 <code>null</code> 则不同步</td></tr>
+<tr><td>10</td><td><b>触发同步</b></td><td><code>world.markBlockForUpdate</code> / <code>sendBlockUpdated</code></td><td><b><code>level.sendBlockUpdated(pos, state, state, 3)</code></b>（<code>Level.java:333</code>，仍在）或 <code>level.blockEvent(pos, block, id, param)</code>（<code>Level.java:897</code>）</td></tr>
+<tr><td>11</td><td><b><code>Level.addParticle</code></b></td><td><code>world.addParticle(data, x, y, z, xd, yd, zd)</code></td><td><b>签名一样</b>（<code>Level.java:470</code>）；<b>aux 语义由粒子自己决定</b>（ENCHANT 是位移、SculkCharge 是速度）</td></tr>
+<tr><td>12</td><td><b>"始终可见"粒子</b></td><td><code>world.addAlwaysVisibleParticle(...)</code></td><td><b>客户端 <code>ClientLevel.addAlwaysVisibleParticle(particle, x, y, z, xd, yd, zd)</code></b>（<code>ClientLevel.java:756</code>）或带 <code>overrideLimiter</code> 的 5 参版（<code>:761</code>）</td></tr>
+<tr><td>13</td><td><b>服务端发粒子</b></td><td><code>((ServerLevel) world).sendParticles(type, x, y, z, count, dx, dy, dz, speed)</code></td><td><b>一样</b>（<code>ServerLevel.java:1333</code>）；**<code>count == 0</code> 时 aux = <code>speed * dist</code>（方向可控），<code>count != 0</code> 时 aux 是 <code>nextGaussian() * speed</code>（随机）**</td></tr>
+<tr><td>14</td><td><b>粒子距离限制</b></td><td>——</td><td>默认<b>只发给 32 格内</b>玩家；<code>overrideLimiter = true</code> 则 512 格（<code>ServerLevel.java:1392</code>）</td></tr>
+<tr><td>15</td><td><b>自定义粒子</b></td><td><code>ParticleType&lt;T&gt;</code> + <code>ParticleOptions</code> 手写 <code>writeToNetwork/readFromNetwork</code></td><td><b><code>ParticleOptions</code> + <code>MapCodec</code>（<code>codec()</code>）+ <code>StreamCodec</code></b>；Provider 的 <code>createParticle(options, level, x, y, z, xAux, yAux, zAux, random)</code> <b>多了 <code>random</code> 参数</b>（对照 <code>SculkChargeParticle.java:41-43</code>、<code>FlyTowardsPositionParticle.java:118-122</code>）</td></tr>
+<tr><td>16</td><td><b><code>ParticleRenderType</code></b></td><td><code>ParticleRenderType</code> 由粒子自己 <code>getRenderType()</code> 返回，自己做 <code>begin/end</code>（Botania <code>FXWisp</code>）</td><td><b>26.1.2 改成 <code>SingleQuadParticle.Layer</code>（<code>OPAQUE</code> / <code>TRANSLUCENT</code>）+ <code>getLayer()</code></b>（<code>FlyStraightTowardsParticle.java:45-47</code>、<code>FlyTowardsPositionParticle.java:63-65</code>）+ <code>extract(QuadParticleRenderState, Camera, float)</code></td></tr>
+<tr><td>17</td><td><b>自定义包</b></td><td><code>IMessage</code>/<code>IMessageHandler</code>（1.12.2）或 <code>SimpleChannel</code>+<code>FriendlyByteBuf</code>（1.20.x）</td><td><b><code>CustomPacketPayload</code> + 一个 <code>Type</code> + <code>StreamCodec</code>，handler 用 <code>ctx.enqueueWork(...)</code></b>（Astral 那种"一个包 + 枚举 + double + long"的设计别抄）</td></tr>
+<tr><td>18</td><td><b>音效注册</b></td><td><code>SoundEvent</code> 用 <code>setRegistryName</code></td><td><b><code>SoundEvent.createVariableRangeEvent(ResourceLocation)</code></b>（AN <code>SoundRegistry.java:238-239</code>）+ <code>DeferredRegister</code></td></tr>
+<tr><td>19</td><td><b><code>ResourceLocation</code></b></td><td><code>new ResourceLocation(ns, path)</code></td><td>构造器<b>已弃用/改私有</b>，用 <b><code>ResourceLocation.fromNamespaceAndPath(ns, path)</code></b>（<code>ItemModelResolver.java:54</code> 里见 <code>Identifier</code>——注意 26.1.2 里 <code>ResourceLocation</code> 的<b>别名是 <code>Identifier</code></b>）</td></tr>
+<tr><td>20</td><td><b><code>MathHelper</code> → <code>Mth</code></b></td><td><code>MathHelper.sin/clamp/floor</code>（1.12.2）</td><td><b><code>net.minecraft.util.Mth</code></b>：<code>Mth.sin</code>、<code>Mth.clamp</code>、<code>Mth.floor</code>、<code>Mth.lerp</code>、<code>Mth.smoothstep</code>、<code>Mth.smoothstepDerivative</code></td></tr>
+<tr><td>21</td><td><b><code>Vec3</code></b></td><td><code>Vec3</code> 老式 getter <code>x/y/z</code> 字段</td><td>26.1.2 是 record 风格：<b><code>vec.x()</code> / <code>vec.y()</code> / <code>vec.z()</code></b>（Botania 1.20 已经是这个，1.12.2 的 <code>field_70165_t</code> 当然也不能用）</td></tr>
+<tr><td>22</td><td><b><code>AxisAlignedBB</code></b></td><td><code>AxisAlignedBB</code>（1.12.2）</td><td><b><code>net.minecraft.world.phys.AABB</code></b></td></tr>
+<tr><td>23</td><td><b>GL 立即模式</b></td><td><code>GL11.glTranslatef</code> / <code>glRotatef</code> / <code>glPushMatrix</code> / <code>Tessellator</code>（TC、Astral 大量使用）</td><td><b>全部不能用了</b>。一律 <code>PoseStack</code> + <code>SubmitNodeCollector</code>；自定义几何走 <code>SubmitNodeCollector.CustomGeometryRenderer</code>（<code>SubmitNodeCollector.java:17-20</code>）</td></tr>
+<tr><td>24</td><td><b><code>ITickHandler</code> / <code>TickEvent</code></b></td><td>Astral 的 <code>ITickHandler</code>（Forge 1.12.2）</td><td>用 <b><code>BlockEntityTicker</code></b> 或 NeoForge 的 <code>TickEvent</code>（<code>LevelTickEvent</code>/<code>PlayerTickEvent</code> 等）</td></tr>
+</table>
+<hr>
+<h3>6. 直接可抄的代码片段索引</h3>
+<table>
+<tr><th>想抄什么</th><th>去哪看</th></tr>
+<tr><td><b>ENCHANT 粒子的运动公式</b></td><td><code>D:\mcsrc\net\minecraft\client\particle\FlyTowardsPositionParticle.java:85-102</code></td></tr>
+<tr><td><b>ENCHANT 的 aux 是"位移"的证明</b></td><td><code>FlyTowardsPositionParticle.java:25-56</code> + <code>EnchantingTableBlock.java:63-79</code></td></tr>
+<tr><td><b><code>sendParticles</code> 速度参数如何变成 aux</b></td><td><code>ServerLevel.java:1333-1365</code> + <code>ClientPacketListener.java:2312-2346</code></td></tr>
+<tr><td><b>"沿路径撒 ENCHANT"的最短实现</b></td><td><code>_ref3/arsnouveau/src/.../client/particle/ParticleUtil.java:69-96</code></td></tr>
+<tr><td><b>"沿路径撒粒子 + 彩虹渐变"</b></td><td><code>_ref3/botania/.../common/item/WandOfTheForestItem.java:407-429</code></td></tr>
+<tr><td><b>"速度 × 0.04 = 约 25 刻到达"</b></td><td><code>_ref3/botania/.../network/clientbound/BotaniaEffectPacket.java:180-206</code></td></tr>
+<tr><td><b>"自带终点坐标的自定义粒子"</b></td><td><code>_ref3/arsnouveau/src/.../client/particle/ParticleLine.java:9-84</code></td></tr>
+<tr><td><b>"归航粒子（阻尼 + 转向 + 夹紧 + 抖动）"</b></td><td><code>_ref3/thaumcraft/.../client/fx/particles/FXBoreSparkle.java:16-247</code></td></tr>
+<tr><td><b>"近处猛吸"的另一种归航</b></td><td><code>_ref3/thaumcraft/.../client/fx/other/FXEssentiaStream.java:205-217</code></td></tr>
+<tr><td><b>"实体归航 + 轨迹撒点"</b></td><td><code>_ref3/arsnouveau/src/.../common/entity/EntityFollowProjectile.java:100-163</code></td></tr>
+<tr><td><b>"20 字节的源→目标特效包 + 客户端自维持"</b></td><td><code>_ref3/thaumcraft/.../common/lib/network/fx/PacketFXInfusionSource.java:16-63</code></td></tr>
+<tr><td><b>"抖动公式（三轴异频 + 双包络）"</b></td><td><code>_ref3/thaumcraft/.../client/renderers/tile/TileInfusionMatrixRenderer.java:141-175</code></td></tr>
+<tr><td><b>"指数缓入 startUp"</b></td><td><code>_ref3/thaumcraft/.../common/tiles/crafting/TileInfusionMatrix.java:877-885</code></td></tr>
+<tr><td><b>"固定种子 Random → 稳定形状"</b></td><td><code>TileInfusionMatrixRenderer.java:47, 56-75</code>；Botania <code>RunicAltarBlockEntityRenderer.java:96</code></td></tr>
+<tr><td><b>"产物留在下方台座"</b></td><td><code>_ref3/thaumcraft/.../common/tiles/crafting/TileInfusionMatrix.java:652-696</code></td></tr>
+<tr><td><b>"产物留在原地 + 高音 chime"</b></td><td><code>_ref3/astral/.../common/tile/TileAttunementAltar.java:251-257</code></td></tr>
+<tr><td><b>"三态状态机防半途卡死"</b></td><td><code>_ref3/astral/.../common/crafting/altar/ActiveCraftingTask.java:42-166</code> + <code>common/tile/TileAltar.java:266-290, 537, 561</code></td></tr>
+<tr><td><b>"客户端残留动画 forceStop"</b></td><td><code>_ref3/astral/.../common/tile/TileAttunementAltar.java:516-531</code></td></tr>
+<tr><td><b>"刻数节流同步（每 4 刻）"</b></td><td><code>_ref3/astral/.../common/tile/TileAttunementAltar.java:216-219, 981-995</code></td></tr>
+<tr><td><b>"仪式结束的归位锁定动画"</b></td><td><code>_ref3/astral/.../client/render/tile/TESRAttunementAltar.java:62-105</code></td></tr>
+<tr><td><b>"客户端只用布尔、进度自己数"</b></td><td><code>_ref3/arsnouveau/src/.../common/block/tile/EnchantingApparatusTile.java:64-116</code></td></tr>
+<tr><td><b>"钟声/ding 音效用法"</b></td><td><code>_ref3/botania/.../common/handler/BotaniaSounds.java:116</code> + <code>ForceRelayBlock.java:102</code> + <code>WorldshaperssSextantItem.java:219</code></td></tr>
+<tr><td><b>"清脆完成音（pitch 1.6~1.7）"</b></td><td><code>_ref3/astral/.../TileAttunementAltar.java:257</code>（1.6）、<code>TileAltar.java:337</code>（1.7）</td></tr>
+<tr><td><b>"完成音 + 失败音 + 进行中循环音"</b></td><td><code>_ref3/thaumcraft/.../TileInfusionMatrix.java:360, 425, 694, 861-866</code>；<code>_ref3/astral/.../TileAltar.java:182</code></td></tr>
+<tr><td><b>26.1.2 的 BER 标准写法</b></td><td><code>D:\mcsrc\net\minecraft\client\renderer\blockentity\ShelfRenderer.java</code>（全文 93 行，照抄结构）</td></tr>
+<tr><td><b>26.1.2 的 BE 同步标准写法</b></td><td><code>D:\mcsrc\net\minecraft\world\level\block\entity\ShelfBlockEntity.java:42-72</code> + <code>CopperGolemStatueBlockEntity.java:45-47</code></td></tr>
+<tr><td><b>26.1.2 的 <code>ValueOutput</code>/<code>ValueInput</code> 用法</b></td><td><code>AbstractFurnaceBlockEntity.java:131-145</code>、<code>ComparatorBlockEntity.java:19-25</code></td></tr>
+</table>
+<hr>
+<h3>7. 明确"未核对"的事项</h3>
+<p>为避免误导，以下我没有核对到，<b>请自行确认</b>：</p>
+<p>1. <b>我们自己的源码</b>：工作区里找不到 <code>EmotionStatueBlock</code> / <code>EmotionStatueBlockEntity</code> /</p>
+<p>   <code>StatueRenderer</code> / <code>StatueRenderState</code>。任务描述说"已经有 <code>getUpdatePacket()</code> + 手写的 <code>getUpdateTag()</code>"</p>
+<p>   和"BER 是 <code>extractRenderState</code> / <code>submit</code>" —— 这些<b>全部来自任务描述，我未核对</b>。</p>
+<p>2. <b>我们的 <code>contained</code> 字段怎么序列化</b>（<code>ItemStack.CODEC</code>？<code>ContainerHelper</code>？手写 NBT？）—— 未核对。</p>
+<p>3. <b><code>ValueInput.getString(...)</code> 的确切返回类型</b>（<code>Optional&lt;String&gt;</code> vs <code>String</code>）—— 未核对；</p>
+<p>   <code>getIntOr</code> / <code>getBooleanOr</code> / <code>putInt</code> / <code>putBoolean</code> 已核对。</p>
+<p>4. <b><code>ItemDisplayContext</code> 该选哪个</b>（<code>FIXED</code> / <code>GROUND</code> / <code>ON_SHELF</code> / <code>GUI</code>）——</p>
+<p>   四家模组里 <code>FIXED</code>（AN 台座）和 <code>GROUND</code>（Botania 祭坛、AN 附魔装置）都有用，<b>取决于我们的物品模型</b>。未核对。</p>
+<p>5. <b><code>TagValueOutput.createWithContext</code> 在 <code>getUpdateTag</code> 里用是否需要 try-with-resources 包 <code>ProblemReporter</code></b></p>
+<p>   —— <code>ShelfBlockEntity</code> 是这么写的，但我们是否需要照抄（取决于我们的 mod 是否已有 <code>problemPath()</code>）未核对。</p>
+<p>6. <b>Thaumcraft <code>SourceFX</code> 的 <code>entity</code> 字段 vs <code>color</code> 字段的用法不一致</b>（§2.3(f) 提到）——</p>
+<p>   反编译产物噪声，<b>未核对</b>原始字节码意图。</p>
+<p>7. <b>Botania <code>ding</code> 的实际音频资源内容</b>（我只看到 <code>makeSoundEvent("ding")</code> 和调用点，</p>
+<p>   没有听/看 <code>sounds.json</code> 与 <code>.ogg</code>）—— <b>未核对</b>它听起来有多"清脆"。</p>
+<p>8. <b>Astral <code>Sounds.craftFinish</code> 的实际音色</b> —— 同上，只看到 <code>pitch 1.7</code> 的参数，<b>未核对</b>资源。</p>
+<p>9. <b><code>SoundEvents.AMETHYST_BLOCK_CHIME</code> 在 26.1.2 是否仍存在、是否仍叫这个名字</b> ——</p>
+<p>   我核对的是 AN 1.21.1 的 <code>SoundRegistry.java:55</code> 引用了它，<b>26.1.2 的 <code>SoundEvents</code> 常量名未逐条核对</b>。</p>
+<p>10. <b><code>SendParticles</code> 的 <code>count = 0</code> 分支是否在所有版本都存在</b> —— 26.1.2 已核对（<code>ClientPacketListener.java:2314</code>）；</p>
+<p>    更早版本的行为未核对。</p></main></html>

@@ -1,0 +1,361 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<title>材料与装置 · 癫狂构想设计分册</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="wiki.css">
+<nav>
+<div class="t">设计分册</div>
+<a href="index.html">总览</a>
+<a href="world.html">这个世界</a>
+<a href="moods.html">心绪</a>
+<a href="traces.html">痕迹与账</a>
+<a href="rituals.html">一切仪式</a>
+<a href="doors.html">四门大魔法</a>
+<a href="dimension.html">情绪维度</a>
+<a href="things.html">材料与装置</a>
+<a href="progression.html">从零开始的路</a>
+<div class="t">现状（代码生成）</div>
+<a href="../index.html">总览与体检</a>
+<a href="../kinds.html">雕像种类</a>
+<a href="../materials.html">材质 ↔ 方块</a>
+<a href="../attributes.html">属性</a>
+<a href="../traits.html">特性</a>
+<a href="../moods.html">心绪</a>
+<a href="../numerics.html">数值与公式</a>
+<a href="../rituals.html">仪式</a>
+<a href="../storage.html">温养</a>
+<a href="../moodstaff.html">情绪之杖</a>
+<div class="t">说明</div>
+<div class="small dim" style="padding:4px 8px">设计分册是手写的，取自已定稿的设计记录；「现状」那栏由 <code>gen-design-site.mjs</code> 从源码生成。</div>
+</nav>
+<main>
+<p class="crumb"><a href="index.html">设计分册</a><span>/</span>材料与装置</p>
+<h1>材料与装置</h1>
+<p class="lede">结晶、零件、建材与生物</p>
+
+<div class="infobox"><div class="cap">速查</div><table>
+<tr><th>材料链</th><td>结晶 → 情绪方块 → 提纯为块 → 五零件（九颗结晶 ＝ 一块）</td></tr>
+<tr><th>器件链</th><td>幽匿块 ＋ 紫水晶块 ＋ 一种金属 → 中性体 →（调谐）四个器件；没调谐的就是约束环</td></tr>
+<tr><th>器件四档</th><td>铜 → 铁 → 金 → 钻</td></tr>
+<tr><th>提纯四档</th><td>铁 50% ／ 金 35% ／ 绿宝石 20% ／ 钻 5%（这一套里没有铜）</td></tr>
+<tr><th>平衡环</th><td>5×5 方环，16 格 ＝ 4 个器件 ＋ 12 颗环身；整圈取最弱那一颗</td></tr>
+<tr><th>建材</th><td>十二件 × 十类情绪（0 号原石 ＋ 十一件），配方完全一样，只换材料</td></tr>
+<tr><th>入口一</th><td>沉淀器（仪式型，多方块，消耗情绪结晶）</td></tr>
+<tr><th>入口二</th><td>原版切石机（不加新方块、不加新界面）</td></tr>
+<tr><th>新方块（雕像）</th><td>情绪石砖雕像十类各一，不做錾制版</td></tr>
+<tr><th>生物三件</th><td>悦灵与恼鬼是传导体；铜傀儡是容器（容量 300，只装一种）</td></tr>
+</table></div>
+
+<h2>材料词典</h2>
+
+<div class="notice"><span class="t">设计约定</span>规则一句话：<strong>一种材料只管一个动词；动词撞了，就换材料。</strong>以后每加一种材料都要查这张表。</div>
+
+<div class="scroll"><table>
+<tr><th>材料</th><th>它在这个模组里的意思</th><th>用在哪</th></tr>
+<tr><td><span class="chip" style="background:#B07F9E"></span> 紫水晶</td><td><strong>调谐</strong>——它不是容器，是调音叉：让一个东西对心绪敏感</td><td>指南书、凝结、温养·洗练、插刀、腐烂之物、中性体的调谐</td></tr>
+<tr><td><span class="chip" style="background:#231A1A"></span> 幽匿</td><td><strong>抽离 · 形成</strong></td><td>温养第四形态、中性体的本体与四张图样</td></tr>
+<tr><td><span class="chip" style="background:#B87A4A"></span> 金属与宝石</td><td><strong>不偏爱 · 提纯</strong></td><td>提纯为块、中性体的硬度档</td></tr>
+<tr><td><span class="chip" style="background:#7A3B3B"></span> 情绪建材</td><td><strong>是哪一种情绪</strong></td><td>六绪轮的柱子、雕像、花纹地板</td></tr>
+<tr><td>载体方块（沸岩／凝雾／沉泥岩／秽荚…）</td><td><strong>污染的物质形态</strong></td><td>四路结构</td></tr>
+<tr><td><span class="chip" style="background:#4A4136"></span> 灵魂沙</td><td><strong>放得下（容量）</strong></td><td>温养的四角与四正</td></tr>
+<tr><td><span class="chip" style="background:#4B3126"></span> 地狱砖</td><td><strong>熔炼</strong></td><td>温养（熔炼形态）</td></tr>
+<tr><td><span class="chip" style="background:#9FA6A6"></span> 麻木晶</td><td><strong>抹掉</strong></td><td>清场地账</td></tr>
+<tr><td><span class="chip" style="background:#4A2C56"></span> 紫珀</td><td><strong>末影 · 对位</strong></td><td>末影仪式；悲伤与恐惧的四角（恐惧那角已改成恐惧方块，见下）</td></tr>
+</table></div>
+
+<div class="notice rule"><span class="t">硬约束</span>恐惧象限的四角用<strong>恐惧方块</strong>标记（不是末影角，第四十六轮改）；悲伤象限的四个角仍是<strong>末影角</strong>（紫珀砖 ＋ 八尊雕像）。</div>
+
+<h2>三级材料链</h2>
+
+<pre class="grid">
+  结晶 ──九颗 ＝ 一块──▶ 情绪方块 ──四角四角同类──▶ 提纯为块 ──▶ 五零件
+   │                        │                          │
+ 30 点/颗              熔炼回心绪 或 直接投塔        损耗＝四角材质决定
+</pre>
+<p class="fig">结晶是零钱，块是整钱。整钱只有两个去处：换回零钱（在温养仪式里烧炼），或者整张花掉（直接投入六绪轮的塔）。</p>
+
+<h3>结晶 → 情绪方块</h3>
+<dl class="kv">
+<dt>一块</dt><dd>9 颗结晶 ＝ 270 点心绪（按 MC 的「九合一」规矩）</dd>
+<dt>去向一</dt><dd>在温养仪式里直接烧炼成心绪值（回到身上，不是存成块）</dd>
+<dt>去向二</dt><dd>直接投入六绪轮的塔</dd>
+<dt>不能</dt><dd>消化（每二十秒一颗、无仪式、渐进）、拆分、吃</dd>
+</dl>
+
+<div class="notice"><span class="t">设计约定</span>为什么「回库 ＝ 烧炼」而不是「存成块」：这个设计本来只有两种存储单位——记录里未提纯的情绪、心绪值——块没有位置。而结晶作为法杖燃料与温养四角材料的那条链一直被堵着（附录甲第 7 条）。</div>
+
+<h3>情绪方块 → 提纯为块</h3>
+<p>它是储存结构的<strong>第五种形态</strong>：四角用金属或宝石材质，四个必须同类；四正方向与中心仍然是灵魂沙。</p>
+<p>它解决的问题：六绪轮半径 5 的启动要每种 32 颗结晶，而温养的库每种只能存 26.7 颗——「一次凑齐 192 颗」卡在「仓库比那笔钱小」上。于是启动的账变成 <strong>每种 32 颗 ÷ 9 ＝ 3.55 块 → 六塔共约 21.3 块</strong>。</p>
+
+<div class="scroll"><table>
+<tr><th>材质</th><th>提纯损耗</th></tr>
+<tr><td>铁</td><td>50%</td></tr>
+<tr><td>金</td><td>35%</td></tr>
+<tr><td>绿宝石</td><td>20%</td></tr>
+<tr><td>钻石</td><td>5%</td></tr>
+</table></div>
+
+<p>金属与宝石是唯一「不偏爱任何一种情绪」的材质（极性层两面都增益、或者干脆没有属性）——所以它们做的不是「筛选」，是「提纯」。它们的价值不在注入效率，而在提纯效率。</p>
+
+<h3>提纯为块 → 五零件</h3>
+
+<div class="notice warn"><span class="t">待定</span>五零件用的是四级链的中性体一档，也就是<strong>铜</strong>；而提纯这一套里不出现铜。两条链在块这一级不对齐——因为它们本来就不是同一套机制。</div>
+
+<h2>两张四档表</h2>
+
+<div class="notice rule"><span class="t">硬约束</span>两套四档长得像，最容易在实现时被「顺手统一」掉，所以写死：<strong>中性体与约束环按铜铁金钻，提纯按铁金绿宝石钻，两者互不参考。</strong>反过来也成立：提纯那套不出现铜，中性体那套不出现绿宝石。</div>
+
+<div class="scroll"><table>
+<tr><th>机制</th><th>四档</th><th>为什么成员不同</th></tr>
+<tr><td><strong>中性体／约束环</strong></td><td>铜 → 铁 → 金 → 钻</td><td>铜是这一套专属的地板——便宜、软、刚好能撑住一次形变；这里不出现绿宝石</td></tr>
+<tr><td><strong>提纯为块</strong></td><td>铁 50% ＜ 金 35% ＜ 绿宝石 20% ＜ 钻 5%</td><td>这里说的是提纯损耗：损耗越小的材料越贵，所以绿宝石在这一套里有位置；这一套不出现铜</td></tr>
+</table></div>
+
+<p>中性体这一套内部的高低：铜是地板（最便宜，一颗就能把整圈拖下来）、铁、金、钻石是顶。</p>
+
+<div class="notice"><span class="t">设计约定</span>规矩：任何新东西要「按等级变强」，用中性体那条链的四档，不要新开一套等级。</div>
+
+<h2>五零件与约束环</h2>
+
+<h3>统一模型：一次形变的五个自由度</h3>
+
+<p>四个门的装置层都是同一件东西：<strong>五件是四门通用的，不属于愤怒一门</strong>。「泡沸血修」是愤怒那一门的修复方式，不是通用的。</p>
+
+<div class="scroll"><table>
+<tr><th>那个数</th><th>它说的是</th><th>哪个器件</th></tr>
+<tr><td>从哪</td><td>注入的原点在哪</td><td>注入口</td></tr>
+<tr><td>往哪</td><td>从原点往哪个方向去</td><td>定向件</td></tr>
+<tr><td>多深</td><td>一路形变到多深</td><td>定深件</td></tr>
+<tr><td>多大</td><td>波及多远</td><td>约束环</td></tr>
+<tr><td>几次</td><td>这座结构还能不能再发动</td><td>复用件</td></tr>
+</table></div>
+
+<div class="notice rule"><span class="t">硬约束</span>不装任何零件，大魔法照样能发动——只是用五个默认值。所以零件是「把形变推到你想要的地方」，不是「启用开关」。</div>
+
+<div class="scroll"><table>
+<tr><th>器件</th><th>它管什么</th><th>默认（不装时）</th><th>刻度</th><th>装的代价</th></tr>
+<tr><td><strong>注入口</strong></td><td>形变的原点位置</td><td>正上方</td><td>6 向（上／下／四方）</td><td>便宜</td></tr>
+<tr><td><strong>定向件</strong></td><td>从原点往哪边去</td><td>向外、远离基座</td><td>6 向</td><td>便宜</td></tr>
+<tr><td><strong>定深件</strong></td><td>深度</td><td>只动地表那一层</td><td>四五档（地表／浅／中／深／到底）</td><td>越深越贵</td></tr>
+<tr><td><strong>约束环</strong></td><td>波及范围（硬上限）</td><td>最小的一圈</td><td>不是一颗，是环身整圈；等级 ＝ 那一圈里最低的那一颗</td><td>最弱那一颗先烧，它一断整圈散架</td></tr>
+<tr><td><strong>复用件</strong></td><td>能发动几次</td><td>1 次（用完结构就废，要重建）</td><td>2 次起</td><td>它本身很贵</td></tr>
+</table></div>
+
+<div class="scroll"><table>
+<tr><th>件</th><th>它给你什么</th><th>它拿什么换</th></tr>
+<tr><td>约束环</td><td>更大的范围</td><td>它会过载，过载了要换</td></tr>
+<tr><td>复用件</td><td>不用重建</td><td>它本身很贵</td></tr>
+</table></div>
+<p class="fig">其余三件（注入口、定向件、定深件）是调节旋钮，而这两个是押注。</p>
+
+<h3>约束环不是一个格子，是那圈剩下的格子</h3>
+
+<p>约束环不占一个基座槽位——它就是环身那 12 格。那 11 格「什么都不做」的方块一直没有理由存在，现在它们有身份了：它们就是<strong>没被调谐的中性体</strong>，而它们不是导线。</p>
+
+<pre class="grid">
+ 5×5，9×9 场中间空出来的那块地
+
+  ○ ○ ○ ○ ○        ○ ＝ 没调谐的中性体 ＝ 约束环（环身）
+  ○ □ □ □ ○        □ ＝ 中间 3×3 空着
+  ○ □   □ ○        ● ＝ 四个器件（调谐过的中性体）
+  ○ □ □ □ ○        器件在环上怎么摆都行，只要那一圈闭合
+  ○ ○ ○ ○ ○
+
+  共 16 格 ＝ 4 个器件 ＋ 12 颗环身
+</pre>
+<p class="fig">激活成功后那 16 个方块不再画，主方块实体改画一整圈连续的几何体，浮在 9×9 中间缓缓转；仪式结束或结构被破坏，环消失、方块重新画出来。所以「六根柱子」可以是一座塔、一堵墙、一个台子、甚至一座房子。</p>
+
+<div class="notice rule"><span class="t">硬约束</span>木桶规则：<strong>约束环的等级 ＝ 那一圈里最低的那一颗</strong>，不是平均。所以一颗铜就能把一圈钻石拖成铜级——而短板是看得见的。过载不是整圈坏，是最弱那一颗烧了，所以「换一只新的」变成「换那一颗」。</div>
+
+<h3>中性体怎么造</h3>
+
+<pre class="grid>
+  幽匿块 ＋ 紫水晶块 ＋ 一种金属 ──（融合仪式）──▶ 中性体
+  铜 ／ 铁 ／ 金 ／ 钻
+         │
+         ├── 不调谐 ──▶ 约束环（环身；等级取最低那一颗）
+         │
+         └── 调谐（紫水晶碎片 ＋ 一张图样）──▶ 注入口 ／ 定向件 ／ 定深件 ／ 复用件
+</pre>
+<p class="fig">链的第一级不是做零件，是做环身。幽匿块给「形」（它本来就是「抽离」），紫水晶给「调谐」，金属给「硬度」。</p>
+
+<div class="scroll"><table>
+<tr><th>调谐成</th><th>图样（原版幽匿部件）</th></tr>
+<tr><td>注入口</td><td>幽匿感测体（口）</td></tr>
+<tr><td>定向件</td><td>幽匿脉络（往哪铺）</td></tr>
+<tr><td>定深件</td><td>幽匿尖啸体（喊到底下）</td></tr>
+<tr><td>复用件</td><td>幽匿催化剂（再来一次）</td></tr>
+</table></div>
+
+<div class="notice"><span class="t">设计约定</span>幽匿家族五个成员一个都没浪费：幽匿块是中性体的本体，感测体／脉络／尖啸体／催化剂是四张调谐图样。紫水晶块、碎片、幽匿五件、铜铁金钻全是原版的——新方块总数 1 种。</div>
+
+<h2>建材</h2>
+
+<h3>十二件</h3>
+
+<p>十类情绪各一套十二件，<strong>配方完全一样，只换材料</strong>。第 0 件是母岩，也就是「愤怒原石」这一类——整套建材的唯一入口。</p>
+
+<div class="scroll"><table>
+<tr><th>#</th><th>件</th><th>配方</th><th>走切石机？</th></tr>
+<tr><td><strong>0</strong></td><td>原石（母岩，唯一入口）</td><td>沉淀器（普通石头或深板岩 ＋ 一颗情绪结晶）</td><td>★ 不走</td></tr>
+<tr><td>1</td><td>磨制石</td><td>4 原石 → 4</td><td>★ 走（第一个输入）</td></tr>
+<tr><td>2</td><td>石砖</td><td>原石 ＋ 普通石，对角 2×2 → 4；或者 磨制石 →（切石机）</td><td>走</td></tr>
+<tr><td>3</td><td>碎石</td><td>原石 ＋ 圆石，对角 2×2 → 4；2 碎石 →（切石机）→ 1 石砖</td><td>走</td></tr>
+<tr><td>4</td><td>石瓦</td><td>4 石砖 2×2</td><td>走</td></tr>
+<tr><td>5</td><td>錾制石砖</td><td>2 个半砖上下 → 1</td><td>走</td></tr>
+<tr><td>6</td><td>雕纹石砖</td><td>2 石夹 1 原石，横排</td><td>走</td></tr>
+<tr><td>7</td><td>裂纹石砖</td><td>熔炉烧石砖</td><td>—（炉子）</td></tr>
+<tr><td>8</td><td>石柱</td><td>2 石上下 ＋ 中间夹 1 原石 → 3</td><td>走</td></tr>
+<tr><td>9</td><td>半砖</td><td>3 个石砖横排 → 6</td><td>走</td></tr>
+<tr><td>10</td><td>台阶</td><td>阶梯型，6 个原料 → 4</td><td>走</td></tr>
+<tr><td>11</td><td>墙</td><td>6 个石砖（两行各三）→ 6</td><td>走</td></tr>
+</table></div>
+
+<p>命名规则：情绪名 ＋ 件名。「石砖」那一族的三件（錾制／雕纹／裂纹）多带一个「石砖」。</p>
+
+<div class="notice"><span class="t">设计约定</span>「原石是种子」这句话的字面意思：<strong>原石永远不能直接变成砖</strong>，你必须先掺普通石头——一块原石能「带」一块普通石。所以原石在石砖配方里是催化剂，不是原料。而苔石砖不做（它只有原石系列才有，我们是特殊石材系列）。</p></div>
+
+<h3>十类情绪</h3>
+
+<div class="scroll"><table>
+<tr><th>类</th><th>那个字</th><th>画像</th><th>主色（砖缝的光）</th></tr>
+<tr><td>快乐</td><td>起</td><td>一道往上的弧</td><td><span class="chip" style="background:#F2D744"></span> 明黄</td></tr>
+<tr><td>安宁</td><td>停</td><td>一圈同心圆</td><td><span class="chip" style="background:#D8DCE0"></span> 灰白</td></tr>
+<tr><td>期待</td><td>未至</td><td>一个未闭合的环</td><td><span class="chip" style="background:#7E6FA8"></span> 青紫</td></tr>
+<tr><td>喜爱</td><td>挨着</td><td>两个相叠的圆</td><td><span class="chip" style="background:#7A2A2E"></span> 暗红</td></tr>
+<tr><td>自豪</td><td>高</td><td>一根竖柱</td><td><span class="chip" style="background:#D9AE3C"></span> 金</td></tr>
+<tr><td>好奇</td><td>没完</td><td>一个缺一角的方框</td><td><span class="chip" style="background:#B07F9E"></span> 那个「不对」的紫红</td></tr>
+<tr><td>悲伤</td><td>缺离开</td><td>一段断掉的下沉台阶</td><td><span class="chip" style="background:#6C7F99"></span> 灰蓝</td></tr>
+<tr><td>恐惧</td><td>缺背面</td><td>只有边框、内部全空的方框</td><td><span class="chip" style="background:#141414"></span> 无光的黑</td></tr>
+<tr><td>愤怒</td><td>缺停</td><td>一道裂开的线</td><td><span class="chip" style="background:#B02020"></span> 血红</td></tr>
+<tr><td>厌恶</td><td>缺干净</td><td>一团纠缠的线</td><td><span class="chip" style="background:#5C7A3A"></span> 腐绿</td></tr>
+</table></div>
+
+<p>正面六是「只有 X」，负面四是「缺 X」。正面的不完整是「还没到」（线条连续、没合上），负面的不完整是「已经坏了」（断了／空了／裂了／缠了）——而这个区别不需要颜色帮忙。三条统一的规矩：只用几何线条；每张只有一个主形且居中；主色是砖缝的光，所以色要亮而不艳。</p>
+
+<div class="notice"><span class="t">设计约定</span>分工：<strong>砖负责「远看是这一类」</strong>（一点色 ＋ 发光砖缝），<strong>錾制负责「近看说的什么」</strong>（四面画像）。錾制没有形状件，所以画面可以画满、可以有焦点、可以不对称。</div>
+
+<h3>两个入口</h3>
+
+<div class="scroll"><table>
+<tr><th></th><th>切石机</th><th>沉淀器</th></tr>
+<tr><th>入口是什么</th><td>一个切割配方（原版切石机）</td><td>一个可放置的方块 ＋ 它周围的环境</td></tr>
+<tr><th>玩家怎么选分类</th><td>在 GUI 列表里选</td><td>把石头放在哪里、周围是什么</td></tr>
+<tr><th>间接表达落在哪</th><td>落在配方表上</td><td>落在世界里的一个位置上</td></tr>
+<tr><th>管什么</th><td>玩家自建</td><td>遗迹生成</td></tr>
+</table></div>
+
+<div class="notice rule"><span class="t">硬约束</span>这里的石切机就是<strong>原版的切石机（stonecutter）</strong>，我们只往它的配方表里加条目——不加新方块、不加新界面。那个选择列表是原版自带的，属于「玩家已经会的东西」，所以不破「零界面」这条硬前提。任何图案都能无损还原成基础石，所以十分类的试错成本归零。验收：原版切石机放下去，能看到并切出我们的十类图案。</div>
+
+<h3>沉淀器</h3>
+
+<p>它是<strong>仪式</strong>，不是机器：一次做完，不养。</p>
+
+<div class="scroll"><table>
+<tr><th>项</th><th>规格</th></tr>
+<tr><td>形制</td><td>一个多方块仪式——中心一个沉淀器，四周是雕像</td></tr>
+<tr><td>消耗</td><td>情绪结晶（一颗 ＝ 一次转化 ＝ 最多 30 块建材）</td></tr>
+<tr><td>它做什么</td><td>把附近的石头逐块转化成那一类的模组建材原料</td></tr>
+<tr><td>哪一类由什么决定</td><td>① 结晶决定是哪一类（燃料 ＋ 模子）；② 四周的雕像决定转化的强度档（材质等级）</td></tr>
+<tr><td>范围</td><td>一个圈，半径待定</td></tr>
+<tr><td>转换的顺序</td><td>从中心往外一圈一圈，用曼哈顿壳（菱形扩散），每层一个概率，累计 30 个就停</td></tr>
+<tr><td>提前结束</td><td>采样次数用尽仍未满 30 个 → 提前结束；它告诉玩家「这片地方的石头不够了」</td></tr>
+<tr><td>对应变种</td><td>扩成同形状：石头→该类石头、石砖→该类石砖、半砖／台阶／墙同理</td></tr>
+</table></div>
+
+<p>同形状这一条顺手解决一件事：旧遗迹里的形状件可以回收——你拆一座旧遗迹，把半砖丢进沉淀器，出来的就是那一类的半砖。</p>
+
+<div class="notice rule"><span class="t">硬约束</span>立方体边长必须是<strong>奇数</strong>，因为奇数边长才有一个中心。要「延伸 5 格」就是 11×11×11（2×5＋1），「延伸 4 格」是 9×9×9。深板岩走同一条路（深板岩 → 我们的建材），所以只做一套。</div>
+
+<p>沉淀器与六绪轮的关系：六绪轮是正向的、自持的、越转越好，改的是圈内的<strong>规则</strong>；沉淀器是一次性的、消耗的，放一颗结晶就走，改的是圈内的<strong>方块</strong>。它是「温养仪式的兄弟」——两者都消耗结晶，但温养把结晶换成心绪值，沉淀器把结晶换成「地方」。</p>
+
+<div class="notice"><span class="t">设计约定</span>它能被再开一次，所以遗迹不是死物，而是「一台还能用的机器」。玩家走到一座旧遗迹，看见一圈建材从中心往外长而外圈还是普通石头，就知道这里发生过一次转化而它没做完。</div>
+
+<div class="notice warn"><span class="t">待定</span>沉淀器自身的获取路径。提案配方：八块该路建材围一圈 ＋ 中心一颗该路的情绪结晶，3×3 无序；结晶进合成配方不撞附录甲第 7 条（那条只禁它当施法燃料）。验收：十种建材各能做出一个沉淀器。</div>
+
+<h2>情绪石砖雕像</h2>
+
+<div class="scroll"><table>
+<tr><th>项</th><th>规格</th></tr>
+<tr><th>一共几个方块</th><td>10 个（十类情绪各一种）</td></tr>
+<tr><th>美术成本</th><td>一套模型 ＋ 十张贴图——零新模型</td></tr>
+<tr><th>配方</th><td>该类情绪的石砖若干</td></tr>
+<tr><th>和旧雕像的关系</th><td>旧雕像（29 种）是「有来历的东西」（可绑定／荒废）；这一批是按情绪石的材质批量做的——它不讲故事，它讲材质</td></tr>
+<tr><th>用途</th><td>自己建 ／ 遗迹 ／ 六绪轮的柱子 ／ 雕像</td></tr>
+</table></div>
+
+<div class="notice rule"><span class="t">硬约束</span>只做十类各一个，<strong>不做錾制版</strong>。中段六场的新方块就是这 10 个雕像；终局四门再加 1 种中性体 ＋ 4 个物品图标。</div>
+
+<p>它最值钱的一处：让「你这片地是愤怒色的」从地砖一直说到雕像——整座仪式是同一个颜色。</p>
+
+<h2>生物</h2>
+
+<div class="notice"><span class="t">设计约定</span>三条：<strong>悦灵与恼鬼是传导体，铜傀儡是容器，三者不重叠。</strong>前两者自己感受再粗略传达，不指定、不绑定、不给某一种心绪，给的永远是随机的；铜傀儡只装你自己存进去的。</div>
+
+<div class="scroll"><table>
+<tr><th>生物</th><th>定位</th><th>怎么获得</th><th>给多少</th><th>限速</th></tr>
+<tr><td>悦灵</td><td>传导体</td><td>用正面情绪法杖对一只原版悦灵施法（原版悦灵关在林地府邸的笼子里）</td><td>随机一种正面心绪，2 到 5 点</td><td>被冷却限速，冷却 90 秒</td></tr>
+<tr><td>恼鬼</td><td>传导体</td><td>雕像多方块仪式，四正方向各放一颗负面结晶（愤怒／恐惧／悲伤／厌恶各一），中心唤醒</td><td>随机一种负面心绪，25 到 40 点，按刚承受的严重程度上浮</td><td>被事件限速，冷却 10 分钟是上限</td></tr>
+<tr><td>铜傀儡</td><td>容器</td><td>用正面情绪法杖对一只原版铜傀儡施法</td><td>只装你自己存进去的</td><td>容量 300 点，只装一种；超过 150 移动变慢到缓慢 IV（移速 ×0.4）</td></tr>
+</table></div>
+
+<p>悦灵感受的是好事（跳跃、奔跑、发现新地方、在明亮处歇脚），恼鬼感受的是坏事（受伤、摔落、饥饿、待在黑暗里）。所以<strong>悦灵是纯赚的挂件，恼鬼是唯一会反过来伤到主人的挂件</strong>——要不要带它是一个真的选择。</p>
+
+<h3>铜傀儡：锈与变像</h3>
+
+<div class="scroll"><table>
+<tr><th>阶段</th><th>样子</th><th>除锈一次扣多少</th><th>累计</th></tr>
+<tr><td>未氧化</td><td>亮铜</td><td>——</td><td>0</td></tr>
+<tr><td>一阶段</td><td>有斑</td><td>0.5%</td><td>0.5%</td></tr>
+<tr><td>二阶段</td><td>斑更多</td><td>5%</td><td>5.5%</td></tr>
+<tr><td>三阶段（铜绿 ＝ 完全氧化）</td><td>全绿</td><td>25%</td><td>30.5%</td></tr>
+</table></div>
+
+<p>每次只退一阶，所以从全绿回到干净要付三次，合计 30.5%。按存量算：存 100 付 30.5 点，存 300（满）付 91.5 点——<strong>存得越多，养它越贵</strong>，所以空傀儡好养，满傀儡养不起，也堵掉了「把它当免费银行」。</p>
+
+<div class="scroll"><table>
+<tr><th>项</th><th>规则</th></tr>
+<tr><td>氧化速度</td><td>每一阶段 100 分钟游戏时间 ＝ 5 游戏日；三阶段到铜绿 15 游戏日</td></tr>
+<tr><td>铜绿后变像概率</td><td>每游戏刻 0.58%（沿用原版）——阶段提了 4.2 倍，这一个数没跟着提；平均约 6 秒，30 秒内 97% 会变</td></tr>
+<tr><td>它变成什么</td><td>一尊可使用的、铜傀儡外观的雕像，以随机姿势静止，并掉落手持物</td></tr>
+<tr><td>它带走多少</td><td>存量的 25%；另外 75% 没了</td></tr>
+<tr><td>怎么复活</td><td>用斧子除锈——雕像状态下除锈不扣心绪；复活后恢复行动，带着那 25%，而且仍然能存取</td></tr>
+<tr><td>除锈工具</td><td>斧子（和原版一致，不新做工具）</td></tr>
+</table></div>
+
+<p>所以变像不是失败，是<strong>冻结</strong>：它成了一个保险柜——心绪封在 25%，不锈、不跑、还能当雕像用。抢救和放任是两个都有道理的选择。</p>
+
+<div class="scroll"><table>
+<tr><th>状态</th><th>会锈吗</th><th>能存 ／ 能取吗</th><th>代价</th></tr>
+<tr><td>未涂蜡（默认）</td><td>会</td><td>能</td><td>除锈要付心绪</td></tr>
+<tr><td><strong>涂蜡</strong></td><td>不会</td><td>不能——它和外界的心绪通道关了</td><td>封上不要钱</td></tr>
+<tr><td><strong>取消涂蜡</strong></td><td>恢复会锈</td><td>恢复能存取</td><td>付存量 5%</td></tr>
+</table></div>
+
+<p>所以「蜡」在这一套里不是防锈剂，是<strong>棺材盖</strong>：封上不要钱，打开要收门票。它和锈成雕像凑成两条封存路线——涂蜡保 100%（要记得回来交 5%），锈成雕像保 25%（除锈不要钱）。</p>
+
+<p>原版铜傀儡那三条职能（分拣铜箱子里的物品、开关铜门、怕水会沉底）在这里要被换掉：走起来、开门、摔不伤这些「身体」的部分留着，分类物品那部分删掉——它现在是容器，不是分拣机。</p>
+
+<h2>背面收容</h2>
+
+<p>恐惧象限的核心生物：一直在你背后 3 格，能穿墙过门跟上你，跟出象限、跟出维度。外观是玩家自己皮肤的 UV 前后翻转（零新美术），双手在身前捧着一个容器，固定紫色。</p>
+
+<div class="scroll"><table>
+<tr><th>项</th><th>内容</th></tr>
+<tr><td>收容</td><td>你转过身之后，背后的掉落物、物品与生物被「删除」，实际收在它身上</td></tr>
+<tr><td>计件</td><td>一类一组；超过堆叠上限的算多组，不可堆叠的一件一组，生物一只一组；上限 32 组</td></tr>
+<tr><td>交易</td><td>不用界面：手持右键逐组赎回，每右键一次按顺序赎回一组，给一颗正面结晶</td></tr>
+<tr><td>结算</td><td>方块与物品正常回背包；生物装进一颗宝可梦球式的道具，手持右键地面放出，一次性</td></tr>
+<tr><td>满了</td><td>走到你面前锁住你的视角 5 秒、禁止转头，在场的其他怪物停止行动</td></tr>
+<tr><td>杀它</td><td>无掉落、无限复活；但杀过之后一段时间不会有背面来收，那段期间的删除是真丢</td></tr>
+<tr><td>三条边界</td><td>不删玩家自己；排除功能性实体（盔甲架、展示框、船、矿车）；排除你命名过或驯服过的生物</td></tr>
+</table></div>
+
+<p>「满了」那场戏不是处刑，是兜底：你每转一次头就会多删一批，所以它满了之后只能走到你面前按住你的视线，阻止你继续丢东西。</p>
+
+<div class="notice"><span class="t">设计约定</span>被收容的生物<strong>不产出</strong>。产出绑在「养」上，不绑在「关」上——否则牧场就被绕过去了，而牧场是正向那条线的地基。而且它本来是「被删掉的」，不是「被你收好的」。</div>
+
+<p>主题上它是个人账在维度里的化身：个人账是「你做过什么」，可查而不可见；背面是「你丢过什么」，一直跟着你而你从不回头看它。</p>
+
+<p class="stamp">内容取自《癫狂构想-心绪与痕迹-设计决策记录》第四十六轮定稿。以设计记录为准，本页只是它的一个读法。</p>
+</main></html>

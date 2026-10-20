@@ -1,0 +1,617 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<title>材质 ↔ 方块 · 癫狂构想设计站</title>
+<link rel="stylesheet" href="style.css">
+<nav><div class="t">设计站</div><a class="" href="index.html">总览与体检</a>
+<a class="" href="kinds.html">雕像种类</a>
+<a class="on" href="materials.html">材质 ↔ 方块</a>
+<a class="" href="attributes.html">属性</a>
+<a class="" href="traits.html">特性与特殊功能</a>
+<a class="" href="moods.html">心绪</a>
+<a class="" href="numerics.html">数值与公式</a>
+<a class="" href="rituals.html">仪式</a>
+<a class="" href="storage.html">温养仪式</a>
+<a class="" href="moodstaff.html">情绪之杖</a>
+<a class="" href="refs.html">参考文档</a>
+<a class="" href="intent.html">设计意图</a>
+<div class="t">说明</div>
+<div class="small dim" style="padding:4px 8px">本页内容由 <code>gen-design-site.mjs</code>
+从源码生成，改完代码重跑即可。</div></nav>
+<main><h1>材质 ↔ 方块</h1><p class="small dim">材质只是长相。左列 id 即方块模型名
+<code>emotion_statue_&lt;id&gt;.json</code> 的 &lt;id&gt; 部分。<br>
+缩略图取的是<b>侧面</b>贴图（作者要求：只要一面、全部取侧面）。
+图片由 <code>_tools/sync-block-textures.mjs</code> 从原版贴图目录拷进
+<code>docs/textures/</code> —— 那是 Mojang 的美术资源，
+所以该目录走 <code>.gitignore</code>；换机器后重跑一次脚本即可（共 31 KB）。</p><h2>泥土 <span class="dim small">8 条</span></h2>
+<table><tr><th>缩略图</th><th>材质 id</th><th>侧面贴图</th><th>顶面贴图</th></tr><tr><td><img class="tex" src="textures/coarse_dirt.png"
+alt="coarse_dirt" loading="lazy" title="coarse_dirt"></td>
+<td class="mono small">coarse_dirt</td>
+<td class="mono small dim">minecraft:block/coarse_dirt</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/dirt.png"
+alt="dirt" loading="lazy" title="dirt"></td>
+<td class="mono small">dirt</td>
+<td class="mono small dim">minecraft:block/dirt</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/dirt_path_side.png"
+alt="dirt_path_side" loading="lazy" title="dirt_path_side"></td>
+<td class="mono small">dirt_path</td>
+<td class="mono small dim">minecraft:block/dirt_path_side</td>
+<td class="mono small dim">minecraft:block/dirt_path_top</td></tr><tr><td><img class="tex" src="textures/grass_block_side.png"
+alt="grass_block_side" loading="lazy" title="grass_block_side"></td>
+<td class="mono small">grass_block</td>
+<td class="mono small dim">minecraft:block/grass_block_side</td>
+<td class="mono small dim">minecraft:block/grass_block_top</td></tr><tr><td><img class="tex" src="textures/mud.png"
+alt="mud" loading="lazy" title="mud"></td>
+<td class="mono small">mud</td>
+<td class="mono small dim">minecraft:block/mud</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/mycelium_side.png"
+alt="mycelium_side" loading="lazy" title="mycelium_side"></td>
+<td class="mono small">mycelium</td>
+<td class="mono small dim">minecraft:block/mycelium_side</td>
+<td class="mono small dim">minecraft:block/mycelium_top</td></tr><tr><td><img class="tex" src="textures/podzol_side.png"
+alt="podzol_side" loading="lazy" title="podzol_side"></td>
+<td class="mono small">podzol</td>
+<td class="mono small dim">minecraft:block/podzol_side</td>
+<td class="mono small dim">minecraft:block/podzol_top</td></tr><tr><td><img class="tex" src="textures/rooted_dirt.png"
+alt="rooted_dirt" loading="lazy" title="rooted_dirt"></td>
+<td class="mono small">rooted_dirt</td>
+<td class="mono small dim">minecraft:block/rooted_dirt</td>
+<td class="mono small dim">（同侧面）</td></tr></table><h2>木头 <span class="dim small">30 条</span></h2>
+<table><tr><th>缩略图</th><th>材质 id</th><th>侧面贴图</th><th>顶面贴图</th></tr><tr><td><img class="tex" src="textures/acacia_log.png"
+alt="acacia_log" loading="lazy" title="acacia_log"></td>
+<td class="mono small">acacia_log</td>
+<td class="mono small dim">minecraft:block/acacia_log</td>
+<td class="mono small dim">minecraft:block/acacia_log_top</td></tr><tr><td><img class="tex" src="textures/acacia_planks.png"
+alt="acacia_planks" loading="lazy" title="acacia_planks"></td>
+<td class="mono small">acacia_planks</td>
+<td class="mono small dim">minecraft:block/acacia_planks</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/bamboo_block.png"
+alt="bamboo_block" loading="lazy" title="bamboo_block"></td>
+<td class="mono small">bamboo_block</td>
+<td class="mono small dim">minecraft:block/bamboo_block</td>
+<td class="mono small dim">minecraft:block/bamboo_block_top</td></tr><tr><td><img class="tex" src="textures/bamboo_planks.png"
+alt="bamboo_planks" loading="lazy" title="bamboo_planks"></td>
+<td class="mono small">bamboo_planks</td>
+<td class="mono small dim">minecraft:block/bamboo_planks</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/birch_log.png"
+alt="birch_log" loading="lazy" title="birch_log"></td>
+<td class="mono small">birch_log</td>
+<td class="mono small dim">minecraft:block/birch_log</td>
+<td class="mono small dim">minecraft:block/birch_log_top</td></tr><tr><td><img class="tex" src="textures/birch_planks.png"
+alt="birch_planks" loading="lazy" title="birch_planks"></td>
+<td class="mono small">birch_planks</td>
+<td class="mono small dim">minecraft:block/birch_planks</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/cherry_log.png"
+alt="cherry_log" loading="lazy" title="cherry_log"></td>
+<td class="mono small">cherry_log</td>
+<td class="mono small dim">minecraft:block/cherry_log</td>
+<td class="mono small dim">minecraft:block/cherry_log_top</td></tr><tr><td><img class="tex" src="textures/cherry_planks.png"
+alt="cherry_planks" loading="lazy" title="cherry_planks"></td>
+<td class="mono small">cherry_planks</td>
+<td class="mono small dim">minecraft:block/cherry_planks</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/dark_oak_log.png"
+alt="dark_oak_log" loading="lazy" title="dark_oak_log"></td>
+<td class="mono small">dark_oak_log</td>
+<td class="mono small dim">minecraft:block/dark_oak_log</td>
+<td class="mono small dim">minecraft:block/dark_oak_log_top</td></tr><tr><td><img class="tex" src="textures/dark_oak_planks.png"
+alt="dark_oak_planks" loading="lazy" title="dark_oak_planks"></td>
+<td class="mono small">dark_oak_planks</td>
+<td class="mono small dim">minecraft:block/dark_oak_planks</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/jungle_log.png"
+alt="jungle_log" loading="lazy" title="jungle_log"></td>
+<td class="mono small">jungle_log</td>
+<td class="mono small dim">minecraft:block/jungle_log</td>
+<td class="mono small dim">minecraft:block/jungle_log_top</td></tr><tr><td><img class="tex" src="textures/jungle_planks.png"
+alt="jungle_planks" loading="lazy" title="jungle_planks"></td>
+<td class="mono small">jungle_planks</td>
+<td class="mono small dim">minecraft:block/jungle_planks</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/mangrove_log.png"
+alt="mangrove_log" loading="lazy" title="mangrove_log"></td>
+<td class="mono small">mangrove_log</td>
+<td class="mono small dim">minecraft:block/mangrove_log</td>
+<td class="mono small dim">minecraft:block/mangrove_log_top</td></tr><tr><td><img class="tex" src="textures/mangrove_planks.png"
+alt="mangrove_planks" loading="lazy" title="mangrove_planks"></td>
+<td class="mono small">mangrove_planks</td>
+<td class="mono small dim">minecraft:block/mangrove_planks</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/oak_log.png"
+alt="oak_log" loading="lazy" title="oak_log"></td>
+<td class="mono small">oak_log</td>
+<td class="mono small dim">minecraft:block/oak_log</td>
+<td class="mono small dim">minecraft:block/oak_log_top</td></tr><tr><td><img class="tex" src="textures/oak_planks.png"
+alt="oak_planks" loading="lazy" title="oak_planks"></td>
+<td class="mono small">oak_planks</td>
+<td class="mono small dim">minecraft:block/oak_planks</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/pale_oak_log.png"
+alt="pale_oak_log" loading="lazy" title="pale_oak_log"></td>
+<td class="mono small">pale_oak_log</td>
+<td class="mono small dim">minecraft:block/pale_oak_log</td>
+<td class="mono small dim">minecraft:block/pale_oak_log_top</td></tr><tr><td><img class="tex" src="textures/pale_oak_planks.png"
+alt="pale_oak_planks" loading="lazy" title="pale_oak_planks"></td>
+<td class="mono small">pale_oak_planks</td>
+<td class="mono small dim">minecraft:block/pale_oak_planks</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/spruce_log.png"
+alt="spruce_log" loading="lazy" title="spruce_log"></td>
+<td class="mono small">spruce_log</td>
+<td class="mono small dim">minecraft:block/spruce_log</td>
+<td class="mono small dim">minecraft:block/spruce_log_top</td></tr><tr><td><img class="tex" src="textures/spruce_planks.png"
+alt="spruce_planks" loading="lazy" title="spruce_planks"></td>
+<td class="mono small">spruce_planks</td>
+<td class="mono small dim">minecraft:block/spruce_planks</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/stripped_acacia_log.png"
+alt="stripped_acacia_log" loading="lazy" title="stripped_acacia_log"></td>
+<td class="mono small">stripped_acacia_log</td>
+<td class="mono small dim">minecraft:block/stripped_acacia_log</td>
+<td class="mono small dim">minecraft:block/stripped_acacia_log_top</td></tr><tr><td><img class="tex" src="textures/stripped_bamboo_block.png"
+alt="stripped_bamboo_block" loading="lazy" title="stripped_bamboo_block"></td>
+<td class="mono small">stripped_bamboo_block</td>
+<td class="mono small dim">minecraft:block/stripped_bamboo_block</td>
+<td class="mono small dim">minecraft:block/bamboo_block_top</td></tr><tr><td><img class="tex" src="textures/stripped_birch_log.png"
+alt="stripped_birch_log" loading="lazy" title="stripped_birch_log"></td>
+<td class="mono small">stripped_birch_log</td>
+<td class="mono small dim">minecraft:block/stripped_birch_log</td>
+<td class="mono small dim">minecraft:block/stripped_birch_log_top</td></tr><tr><td><img class="tex" src="textures/stripped_cherry_log.png"
+alt="stripped_cherry_log" loading="lazy" title="stripped_cherry_log"></td>
+<td class="mono small">stripped_cherry_log</td>
+<td class="mono small dim">minecraft:block/stripped_cherry_log</td>
+<td class="mono small dim">minecraft:block/stripped_cherry_log_top</td></tr><tr><td><img class="tex" src="textures/stripped_dark_oak_log.png"
+alt="stripped_dark_oak_log" loading="lazy" title="stripped_dark_oak_log"></td>
+<td class="mono small">stripped_dark_oak_log</td>
+<td class="mono small dim">minecraft:block/stripped_dark_oak_log</td>
+<td class="mono small dim">minecraft:block/stripped_dark_oak_log_top</td></tr><tr><td><img class="tex" src="textures/stripped_jungle_log.png"
+alt="stripped_jungle_log" loading="lazy" title="stripped_jungle_log"></td>
+<td class="mono small">stripped_jungle_log</td>
+<td class="mono small dim">minecraft:block/stripped_jungle_log</td>
+<td class="mono small dim">minecraft:block/stripped_jungle_log_top</td></tr><tr><td><img class="tex" src="textures/stripped_mangrove_log.png"
+alt="stripped_mangrove_log" loading="lazy" title="stripped_mangrove_log"></td>
+<td class="mono small">stripped_mangrove_log</td>
+<td class="mono small dim">minecraft:block/stripped_mangrove_log</td>
+<td class="mono small dim">minecraft:block/stripped_mangrove_log_top</td></tr><tr><td><img class="tex" src="textures/stripped_oak_log.png"
+alt="stripped_oak_log" loading="lazy" title="stripped_oak_log"></td>
+<td class="mono small">stripped_oak_log</td>
+<td class="mono small dim">minecraft:block/stripped_oak_log</td>
+<td class="mono small dim">minecraft:block/stripped_oak_log_top</td></tr><tr><td><img class="tex" src="textures/stripped_pale_oak_log.png"
+alt="stripped_pale_oak_log" loading="lazy" title="stripped_pale_oak_log"></td>
+<td class="mono small">stripped_pale_oak_log</td>
+<td class="mono small dim">minecraft:block/stripped_pale_oak_log</td>
+<td class="mono small dim">minecraft:block/stripped_pale_oak_log_top</td></tr><tr><td><img class="tex" src="textures/stripped_spruce_log.png"
+alt="stripped_spruce_log" loading="lazy" title="stripped_spruce_log"></td>
+<td class="mono small">stripped_spruce_log</td>
+<td class="mono small dim">minecraft:block/stripped_spruce_log</td>
+<td class="mono small dim">minecraft:block/stripped_spruce_log_top</td></tr></table><h2>圆石 <span class="dim small">10 条</span></h2>
+<table><tr><th>缩略图</th><th>材质 id</th><th>侧面贴图</th><th>顶面贴图</th></tr><tr><td><img class="tex" src="textures/andesite.png"
+alt="andesite" loading="lazy" title="andesite"></td>
+<td class="mono small">andesite</td>
+<td class="mono small dim">minecraft:block/andesite</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/calcite.png"
+alt="calcite" loading="lazy" title="calcite"></td>
+<td class="mono small">calcite</td>
+<td class="mono small dim">minecraft:block/calcite</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/cobbled_deepslate.png"
+alt="cobbled_deepslate" loading="lazy" title="cobbled_deepslate"></td>
+<td class="mono small">cobbled_deepslate</td>
+<td class="mono small dim">minecraft:block/cobbled_deepslate</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/cobblestone.png"
+alt="cobblestone" loading="lazy" title="cobblestone"></td>
+<td class="mono small">cobblestone</td>
+<td class="mono small dim">minecraft:block/cobblestone</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/deepslate.png"
+alt="deepslate" loading="lazy" title="deepslate"></td>
+<td class="mono small">deepslate</td>
+<td class="mono small dim">minecraft:block/deepslate</td>
+<td class="mono small dim">minecraft:block/deepslate_top</td></tr><tr><td><img class="tex" src="textures/diorite.png"
+alt="diorite" loading="lazy" title="diorite"></td>
+<td class="mono small">diorite</td>
+<td class="mono small dim">minecraft:block/diorite</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/granite.png"
+alt="granite" loading="lazy" title="granite"></td>
+<td class="mono small">granite</td>
+<td class="mono small dim">minecraft:block/granite</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/mossy_cobblestone.png"
+alt="mossy_cobblestone" loading="lazy" title="mossy_cobblestone"></td>
+<td class="mono small">mossy_cobblestone</td>
+<td class="mono small dim">minecraft:block/mossy_cobblestone</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/stone.png"
+alt="stone" loading="lazy" title="stone"></td>
+<td class="mono small">stone</td>
+<td class="mono small dim">minecraft:block/stone</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/tuff.png"
+alt="tuff" loading="lazy" title="tuff"></td>
+<td class="mono small">tuff</td>
+<td class="mono small dim">minecraft:block/tuff</td>
+<td class="mono small dim">（同侧面）</td></tr></table><h2>砂岩 <span class="dim small">8 条</span></h2>
+<table><tr><th>缩略图</th><th>材质 id</th><th>侧面贴图</th><th>顶面贴图</th></tr><tr><td><img class="tex" src="textures/chiseled_red_sandstone.png"
+alt="chiseled_red_sandstone" loading="lazy" title="chiseled_red_sandstone"></td>
+<td class="mono small">chiseled_red_sandstone</td>
+<td class="mono small dim">minecraft:block/chiseled_red_sandstone</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/chiseled_sandstone.png"
+alt="chiseled_sandstone" loading="lazy" title="chiseled_sandstone"></td>
+<td class="mono small">chiseled_sandstone</td>
+<td class="mono small dim">minecraft:block/chiseled_sandstone</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/cut_red_sandstone.png"
+alt="cut_red_sandstone" loading="lazy" title="cut_red_sandstone"></td>
+<td class="mono small">cut_red_sandstone</td>
+<td class="mono small dim">minecraft:block/cut_red_sandstone</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/cut_sandstone.png"
+alt="cut_sandstone" loading="lazy" title="cut_sandstone"></td>
+<td class="mono small">cut_sandstone</td>
+<td class="mono small dim">minecraft:block/cut_sandstone</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/red_sandstone.png"
+alt="red_sandstone" loading="lazy" title="red_sandstone"></td>
+<td class="mono small">red_sandstone</td>
+<td class="mono small dim">minecraft:block/red_sandstone</td>
+<td class="mono small dim">minecraft:block/red_sandstone_top</td></tr><tr><td><img class="tex" src="textures/sandstone.png"
+alt="sandstone" loading="lazy" title="sandstone"></td>
+<td class="mono small">sandstone</td>
+<td class="mono small dim">minecraft:block/sandstone</td>
+<td class="mono small dim">minecraft:block/sandstone_top</td></tr><tr><td><img class="tex" src="textures/red_sandstone_top.png"
+alt="red_sandstone_top" loading="lazy" title="red_sandstone_top"></td>
+<td class="mono small">smooth_red_sandstone</td>
+<td class="mono small dim">minecraft:block/red_sandstone_top</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/sandstone_top.png"
+alt="sandstone_top" loading="lazy" title="sandstone_top"></td>
+<td class="mono small">smooth_sandstone</td>
+<td class="mono small dim">minecraft:block/sandstone_top</td>
+<td class="mono small dim">（同侧面）</td></tr></table><h2>雪 <span class="dim small">7 条</span></h2>
+<table><tr><th>缩略图</th><th>材质 id</th><th>侧面贴图</th><th>顶面贴图</th></tr><tr><td><img class="tex" src="textures/blue_ice.png"
+alt="blue_ice" loading="lazy" title="blue_ice"></td>
+<td class="mono small">blue_ice</td>
+<td class="mono small dim">minecraft:block/blue_ice</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/frosted_ice_0.png"
+alt="frosted_ice_0" loading="lazy" title="frosted_ice_0"></td>
+<td class="mono small">frosted_ice</td>
+<td class="mono small dim">minecraft:block/frosted_ice_0</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/ice.png"
+alt="ice" loading="lazy" title="ice"></td>
+<td class="mono small">ice</td>
+<td class="mono small dim">minecraft:block/ice</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/packed_ice.png"
+alt="packed_ice" loading="lazy" title="packed_ice"></td>
+<td class="mono small">packed_ice</td>
+<td class="mono small dim">minecraft:block/packed_ice</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/powder_snow.png"
+alt="powder_snow" loading="lazy" title="powder_snow"></td>
+<td class="mono small">powder_snow</td>
+<td class="mono small dim">minecraft:block/powder_snow</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/snow.png"
+alt="snow" loading="lazy" title="snow"></td>
+<td class="mono small">snow</td>
+<td class="mono small dim">minecraft:block/snow</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/snow.png"
+alt="snow" loading="lazy" title="snow"></td>
+<td class="mono small">snow_block</td>
+<td class="mono small dim">minecraft:block/snow</td>
+<td class="mono small dim">（同侧面）</td></tr></table><h2>铁 <span class="dim small">2 条</span></h2>
+<table><tr><th>缩略图</th><th>材质 id</th><th>侧面贴图</th><th>顶面贴图</th></tr><tr><td><img class="tex" src="textures/iron_block.png"
+alt="iron_block" loading="lazy" title="iron_block"></td>
+<td class="mono small">iron_block</td>
+<td class="mono small dim">minecraft:block/iron_block</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/raw_iron_block.png"
+alt="raw_iron_block" loading="lazy" title="raw_iron_block"></td>
+<td class="mono small">raw_iron_block</td>
+<td class="mono small dim">minecraft:block/raw_iron_block</td>
+<td class="mono small dim">（同侧面）</td></tr></table><h2>金 <span class="dim small">2 条</span></h2>
+<table><tr><th>缩略图</th><th>材质 id</th><th>侧面贴图</th><th>顶面贴图</th></tr><tr><td><img class="tex" src="textures/gold_block.png"
+alt="gold_block" loading="lazy" title="gold_block"></td>
+<td class="mono small">gold_block</td>
+<td class="mono small dim">minecraft:block/gold_block</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/raw_gold_block.png"
+alt="raw_gold_block" loading="lazy" title="raw_gold_block"></td>
+<td class="mono small">raw_gold_block</td>
+<td class="mono small dim">minecraft:block/raw_gold_block</td>
+<td class="mono small dim">（同侧面）</td></tr></table><h2>钻石 <span class="dim small">1 条</span></h2>
+<table><tr><th>缩略图</th><th>材质 id</th><th>侧面贴图</th><th>顶面贴图</th></tr><tr><td><img class="tex" src="textures/diamond_block.png"
+alt="diamond_block" loading="lazy" title="diamond_block"></td>
+<td class="mono small">diamond_block</td>
+<td class="mono small dim">minecraft:block/diamond_block</td>
+<td class="mono small dim">（同侧面）</td></tr></table><h2>绿宝石 <span class="dim small">1 条</span></h2>
+<table><tr><th>缩略图</th><th>材质 id</th><th>侧面贴图</th><th>顶面贴图</th></tr><tr><td><img class="tex" src="textures/emerald_block.png"
+alt="emerald_block" loading="lazy" title="emerald_block"></td>
+<td class="mono small">emerald_block</td>
+<td class="mono small dim">minecraft:block/emerald_block</td>
+<td class="mono small dim">（同侧面）</td></tr></table><h2>下界泥土 <span class="dim small">3 条</span></h2>
+<table><tr><th>缩略图</th><th>材质 id</th><th>侧面贴图</th><th>顶面贴图</th></tr><tr><td><img class="tex" src="textures/nether_wart_block.png"
+alt="nether_wart_block" loading="lazy" title="nether_wart_block"></td>
+<td class="mono small">nether_wart_block</td>
+<td class="mono small dim">minecraft:block/nether_wart_block</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/netherrack.png"
+alt="netherrack" loading="lazy" title="netherrack"></td>
+<td class="mono small">netherrack</td>
+<td class="mono small dim">minecraft:block/netherrack</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/warped_wart_block.png"
+alt="warped_wart_block" loading="lazy" title="warped_wart_block"></td>
+<td class="mono small">warped_wart_block</td>
+<td class="mono small dim">minecraft:block/warped_wart_block</td>
+<td class="mono small dim">（同侧面）</td></tr></table><h2>下界岩石 <span class="dim small">4 条</span></h2>
+<table><tr><th>缩略图</th><th>材质 id</th><th>侧面贴图</th><th>顶面贴图</th></tr><tr><td><img class="tex" src="textures/basalt_side.png"
+alt="basalt_side" loading="lazy" title="basalt_side"></td>
+<td class="mono small">basalt</td>
+<td class="mono small dim">minecraft:block/basalt_side</td>
+<td class="mono small dim">minecraft:block/basalt_top</td></tr><tr><td><img class="tex" src="textures/blackstone.png"
+alt="blackstone" loading="lazy" title="blackstone"></td>
+<td class="mono small">blackstone</td>
+<td class="mono small dim">minecraft:block/blackstone</td>
+<td class="mono small dim">minecraft:block/blackstone_top</td></tr><tr><td><img class="tex" src="textures/gilded_blackstone.png"
+alt="gilded_blackstone" loading="lazy" title="gilded_blackstone"></td>
+<td class="mono small">gilded_blackstone</td>
+<td class="mono small dim">minecraft:block/gilded_blackstone</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/polished_blackstone.png"
+alt="polished_blackstone" loading="lazy" title="polished_blackstone"></td>
+<td class="mono small">polished_blackstone</td>
+<td class="mono small dim">minecraft:block/polished_blackstone</td>
+<td class="mono small dim">（同侧面）</td></tr></table><h2>下界原木 <span class="dim small">10 条</span></h2>
+<table><tr><th>缩略图</th><th>材质 id</th><th>侧面贴图</th><th>顶面贴图</th></tr><tr><td><img class="tex" src="textures/crimson_stem.png"
+alt="crimson_stem" loading="lazy" title="crimson_stem"></td>
+<td class="mono small">crimson_hyphae</td>
+<td class="mono small dim">minecraft:block/crimson_stem</td>
+<td class="mono small dim">minecraft:block/crimson_stem_top</td></tr><tr><td><img class="tex" src="textures/crimson_planks.png"
+alt="crimson_planks" loading="lazy" title="crimson_planks"></td>
+<td class="mono small">crimson_planks</td>
+<td class="mono small dim">minecraft:block/crimson_planks</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/crimson_stem.png"
+alt="crimson_stem" loading="lazy" title="crimson_stem"></td>
+<td class="mono small">crimson_stem</td>
+<td class="mono small dim">minecraft:block/crimson_stem</td>
+<td class="mono small dim">minecraft:block/crimson_stem_top</td></tr><tr><td><img class="tex" src="textures/stripped_crimson_stem.png"
+alt="stripped_crimson_stem" loading="lazy" title="stripped_crimson_stem"></td>
+<td class="mono small">stripped_crimson_hyphae</td>
+<td class="mono small dim">minecraft:block/stripped_crimson_stem</td>
+<td class="mono small dim">minecraft:block/stripped_crimson_stem_top</td></tr><tr><td><img class="tex" src="textures/stripped_crimson_stem.png"
+alt="stripped_crimson_stem" loading="lazy" title="stripped_crimson_stem"></td>
+<td class="mono small">stripped_crimson_stem</td>
+<td class="mono small dim">minecraft:block/stripped_crimson_stem</td>
+<td class="mono small dim">minecraft:block/crimson_stem_top</td></tr><tr><td><img class="tex" src="textures/stripped_warped_stem.png"
+alt="stripped_warped_stem" loading="lazy" title="stripped_warped_stem"></td>
+<td class="mono small">stripped_warped_hyphae</td>
+<td class="mono small dim">minecraft:block/stripped_warped_stem</td>
+<td class="mono small dim">minecraft:block/stripped_warped_stem_top</td></tr><tr><td><img class="tex" src="textures/stripped_warped_stem.png"
+alt="stripped_warped_stem" loading="lazy" title="stripped_warped_stem"></td>
+<td class="mono small">stripped_warped_stem</td>
+<td class="mono small dim">minecraft:block/stripped_warped_stem</td>
+<td class="mono small dim">minecraft:block/warped_stem_top</td></tr><tr><td><img class="tex" src="textures/warped_stem.png"
+alt="warped_stem" loading="lazy" title="warped_stem"></td>
+<td class="mono small">warped_hyphae</td>
+<td class="mono small dim">minecraft:block/warped_stem</td>
+<td class="mono small dim">minecraft:block/warped_stem_top</td></tr><tr><td><img class="tex" src="textures/warped_planks.png"
+alt="warped_planks" loading="lazy" title="warped_planks"></td>
+<td class="mono small">warped_planks</td>
+<td class="mono small dim">minecraft:block/warped_planks</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/warped_stem.png"
+alt="warped_stem" loading="lazy" title="warped_stem"></td>
+<td class="mono small">warped_stem</td>
+<td class="mono small dim">minecraft:block/warped_stem</td>
+<td class="mono small dim">minecraft:block/warped_stem_top</td></tr></table><h2>下界砖 <span class="dim small">9 条</span></h2>
+<table><tr><th>缩略图</th><th>材质 id</th><th>侧面贴图</th><th>顶面贴图</th></tr><tr><td><img class="tex" src="textures/chiseled_nether_bricks.png"
+alt="chiseled_nether_bricks" loading="lazy" title="chiseled_nether_bricks"></td>
+<td class="mono small">chiseled_nether_bricks</td>
+<td class="mono small dim">minecraft:block/chiseled_nether_bricks</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/chiseled_polished_blackstone.png"
+alt="chiseled_polished_blackstone" loading="lazy" title="chiseled_polished_blackstone"></td>
+<td class="mono small">chiseled_polished_blackstone</td>
+<td class="mono small dim">minecraft:block/chiseled_polished_blackstone</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/cracked_nether_bricks.png"
+alt="cracked_nether_bricks" loading="lazy" title="cracked_nether_bricks"></td>
+<td class="mono small">cracked_nether_bricks</td>
+<td class="mono small dim">minecraft:block/cracked_nether_bricks</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/cracked_polished_blackstone_bricks.png"
+alt="cracked_polished_blackstone_bricks" loading="lazy" title="cracked_polished_blackstone_bricks"></td>
+<td class="mono small">cracked_polished_blackstone_bricks</td>
+<td class="mono small dim">minecraft:block/cracked_polished_blackstone_bricks</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/nether_bricks.png"
+alt="nether_bricks" loading="lazy" title="nether_bricks"></td>
+<td class="mono small">nether_bricks</td>
+<td class="mono small dim">minecraft:block/nether_bricks</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/polished_basalt_side.png"
+alt="polished_basalt_side" loading="lazy" title="polished_basalt_side"></td>
+<td class="mono small">polished_basalt</td>
+<td class="mono small dim">minecraft:block/polished_basalt_side</td>
+<td class="mono small dim">minecraft:block/polished_basalt_top</td></tr><tr><td><img class="tex" src="textures/polished_blackstone_bricks.png"
+alt="polished_blackstone_bricks" loading="lazy" title="polished_blackstone_bricks"></td>
+<td class="mono small">polished_blackstone_bricks</td>
+<td class="mono small dim">minecraft:block/polished_blackstone_bricks</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/red_nether_bricks.png"
+alt="red_nether_bricks" loading="lazy" title="red_nether_bricks"></td>
+<td class="mono small">red_nether_bricks</td>
+<td class="mono small dim">minecraft:block/red_nether_bricks</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/smooth_basalt.png"
+alt="smooth_basalt" loading="lazy" title="smooth_basalt"></td>
+<td class="mono small">smooth_basalt</td>
+<td class="mono small dim">minecraft:block/smooth_basalt</td>
+<td class="mono small dim">（同侧面）</td></tr></table><h2>灵魂 <span class="dim small">2 条</span></h2>
+<table><tr><th>缩略图</th><th>材质 id</th><th>侧面贴图</th><th>顶面贴图</th></tr><tr><td><img class="tex" src="textures/soul_sand.png"
+alt="soul_sand" loading="lazy" title="soul_sand"></td>
+<td class="mono small">soul_sand</td>
+<td class="mono small dim">minecraft:block/soul_sand</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/soul_soil.png"
+alt="soul_soil" loading="lazy" title="soul_soil"></td>
+<td class="mono small">soul_soil</td>
+<td class="mono small dim">minecraft:block/soul_soil</td>
+<td class="mono small dim">（同侧面）</td></tr></table><h2>末地石 <span class="dim small">1 条</span></h2>
+<table><tr><th>缩略图</th><th>材质 id</th><th>侧面贴图</th><th>顶面贴图</th></tr><tr><td><img class="tex" src="textures/end_stone.png"
+alt="end_stone" loading="lazy" title="end_stone"></td>
+<td class="mono small">end_stone</td>
+<td class="mono small dim">minecraft:block/end_stone</td>
+<td class="mono small dim">（同侧面）</td></tr></table><h2>紫颂花 <span class="dim small">2 条</span></h2>
+<table><tr><th>缩略图</th><th>材质 id</th><th>侧面贴图</th><th>顶面贴图</th></tr><tr><td><img class="tex" src="textures/chorus_flower.png"
+alt="chorus_flower" loading="lazy" title="chorus_flower"></td>
+<td class="mono small">chorus_flower</td>
+<td class="mono small dim">minecraft:block/chorus_flower</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/chorus_plant.png"
+alt="chorus_plant" loading="lazy" title="chorus_plant"></td>
+<td class="mono small">chorus_plant</td>
+<td class="mono small dim">minecraft:block/chorus_plant</td>
+<td class="mono small dim">（同侧面）</td></tr></table><h2>末地砖 <span class="dim small">3 条</span></h2>
+<table><tr><th>缩略图</th><th>材质 id</th><th>侧面贴图</th><th>顶面贴图</th></tr><tr><td><img class="tex" src="textures/end_stone_bricks.png"
+alt="end_stone_bricks" loading="lazy" title="end_stone_bricks"></td>
+<td class="mono small">end_stone_bricks</td>
+<td class="mono small dim">minecraft:block/end_stone_bricks</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/purpur_block.png"
+alt="purpur_block" loading="lazy" title="purpur_block"></td>
+<td class="mono small">purpur_block</td>
+<td class="mono small dim">minecraft:block/purpur_block</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/purpur_pillar.png"
+alt="purpur_pillar" loading="lazy" title="purpur_pillar"></td>
+<td class="mono small">purpur_pillar</td>
+<td class="mono small dim">minecraft:block/purpur_pillar</td>
+<td class="mono small dim">minecraft:block/purpur_pillar_top</td></tr></table><h2>潜声石像 <span class="dim small">4 条</span></h2>
+<table><tr><th>缩略图</th><th>材质 id</th><th>侧面贴图</th><th>顶面贴图</th></tr><tr><td><img class="tex" src="textures/chiseled_deepslate.png"
+alt="chiseled_deepslate" loading="lazy" title="chiseled_deepslate"></td>
+<td class="mono small">chiseled_deepslate</td>
+<td class="mono small dim">minecraft:block/chiseled_deepslate</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/deepslate_tiles.png"
+alt="deepslate_tiles" loading="lazy" title="deepslate_tiles"></td>
+<td class="mono small">deepslate_tiles</td>
+<td class="mono small dim">minecraft:block/deepslate_tiles</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/polished_deepslate.png"
+alt="polished_deepslate" loading="lazy" title="polished_deepslate"></td>
+<td class="mono small">polished_deepslate</td>
+<td class="mono small dim">minecraft:block/polished_deepslate</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/sculk.png"
+alt="sculk" loading="lazy" title="sculk"></td>
+<td class="mono small">sculk</td>
+<td class="mono small dim">minecraft:block/sculk</td>
+<td class="mono small dim">（同侧面）</td></tr></table><h2>深海石像 <span class="dim small">4 条</span></h2>
+<table><tr><th>缩略图</th><th>材质 id</th><th>侧面贴图</th><th>顶面贴图</th></tr><tr><td><img class="tex" src="textures/dark_prismarine.png"
+alt="dark_prismarine" loading="lazy" title="dark_prismarine"></td>
+<td class="mono small">dark_prismarine</td>
+<td class="mono small dim">minecraft:block/dark_prismarine</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/prismarine.png"
+alt="prismarine" loading="lazy" title="prismarine"></td>
+<td class="mono small">prismarine</td>
+<td class="mono small dim">minecraft:block/prismarine</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/prismarine_bricks.png"
+alt="prismarine_bricks" loading="lazy" title="prismarine_bricks"></td>
+<td class="mono small">prismarine_bricks</td>
+<td class="mono small dim">minecraft:block/prismarine_bricks</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/sea_lantern.png"
+alt="sea_lantern" loading="lazy" title="sea_lantern"></td>
+<td class="mono small">sea_lantern</td>
+<td class="mono small dim">minecraft:block/sea_lantern</td>
+<td class="mono small dim">（同侧面）</td></tr></table><h2>石笋石像 <span class="dim small">1 条</span></h2>
+<table><tr><th>缩略图</th><th>材质 id</th><th>侧面贴图</th><th>顶面贴图</th></tr><tr><td><img class="tex" src="textures/dripstone_block.png"
+alt="dripstone_block" loading="lazy" title="dripstone_block"></td>
+<td class="mono small">dripstone_block</td>
+<td class="mono small dim">minecraft:block/dripstone_block</td>
+<td class="mono small dim">（同侧面）</td></tr></table><h2>试炼石像 <span class="dim small">13 条</span></h2>
+<table><tr><th>缩略图</th><th>材质 id</th><th>侧面贴图</th><th>顶面贴图</th></tr><tr><td><img class="tex" src="textures/chiseled_copper.png"
+alt="chiseled_copper" loading="lazy" title="chiseled_copper"></td>
+<td class="mono small">chiseled_copper</td>
+<td class="mono small dim">minecraft:block/chiseled_copper</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/chiseled_tuff.png"
+alt="chiseled_tuff" loading="lazy" title="chiseled_tuff"></td>
+<td class="mono small">chiseled_tuff</td>
+<td class="mono small dim">minecraft:block/chiseled_tuff</td>
+<td class="mono small dim">minecraft:block/chiseled_tuff_top</td></tr><tr><td><img class="tex" src="textures/chiseled_tuff_bricks.png"
+alt="chiseled_tuff_bricks" loading="lazy" title="chiseled_tuff_bricks"></td>
+<td class="mono small">chiseled_tuff_bricks</td>
+<td class="mono small dim">minecraft:block/chiseled_tuff_bricks</td>
+<td class="mono small dim">minecraft:block/chiseled_tuff_bricks_top</td></tr><tr><td><img class="tex" src="textures/copper_block.png"
+alt="copper_block" loading="lazy" title="copper_block"></td>
+<td class="mono small">copper_block</td>
+<td class="mono small dim">minecraft:block/copper_block</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/cut_copper.png"
+alt="cut_copper" loading="lazy" title="cut_copper"></td>
+<td class="mono small">cut_copper</td>
+<td class="mono small dim">minecraft:block/cut_copper</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/exposed_chiseled_copper.png"
+alt="exposed_chiseled_copper" loading="lazy" title="exposed_chiseled_copper"></td>
+<td class="mono small">exposed_chiseled_copper</td>
+<td class="mono small dim">minecraft:block/exposed_chiseled_copper</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/exposed_copper.png"
+alt="exposed_copper" loading="lazy" title="exposed_copper"></td>
+<td class="mono small">exposed_copper</td>
+<td class="mono small dim">minecraft:block/exposed_copper</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/exposed_cut_copper.png"
+alt="exposed_cut_copper" loading="lazy" title="exposed_cut_copper"></td>
+<td class="mono small">exposed_cut_copper</td>
+<td class="mono small dim">minecraft:block/exposed_cut_copper</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/oxidized_copper.png"
+alt="oxidized_copper" loading="lazy" title="oxidized_copper"></td>
+<td class="mono small">oxidized_copper</td>
+<td class="mono small dim">minecraft:block/oxidized_copper</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/oxidized_cut_copper.png"
+alt="oxidized_cut_copper" loading="lazy" title="oxidized_cut_copper"></td>
+<td class="mono small">oxidized_cut_copper</td>
+<td class="mono small dim">minecraft:block/oxidized_cut_copper</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/oxidized_copper.png"
+alt="oxidized_copper" loading="lazy" title="oxidized_copper"></td>
+<td class="mono small">waxed_oxidized_copper</td>
+<td class="mono small dim">minecraft:block/oxidized_copper</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/weathered_copper.png"
+alt="weathered_copper" loading="lazy" title="weathered_copper"></td>
+<td class="mono small">weathered_copper</td>
+<td class="mono small dim">minecraft:block/weathered_copper</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/weathered_cut_copper.png"
+alt="weathered_cut_copper" loading="lazy" title="weathered_cut_copper"></td>
+<td class="mono small">weathered_cut_copper</td>
+<td class="mono small dim">minecraft:block/weathered_cut_copper</td>
+<td class="mono small dim">（同侧面）</td></tr></table><h2>砖质石像 <span class="dim small">10 条</span></h2>
+<table><tr><th>缩略图</th><th>材质 id</th><th>侧面贴图</th><th>顶面贴图</th></tr><tr><td><img class="tex" src="textures/deepslate_bricks.png"
+alt="deepslate_bricks" loading="lazy" title="deepslate_bricks"></td>
+<td class="mono small">deepslate_bricks</td>
+<td class="mono small dim">minecraft:block/deepslate_bricks</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/mud_bricks.png"
+alt="mud_bricks" loading="lazy" title="mud_bricks"></td>
+<td class="mono small">mud_bricks</td>
+<td class="mono small dim">minecraft:block/mud_bricks</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/packed_mud.png"
+alt="packed_mud" loading="lazy" title="packed_mud"></td>
+<td class="mono small">packed_mud</td>
+<td class="mono small dim">minecraft:block/packed_mud</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/polished_andesite.png"
+alt="polished_andesite" loading="lazy" title="polished_andesite"></td>
+<td class="mono small">polished_andesite</td>
+<td class="mono small dim">minecraft:block/polished_andesite</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/polished_diorite.png"
+alt="polished_diorite" loading="lazy" title="polished_diorite"></td>
+<td class="mono small">polished_diorite</td>
+<td class="mono small dim">minecraft:block/polished_diorite</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/polished_granite.png"
+alt="polished_granite" loading="lazy" title="polished_granite"></td>
+<td class="mono small">polished_granite</td>
+<td class="mono small dim">minecraft:block/polished_granite</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/polished_tuff.png"
+alt="polished_tuff" loading="lazy" title="polished_tuff"></td>
+<td class="mono small">polished_tuff</td>
+<td class="mono small dim">minecraft:block/polished_tuff</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/smooth_stone.png"
+alt="smooth_stone" loading="lazy" title="smooth_stone"></td>
+<td class="mono small">smooth_stone</td>
+<td class="mono small dim">minecraft:block/smooth_stone</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/stone_bricks.png"
+alt="stone_bricks" loading="lazy" title="stone_bricks"></td>
+<td class="mono small">stone_bricks</td>
+<td class="mono small dim">minecraft:block/stone_bricks</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/tuff_bricks.png"
+alt="tuff_bricks" loading="lazy" title="tuff_bricks"></td>
+<td class="mono small">tuff_bricks</td>
+<td class="mono small dim">minecraft:block/tuff_bricks</td>
+<td class="mono small dim">（同侧面）</td></tr></table><h2>紫水晶石像 <span class="dim small">1 条</span></h2>
+<table><tr><th>缩略图</th><th>材质 id</th><th>侧面贴图</th><th>顶面贴图</th></tr><tr><td><img class="tex" src="textures/amethyst_block.png"
+alt="amethyst_block" loading="lazy" title="amethyst_block"></td>
+<td class="mono small">amethyst_block</td>
+<td class="mono small dim">minecraft:block/amethyst_block</td>
+<td class="mono small dim">（同侧面）</td></tr></table><h2>石英石像 <span class="dim small">4 条</span></h2>
+<table><tr><th>缩略图</th><th>材质 id</th><th>侧面贴图</th><th>顶面贴图</th></tr><tr><td><img class="tex" src="textures/chiseled_quartz_block.png"
+alt="chiseled_quartz_block" loading="lazy" title="chiseled_quartz_block"></td>
+<td class="mono small">chiseled_quartz_block</td>
+<td class="mono small dim">minecraft:block/chiseled_quartz_block</td>
+<td class="mono small dim">minecraft:block/chiseled_quartz_block_top</td></tr><tr><td><img class="tex" src="textures/quartz_block_side.png"
+alt="quartz_block_side" loading="lazy" title="quartz_block_side"></td>
+<td class="mono small">quartz_block</td>
+<td class="mono small dim">minecraft:block/quartz_block_side</td>
+<td class="mono small dim">minecraft:block/quartz_block_top</td></tr><tr><td><img class="tex" src="textures/quartz_pillar.png"
+alt="quartz_pillar" loading="lazy" title="quartz_pillar"></td>
+<td class="mono small">quartz_pillar</td>
+<td class="mono small dim">minecraft:block/quartz_pillar</td>
+<td class="mono small dim">minecraft:block/quartz_pillar_top</td></tr><tr><td><img class="tex" src="textures/quartz_block_bottom.png"
+alt="quartz_block_bottom" loading="lazy" title="quartz_block_bottom"></td>
+<td class="mono small">smooth_quartz</td>
+<td class="mono small dim">minecraft:block/quartz_block_bottom</td>
+<td class="mono small dim">（同侧面）</td></tr></table><h2>琥珀石像 <span class="dim small">2 条</span></h2>
+<table><tr><th>缩略图</th><th>材质 id</th><th>侧面贴图</th><th>顶面贴图</th></tr><tr><td><img class="tex" src="textures/resin_block.png"
+alt="resin_block" loading="lazy" title="resin_block"></td>
+<td class="mono small">resin_block</td>
+<td class="mono small dim">minecraft:block/resin_block</td>
+<td class="mono small dim">（同侧面）</td></tr><tr><td><img class="tex" src="textures/resin_bricks.png"
+alt="resin_bricks" loading="lazy" title="resin_bricks"></td>
+<td class="mono small">resin_bricks</td>
+<td class="mono small dim">minecraft:block/resin_bricks</td>
+<td class="mono small dim">（同侧面）</td></tr></table></main></html>

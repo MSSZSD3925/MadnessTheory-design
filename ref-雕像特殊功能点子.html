@@ -1,0 +1,1387 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<title>雕像特殊功能点子 · 癫狂构想设计站</title>
+<link rel="stylesheet" href="style.css">
+<nav><div class="t">设计站</div><a class="" href="index.html">总览与体检</a>
+<a class="" href="kinds.html">雕像种类</a>
+<a class="" href="materials.html">材质 ↔ 方块</a>
+<a class="" href="attributes.html">属性</a>
+<a class="" href="traits.html">特性与特殊功能</a>
+<a class="" href="moods.html">心绪</a>
+<a class="" href="numerics.html">数值与公式</a>
+<a class="" href="rituals.html">仪式</a>
+<a class="" href="storage.html">温养仪式</a>
+<a class="" href="moodstaff.html">情绪之杖</a>
+<a class="on" href="refs.html">参考文档</a>
+<a class="" href="intent.html">设计意图</a>
+<div class="t">说明</div>
+<div class="small dim" style="padding:4px 8px">本页内容由 <code>gen-design-site.mjs</code>
+从源码生成，改完代码重跑即可。</div></nav>
+<main><h1>雕像特殊功能点子</h1><p>﻿# 作者批注（2026-10-04）—— 对本文档的逐条回应</p>
+<div class="card small">本节由作者口述、助手整理，置于文档最前。<b>请先读本节，再读正文</b>：</div>
+<div class="card small">正文的点子清单【不是待办清单】，作者已逐条裁决。</div>
+<h3>一、关于「接线核对」的结论</h3>
+<table>
+<tr><th>项</th><th>作者裁决</th></tr>
+<tr><td>灵魂 <code>allowsMixing</code>（空功能）</td><td><b>确实有问题</b> —— 要处理</td></tr>
+<tr><td>紫颂花 <code>randomFluctuation</code></td><td><b>不算设计失误</b>（详见下条原话）</td></tr>
+<tr><td>紫珀砖 <code>sharedStorage</code></td><td>需用<b>专门的多方块仪式</b>实现，<b>不急这一时</b></td></tr>
+<tr><td>第 7 条（trait 挂在【种类】而非【材质】上）</td><td><b>确实得修</b></td></tr>
+<tr><td>第 8 条（<code>ritualPayload</code> 不序列化，仪式中途退出会丢注入）</td><td><b>确实得修</b></td></tr>
+</table>
+<p><b>关于紫颂花，作者原话</b>：</p>
+<div class="card small">"紫颂花的属性是属于法杖的特色，不仅仅是输入随机，还可以让存储的数值在 0 的时候无中生有，并不算设计失误。"</div>
+<p>（整理：该特性属于<b>法杖</b>侧的特色，不只是"输入随机"这一层；</p>
+<p>它还应当让<b>存储数值为 0 时能无中生有</b>。所以这不是漏接线，而是<b>还没做到位</b>。）</p>
+<h3>二、关于 12 个点子</h3>
+<table>
+<tr><th>#</th><th>点子</th><th>作者裁决</th></tr>
+<tr><td>1</td><td>回响 <code>ECHO</code></td><td>计入<b>有价值部分</b>（留作参考），但<b>目前不符合游戏制作进程</b></td></tr>
+<tr><td>2</td><td>同调 <code>ATTUNED</code></td><td>其逻辑需要<b>重新分组雕像来源</b>，与现有「类型—材质」分类<b>相性不合</b>，<b>暂不考虑</b></td></tr>
+<tr><td>3</td><td>偏食 <code>PALATE</code></td><td>⭐ <b>好点子，下一步就做</b></td></tr>
+<tr><td>4</td><td>共鸣消耗 <code>RESONANT</code></td><td>改作<b>一种特殊仪式的基座</b>（见下方原话）</td></tr>
+<tr><td>5</td><td>陈化 <code>AGED</code></td><td>计入有价值部分，但<b>实现需要用雕像以外的工具派系</b></td></tr>
+<tr><td>6</td><td>跨维度回声 <code>REMOTE</code></td><td>紫珀砖远远不到做的时候，<b>不用急</b></td></tr>
+<tr><td>7</td><td>补料 <code>SUBSTITUTE</code></td><td>同 5</td></tr>
+<tr><td>8</td><td>雕像即基站 <code>BEACON</code></td><td>同 5</td></tr>
+<tr><td>9</td><td>回收 <code>SALVAGE</code></td><td>同 5</td></tr>
+<tr><td>10</td><td>延时绽裂 <code>DELAYED</code></td><td>同 5</td></tr>
+<tr><td>11</td><td>交换台 <code>BARTER</code></td><td>同 5</td></tr>
+<tr><td>12</td><td>温床 <code>HOTBED</code></td><td>已被第三节的新方向取代（见下）</td></tr>
+</table>
+<p><b>关于点子 4，作者原话</b>：</p>
+<div class="card small">"作为一种特殊仪式的基座，将记录的属性洗成外部雕像的同类属性，记录的情绪含量*0.8。</div>
+<div class="card small">只做紫水晶不做重生锚，重生锚一碰就炸的设定不符合雕像的设定。"</div>
+<p>（整理：<b>紫水晶雕像</b>改为一种<b>特殊仪式的基座</b> ——</p>
+<p>把记录的<b>属性</b>洗成<b>外部的某一尊雕像的同类属性</b>，代价是记录的情绪含量 <b>×0.8</b>。</p>
+<p><b>不做重生锚</b>：它"一碰就炸"的设定不符合雕像的定位。）</p>
+<h3>三、关于下界砖：作者否掉「砖窑」，另立方向</h3>
+<p><b>作者的判断</b>：砖窑这个点子<b>不太行</b>。</p>
+<p><b>取代它的方向（原话）</b>：</p>
+<div class="card small">"不如特化 3 里加入的下界特色，通过多方块仪式将法杖内的正负面情绪熔炼为纯粹的情绪方块，</div>
+<div class="card small">即为梦境维度中的房间的原料，参与之后的特殊玩法。"</div>
+<p>（整理：<b>不做"余烬砖"</b>。下界砖的价值改为 ——</p>
+<p>用一个<b>多方块仪式</b>，把<b>法杖里的正负面情绪熔炼成纯粹的「情绪方块」</b>；</p>
+<p>该方块是<b>梦境维度中房间的原料</b>，接入后续的特殊玩法。</p>
+<p>即：下界砖的特色从"回收边角料"改为"<b>把情绪做成建材</b>"。）</p>
+<h3>四、给后续阅读者的提醒</h3>
+<p>1. 正文第二节的 12 个点子<b>不是待办清单</b> —— 逐条裁决见上表。</p>
+<p>2. 真正排上下一步的是 <b>点子 3（偏食）</b>，以及<b>下界砖的「情绪方块」方向</b>。</p>
+<p>3. 正文第一节（接线核对）的结论请按上表理解，</p>
+<p>   <b>不要</b>沿用正文"三条空功能都是漏接线"的框架 —— 其中紫颂花那条是<b>尚未做到位</b>。</p>
+<p>4. 表中"同 5"的含义：<b>计入有价值部分，但实现需要用雕像以外的工具派系</b>。</p>
+<h2>子智能体回应（2026-10-04）</h2>
+<h3>0　一句话总纲</h3>
+<p><b>这一轮我不再提新点子，只做三件事：坦白我判偏的地方、把作者点名的两条路做成能施工的设计、把两条「确实得修」的修法写实。</b></p>
+<p>其中有两处是这一轮读代码才发现、且会<b>直接影响作者方案能否成立</b>的硬发现（§4.7 的 <code>symbolOf</code> 闸门、§3.4 的紫水晶归属），请优先看那两处。</p>
+<hr>
+<h3>1　我的哪些前提被作者纠正了（坦白）</h3>
+<h4>1.1 最该认的一条：紫颂花那条，我把<b>事实判断</b>和<b>设计判断</b>混成了一句</h4>
+<p>我写的原文是（正文第一节 1.1）：</p>
+<div class="card small">「另外 3 个「机制型特性」是全仓零调用 —— 它们只出现在 tooltip 和 <code>/madnesstheory debug</code> 的打印文本里，是「写了没接线」的空功能。」</div>
+<p>拆开看，这句话里有两个<b>性质完全不同</b>的判断：</p>
+<table>
+<tr><th>判断</th><th>性质</th><th>对错</th></tr>
+<tr><td><code>randomFluctuation()</code> / <code>allowsMixing()</code> / <code>sharedStorage()</code> 在全仓<b>没有调用点</b></td><td><b>事实判断</b></td><td>我核对了，这条没错</td></tr>
+<tr><td>所以它们是「<b>空功能</b>」「<b>正在对玩家撒谎的 UI</b>」</td><td><b>设计判断</b></td><td><b>这一条我判偏了</b></td></tr>
+</table>
+<p>**偏在哪：我把「我搜不到调用点」直接翻译成了「这个设计没做 / 没意义」，</p>
+<p>而正确的翻译应该是「这个设计的落点还没建起来」。**</p>
+<p>具体到紫颂花：作者原话是它「属于<b>法杖</b>侧的特色」。而我这整份文档的搜索，</p>
+<p><b>是以「仪式路径」为默认视野的</b> —— 我一遍遍 grep <code>RitualEffects</code>、<code>GuideBookItem</code>、<code>StatueTrait</code>，</p>
+<p>找不到调用点就下了结论。<b>我漏掉的那一层是：特性可以在「杖离开仪式之后」才生效</b>，</p>
+<p>而那条路径我根本没去问「它应该长什么样」。</p>
+<p><b>教训（写下来避免再犯）</b>：</p>
+<div class="card small">「零调用」只能推出「<b>落点不存在</b>」，不能推出「<b>设计不存在</b>」。</div>
+<div class="card small">下判断之前要问一句「这条特性<b>如果</b>有一个落点，它应该在哪一层」——</div>
+<div class="card small">而不是「我在我搜过的那几层里没找到」。</div>
+<p><b>因此修正结论</b>：我第一轮那句「三条都是写了没接线的空功能」应当改成：</p>
+<table>
+<tr><th>特性</th><th>修正后的判定</th></tr>
+<tr><td><code>allowsMixing</code>（灵魂）</td><td><b>确实是空功能</b>（作者已同意"要处理"）—— 我这条判断成立</td></tr>
+<tr><td><code>randomFluctuation</code>（紫颂花）</td><td><b>不是空功能，是落点未建</b> —— 它要在<b>存储读取侧</b>生效（见 §2），我撤回"该摘掉 tooltip"的建议</td></tr>
+<tr><td><code>sharedStorage</code>（紫珀砖）</td><td><b>需要专门的多方块仪式</b>（作者定），不急 —— 我那句"中～大工程"方向没错，但"空功能"这个定性偏了</td></tr>
+</table>
+<hr>
+<h3>2　紫颂花「存储数值在 0 时无中生有」怎么落地</h3>
+<h4>2.1 先回答"数值存在哪"</h4>
+<p>模组里有<b>两个</b>情绪数值，不要混：</p>
+<table>
+<tr><th>数值</th><th>存放位置</th><th>键/字段</th><th>上限</th></tr>
+<tr><td><b>法杖里的情绪</b></td><td>物品数据组件 <code>ModComponents.EMOTION</code>（<code>ModComponents.java:24-27</code>）</td><td><code>EmotionPayload.amount</code>（<code>EmotionPayload.java:31</code>）</td><td><code>effectiveCapacity()</code>（<code>:100-108</code>）</td></tr>
+<tr><td><b>玩家的心绪存储</b></td><td>玩家附件 <code>MoodAttachments.MOOD_DATA</code>（<code>MoodAttachments.java:51-53</code>）里的 <code>List&lt;String&gt; moods</code>（<code>:161</code>）</td><td>每行 `"心绪id</td><td>属性id</td><td>数量"<code>，编解码见 </code>EmotionMoodStore<code> 的 </code>encode/part<code>（</code>:162-189`）</td><td><b>每类各自 150</b>（<code>EmotionMoodStore.CAPACITY</code>，<code>:34</code>）</td></tr>
+</table>
+<p>"0 时无中生有"里的"存储"，我判断指的是<b>后者（玩家的心绪池）</b>——</p>
+<p>因为只有在一个<b>空池子</b>上"无中生有"才像一条特性；在法杖上它只是"多了几点"。</p>
+<p>但我把两边的落点都给出来，供作者选。</p>
+<h4>2.2 在哪个环节发生（三个落点，推荐第一个）</h4>
+<p><b>⚠️ 铁律：绝不要放在每帧/每 tick 被调用的读取路径里。</b></p>
+<p><code>EmotionMoodStore.amountAll</code> / <code>decodeTotals</code> 被 HUD（<code>client/MoodHudLayer</code>）每帧调用，</p>
+<p>在那里加副作用会变成<b>每帧加一点</b>。</p>
+<p><b>落点 ①（推荐）：玩家 tick 上的「空池唤醒」，事件驱动 + 冷却</b></p>
+<ul>
+<li>位置：<code>EmotionMoodStore</code> 新增 <code>wakeEmptyPools(data, rng, attrId)</code>，</li>
+</ul>
+<p>  由玩家 tick 挂点调用（现成的挂点见 <code>DreamSession.onPlayerTick</code>，<code>DreamSession.java:233</code>）。</p>
+<ul>
+<li>三个条件同时成立才触发：</li>
+</ul>
+<p>  1. 玩家主手/副手持有一根<b>紫颂花法杖</b>。判据建议用<b>材质</b>：</p>
+<p>     <code>StatueMaterial.byIdOrNull(p.materialId()).kind() == CHORUS</code></p>
+<p>     （<code>StatueMaterial.kind()</code>，<code>StatueMaterial.java:198</code>；<code>materialId</code> 在 <code>EmotionPayload.java:45</code>，</p>
+<p>     由 <code>GuideBookItem.java:346</code> 写入）—— 这比按 <code>kindId</code> 判更贴"属于<b>法杖</b>的特色"。</p>
+<p>  2. 该杖 <code>payload.attrId()</code> 对应的心绪里有<b>当前为 0</b> 的类。</p>
+<p>  3. 冷却到期 —— 建议 <b>600 刻（30 秒）</b>一次，冷却存成 <code>MoodData</code> 的新字段</p>
+<p>     （<b>新持久字段必须"可选 + 默认值"</b>，照 <code>MoodAttachments.java:290-294</code> 里 <code>moods</code> 的写法）。</p>
+<ul>
+<li>效果：随机挑一类<b>当前为 0</b> 的心绪，<code>EmotionMoodStore.add(data, mood, p.attrId(), 1)</code>。</li>
+</ul>
+<p>  <b>1 点</b>，不要更多。</p>
+<p><b>落点 ②：绽裂结算时往空池倾斜</b></p>
+<ul>
+<li><code>RitualEffects.burst()</code> 现在是"每类平均 + ±20% 浮动"（<code>:336-345</code>）。</li>
+</ul>
+<p>  可以让<b>外围是紫颂花</b>时把"当前为 0 的类"多分一点。</p>
+<ul>
+<li>优点：完全落在已有代码里（<code>per</code> 的计算处），零新状态、零 tick 开销。</li>
+<li>缺点：语义是"分配倾斜"而非"无中生有"，弱一档。</li>
+</ul>
+<p><b>落点 ③：空杖自己起搏（最贴"输入随机"的另一半，但风险最高）</b></p>
+<ul>
+<li>位置：<code>EmotionStaffItem.use()</code>（<code>:63</code>）之前，或 <code>appendHoverText</code>（<code>:230</code>）。</li>
+<li>效果：一根<b>空的</b>紫颂花杖每隔 N 刻自己涨 1 点（受 <code>effectiveCapacity()</code> 封顶）。</li>
+<li>风险：它会让"空杖"变成<b>可无限等待的资源源</b>。</li>
+</ul>
+<h4>2.3 上限怎么控（三条）</h4>
+<p>1. <b>心绪侧必须吃 150 的硬上限</b> —— 直接调 <code>EmotionMoodStore.add(...)</code>，</p>
+<p>   它内部就是 <code>min(n, freeSpaceFor(...))</code>（<code>:87-88</code>）。<b>不要自己写加法</b>，</p>
+<p>   这样永远不会超上限，且与绽裂的溢出转经验逻辑天然一致。</p>
+<p>2. <b>必须同时有「冷却」与「仅 0 时」两个闸门。</b></p>
+<p>   只写"为 0 就 +1"，玩家<b>什么都不做</b>也能把 10 类全部顶到 150 ——</p>
+<p>   那就直接推翻了"心绪需要攒两次"的节奏设计（<code>EmotionMoodStore.java:19-21</code> 写明</p>
+<p>   150 与绽裂 ×1.5 是配套的）。建议再加"每类单日封顶"或"只在玩家做别的事时顺手给 1 点"。</p>
+<p>3. <b>永不越过玩家已有的量</b> —— <code>add</code> 只往"最小"方向给，天然只从 0 起步。</p>
+<h4>2.4 落点与风险汇总</h4>
+<ul>
+<li><b>落点</b>：<code>EmotionMoodStore.freeSpaceFor</code>（<code>:50</code>）/ <code>add</code>（<code>:83</code>）<b>复用不改</b>；</li>
+</ul>
+<p>  触发与冷却 = <code>MoodData</code> 加 <code>long moodWakeCooldownUntil</code> + <code>DreamSession.onPlayerTick</code>（<code>:233</code>）；</p>
+<p>  表现 = <code>EmotionStaffItem.appendHoverText</code> 那句"（空的 —— 还没有装进情绪）"（<code>:238</code>）。</p>
+<ul>
+<li><b>风险 A（可控）</b>：挂机收益 —— 靠冷却 + 仅 0 时 + 可选单日封顶控住。</li>
+<li><b>风险 B（本次新核对，必须一起处理）</b>：<code>MoodAttachments.java:155</code> 的注释写着</li>
+</ul>
+<p>  "总量上限 = <code>EmotionMoodStore.CAPACITY</code>（<b>100</b>）"，但<b>代码实际是每类各自 150</b></p>
+<p>  （<code>EmotionMoodStore.java:34</code>，且 <code>:26-33</code> 记录了当初误解成共享池导致的实测 bug）。</p>
+<p>  <b>注释过期</b> —— 照注释写会重新踩进那个已经踩过的坑。</p>
+<ul>
+<li><b>风险 C</b>：任何改 <code>moods</code> 的地方都必须调 <code>EmotionMoodStore.syncTo(player, data)</code>（<code>:136</code>），</li>
+</ul>
+<p>  否则 HUD 十根管子不刷新（<code>MoodAttachments.java:37-43</code> 说明了这条同步链）。</p>
+<hr>
+<h3>3　点子 4 重写后的完整设计（紫水晶 · 属性洗炼）</h3>
+<h4>3.1 它是"第四种仪式"还是"升华/沉坠的变体"</h4>
+<p><b>我的建议：做成「让升华/沉坠多一条洗炼分支」，不新增第四种结构。</b></p>
+<p>理由是<b>结构判定层本来就在做这件事</b>，看 <code>RitualStructure.match</code> 的判定顺序（<code>:106-129</code>）：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+① 中心是雕像 + 台座上有东西
+② tryBurst（八尊朝外）      → 不成立就继续
+③ tryInward(wood=true)      → 四尊朝内 + 木头类 → SUBLIMATION
+④ tryInward(wood=false)     → 四尊朝内 + 石头类 → SINKING
+</pre>
+<p><b>关键事实（本次新核对）</b>：<code>isWood</code>（<code>:206-210</code>）与 <code>isStone</code>（<code>:213-217</code>）都是<b>硬编码白名单</b>，</p>
+<p>新的紫水晶种类<b>不在里面</b> —— 而 <code>EmotionStatueKind.java:70-72</code> 的注释自己写明了这件事。</p>
+<p>所以<b>紫水晶雕像只能当中心</b>；两侧（四尊朝内）仍须从现有 6 种里选。<b>这正好够用</b>：</p>
+<div class="card small"><b>洗炼 = 中心是紫水晶雕像的升华或沉坠。</b></div>
+<div class="card small">极性方向照旧（木类外围 → 升华取正面；石类外围 → 沉坠取负面）。</div>
+<div class="card small"><b>洗炼只改「属性」，不改「取哪一半」。</b></div>
+<p>好处：<b>结构判定零改动、<code>RitualKind</code> 不用加、<code>RitualStructure.Result</code> 不用动</b>，</p>
+<p>全部落在效果层 —— 与第一轮"最稳的落点是 <code>RitualEffects.inject</code>"的结论一致。</p>
+<h4>3.2 "把记录的属性洗成外部雕像的同类属性" —— 是哪一尊</h4>
+<p>作者原话是"外部雕像"，<b>不是</b>中心。所以：</p>
+<ul>
+<li><b>不是</b>中心那尊（中心就是紫水晶基座，用它等于"一律洗成幽闭属性"，玩家没有选择空间）。</li>
+<li><b>应当是外围那四尊的属性</b> —— 直接用<b>现成字段</b> <code>RitualStructure.Result.outerKind()</code></li>
+</ul>
+<p>  （<code>:64</code>），<code>tryInward</code> 会填好它（<code>:199-200</code>）。四尊本来就强制同类（<code>:185-188</code>），</p>
+<p>  因此 <code>outerKind().attribute()</code> 是<b>单值、无歧义</b>，<b>不需要动 <code>Result</code></b>。</p>
+<p>于是玩家能做的事很清楚：</p>
+<div class="card small">「手头这条记录是<b>自然</b>属性，我想要<b>下界</b>属性 → 摆四尊下界岩石（沉坠结构），</div>
+<div class="card small">  中心放紫水晶 → 洗成下界属性。」</div>
+<p><b>它创造的东西</b>：属性层是<b>平方</b>的（外围 × 中心，<code>RitualEffects.java:179-184</code>），</p>
+<p>所以「记录属性」是整条链上<b>玩家唯一无法自己决定的输入</b>。洗炼第一次让玩家控制这个输入 ——</p>
+<p>配合已有的材质表，等于"我可以把任何一条记录变成任何材质的同类"。</p>
+<h4>3.3 ×0.8 乘在哪一步</h4>
+<p><b>乘在"提取出的那一份"上，且在偏好之前</b>，即 <code>RitualEffects.inject()</code> 里：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+现在：int total  = (int) Math.round(amount * share);                        // :139
+      ...
+      double loss = r.injectionLoss() * centerKind.injectionRatio() * pref; // :186
+      int injected = (int) Math.max(1, Math.round(total * loss));           // :187
+
+洗炼：total = (int) Math.round(amount * share * 0.8);   ← 只改这一行
+</pre>
+<p><b>为什么乘在 <code>total</code> 而不是乘在 <code>loss</code> 上</b>：乘在 <code>loss</code> 上会与"外围/中心损耗 × 偏好"混在一起，</p>
+<p>玩家在聊天栏看到的三因数拆解（<code>:234-237</code>）会多出一个说不清来源的 0.8；</p>
+<p>乘在 <code>total</code> 上，玩家看到的是"<b>提取出的情绪少了 20%</b>"，语义干净，</p>
+<p>而且<b>保住了 <code>Math.max(1, ...)</code> 的 1 点下限</b>（<code>:187</code>）不会因 0.8 变成 0。</p>
+<p><b>建议一并改提示</b>：聊天栏现在打「从这条记录中提取 X 点」（<code>:225-229</code>），</p>
+<p>洗炼时应改成「洗炼：把「自然」洗成「下界」，提取 X 点（×0.8）」，</p>
+<p>否则玩家无法从反馈里看出 0.8 花在哪。</p>
+<h4>3.4 新增种类还是改造 SCULK —— 这里有一条必须处理的地雷</h4>
+<p><b>问题（本次新核对）</b>：<code>EmotionStatueKind.initSources()</code> 把<b>紫水晶绑给了 SCULK</b>（<code>:304-306</code>）：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+bind(SCULK, () -&gt; Blocks.SCULK, () -&gt; Blocks.POLISHED_DEEPSLATE,
+        () -&gt; Blocks.CHISELED_DEEPSLATE, () -&gt; Blocks.DEEPSLATE_TILES,
+        () -&gt; Blocks.AMETHYST_BLOCK, () -&gt; Blocks.BUDDING_AMETHYST);
+</pre>
+<p><b>如果紫水晶只是"SCULK 的一种材质"，它在数据上就是幽闭属性</b></p>
+<p>（<code>SCULK</code> 的 attribute = CAVERN，<code>EmotionStatueKind.java:73</code>）——</p>
+<p>那么"基座"和"属性来源"会是同一个东西，就不是洗炼了。</p>
+<p><b>所以必须新增一个独立的 <code>AMETHYST</code> kind，并把紫水晶块从 SCULK 解绑。</b> 建议取值：</p>
+<table>
+<tr><th>项</th><th>建议</th><th>理由</th></tr>
+<tr><td>id / 标签</td><td><code>amethyst</code> / <code>紫晶石像</code></td><td>——</td></tr>
+<tr><td>容量</td><td><b>32</b></td><td>2 级已有 32 的先例（<code>IRON</code>/<code>NETHER_ROCK</code>，<code>:45/:52</code>），不引入新档位</td></tr>
+<tr><td>等级</td><td><b>2</b></td><td>与其它第二批一致（<code>:73-77</code>）</td></tr>
+<tr><td><b>属性</b></td><td><b>CAVERN（幽闭）</b></td><td>紫水晶洞是地下产物；且 CAVERN 目前只有 SCULK 一个载体，解绑后不给 AMETHYST 会让它更孤</td></tr>
+<tr><td>trait</td><td><b>新值 <code>AMETHYST</code></b></td><td>需要一个"是不是洗炼基座"的判据</td></tr>
+<tr><td>note</td><td><code>洗炼基座 · 同类 ×2.00 · 交叉 ×1.50</code></td><td>与第二批的 note 风格一致</td></tr>
+<tr><td>来源方块</td><td><code>AMETHYST_BLOCK</code> / <code>BUDDING_AMETHYST</code></td><td>从 <code>initSources</code> 的 SCULK 里<b>移走</b>（<code>:304-306</code>）</td></tr>
+</table>
+<p><b>随之而来的必改项（不改就是静默失效）</b>：</p>
+<p>1. <code>StatueTrait</code> 加枚举值 <code>AMETHYST</code>，并且 **<code>positiveMultiplier</code>（<code>:109</code>）与 <code>negativeMultiplier</code>（<code>:134</code>）</p>
+<p>   两个 switch 都要加 case<b> —— 它们是 <code>default -&gt; 1.00</code>，漏写</b>不报错、只静默拿 1.00**</p>
+<p>   （<code>StatueTrait.java:89-90</code> 自己记了这条教训）。</p>
+<p>2. <code>StatueMaterial</code> 要加紫水晶两条的 kind 指向（<code>StatueMaterial.java:174-199</code>）。</p>
+<p>   若材质表由脚本生成，需重跑生成器（<b>脚本名本轮未核对</b>）。</p>
+<p>3. 种类清单会从 19 变 20（书页与 <code>/emotion statue</code> 输出会变长）。</p>
+<p>4. <code>ModBlocks</code> <b>不需要新增方块</b> —— 紫水晶用原版方块，只是"能被雕刻刀雕成雕像"；</p>
+<p>   方块适配表是 <code>Map&lt;Block, EmotionStatueKind&gt;</code>（<code>:203</code>），<code>bind</code> 改一行即可。</p>
+<h4>3.5 与三种既有仪式的关系（收束表）</h4>
+<table>
+<tr><th></th><th>升华</th><th>沉坠</th><th>绽裂</th><th><b>洗炼（新）</b></th></tr>
+<tr><td>结构</td><td>中心任意 + 四尊朝内（木类）</td><td>中心任意 + 四尊朝内（石类）</td><td>中心任意 + 八尊朝外</td><td><b>中心 = 紫水晶 + 四尊朝内（木或石）</b></td></tr>
+<tr><td>取的极性</td><td>正面</td><td>负面</td><td>不涉及</td><td><b>照旧（看外围类别）</b></td></tr>
+<tr><td>改什么</td><td>杖里的量</td><td>杖里的量</td><td>杖 → 心绪</td><td><b>记录属性 → 外围雕像的属性</b></td></tr>
+<tr><td>代价</td><td>1 条记录</td><td>1 条记录</td><td>0 条记录</td><td>1 条记录 <b>+ ×0.8</b></td></tr>
+<tr><td>新增结构判定</td><td>—</td><td>—</td><td>—</td><td><b>不需要</b>（复用 <code>tryInward</code>）</td></tr>
+</table>
+<p><b>判定优先级</b>：因为洗炼<b>复用</b> <code>tryInward</code>，顺序天然是"先绽裂、再升华/沉坠"，</p>
+<p><b>洗炼不需要新优先级</b> —— 它是在"已确定是升华还是沉坠"之后，再看<b>中心是不是紫水晶</b>。</p>
+<p>实现上就是 <code>inject()</code> 里的一个 <code>if</code>。</p>
+<hr>
+<h3>4　下界砖新方向的完整设计（情绪方块 / 熔炼 → 梦境房间原料）</h3>
+<h4>4.1 最关键的发现：它几乎不需要新方块</h4>
+<p>作者说这些方块要成为"<b>梦境维度中房间的原料</b>"。本轮读了梦境那一半的代码，</p>
+<p><b>这条链的接口早就存在，而且名字就是为它留的</b>：</p>
+<table>
+<tr><th>事实</th><th>位置</th></tr>
+<tr><td>房间每一面都由「<b>心绪块（明）/（暗）</b>」铺成</td><td><code>DreamRoom.applyFace</code>（<code>:159-170</code>）用 <code>ModBlocks.MOOD_LIGHT</code> / <code>MOOD_DARK</code></td></tr>
+<tr><td>明块亮度 <b>15</b>、暗块亮度 <b>5</b></td><td><code>ModBlocks.java:52-63</code></td></tr>
+<tr><td>组件字符画只认 <b>L / D</b>（外加 R/N/X 三种"跟着进度走"的记号）</td><td><code>DreamPiece</code> 的 <code>Slot</code>/<code>Base</code>/<code>at()</code>（<code>DreamPiece.java:34-43</code>、<code>:90-96</code>）；<code>DreamRoom.applyFace</code> 的 switch（<code>:198-208</code>）</td></tr>
+<tr><td>搭建 → 保存 → 复用的完整通路</td><td><code>/madnesstheory piece save</code>（<code>MadnessCommands.savePiece</code>，<code>:590-624</code>）→ <code>DreamRoom.capturePad</code>（<code>:321-333</code>）→ <code>symbolOf</code>（<code>:336-343</code>）</td></tr>
+<tr><td>生成时按组件安排各面</td><td><code>DreamPieces.plan</code>（<code>:166-185</code>）、<code>WINDOW=0.3</code>（<code>:44</code>）、<code>WALL_GATE/FRAME_GATE</code>（<code>:46-48</code>）</td></tr>
+</table>
+<p><b>结论：</b></p>
+<div class="card small"><b>「情绪方块」= 现有的 <code>mood_light</code> / <code>mood_dark</code> 两种方块本身。</b></div>
+<div class="card small">它们现在<b>只能靠创造模式拿到</b>（<code>ModBlocks.java:65-68</code> 只注册了 BlockItem，没有任何获取途径）。</div>
+<div class="card small">第一轮读到它们是"早期实验方块"，第二阶段方案 §7 的 Q5 也问过；</div>
+<div class="card small">作者当时答"是梦境维度小房间的标记方块，与情绪/心绪系统无关，本阶段不动它们"。</div>
+<div class="card small"><b>这条答复现在被新方向推翻了</b> —— 它们<b>正是</b>"情绪方块"，当时缺的只是<b>生产手段</b>，</div>
+<div class="card small">而熔炼仪式补的就是这个手段。</div>
+<p><b>这样做的成本几乎为零</b>：不新增方块、不新增模型/贴图/方块状态（<b>零美术</b>）；</p>
+<p><code>piece save</code> 立刻能捕获（<code>symbolOf</code> 已认它们，<code>:337-338</code>）；</p>
+<p><code>room build</code> / <code>applyFace</code> 立刻能摆（<code>:199-200</code>）；<code>isMood</code>（<code>:303-305</code>）与 <code>collapse</code>（<code>:282</code>）天然覆盖。</p>
+<h4>4.2 "十种心绪"怎么办（唯一需要作者拍板的分叉）</h4>
+<p><b>A 案（推荐 · 零美术）</b>：<b>只做两极</b> —— 正性情绪 → <code>mood_light</code>；负性情绪 → <code>mood_dark</code>。</p>
+<p>"纯粹"= <b>极性纯粹</b>（与绽裂的"单一极性"同一个词、同一个世界观）。</p>
+<p>十种心绪不进方块，仍只活在玩家存储里（HUD + 书）。代价：房间里看不出"这是快乐还是安宁"。</p>
+<p><b>B 案（心绪十色 · 要美术）</b>：让方块带心绪种类。</p>
+<ul>
+<li><b>不要新注册 20 个方块</b>。最省的落法是给 <code>MOOD_LIGHT</code>/<code>MOOD_DARK</code> **各加一个</li>
+</ul>
+<p>  <code>EnumProperty&lt;EmotionMood&gt;</code>**（照 <code>EmotionStatueBlock</code> 的三属性做法，<code>EmotionStatueBlock.java:46-61</code>）：</p>
+<p>  方块状态 1 → <b>各 10 个</b>（明 10 + 暗 10 = 20 variants）。注册名仍只有 2 个。</p>
+<ul>
+<li>随之要改：<code>symbolOf</code>（<code>:336</code>）—— 现在只有 L/D 两个字母可用，</li>
+</ul>
+<p>  要么把字符集扩到 20 个，要么<b>只按极性映射</b>（那就退化成 A 案）；</p>
+<p>  <code>applyFace</code> 的 switch（<code>:198-208</code>）要扩；<b>并且要考虑旧组件兼容</b></p>
+<p>  （<code>.json</code> 里的 L/D 必须永远有效，而组件有数据包与玩家本地文件两个来源，<code>DreamPieces.load</code> <code>:94-136</code>）。</p>
+<p><b>我的建议：A 案先落地，B 案等 A 跑通、且玩家真的需要「房间里看出种类」时再做。</b></p>
+<h4>4.3 熔炼仪式的结构与消耗</h4>
+<table>
+<tr><th>项</th><th>设计</th><th>依据 / 代价</th></tr>
+<tr><td>中心</td><td><b>下界砖雕像</b>，台座上插<b>法杖</b></td><td>与升华/沉坠同形，<code>match</code> 的入口条件已满足（<code>:99-104</code>）</td></tr>
+<tr><td>外围</td><td><b>四尊朝内、同类</b>，来自<b>新的一类</b>（建议称"熔炉类"）</td><td><b>本方案唯一的真改动</b>：<code>isWood</code>/<code>isStone</code> 是硬编码白名单（<code>:206-217</code>），须新增第三个方法 + <code>tryInward</code> 加一个"类别"维度</td></tr>
+<tr><td>建议的外围种类</td><td><b>黑曜石 / 哭泣的黑曜石</b>（新 kind <code>OBSIDIAN</code>）</td><td>耐高温 + 下界熔炉意象；且这两个方块<b>目前完全没被使用过</b></td></tr>
+<tr><td>触发</td><td>手持指南书右键中心</td><td>与三个既有仪式一致（<code>GuideBookItem.useOn</code>，<code>:268-279</code>）</td></tr>
+<tr><td>时长</td><td>建议 <b>200 刻（10 秒）</b>，短于升华/沉坠的 600 刻</td><td>绽裂现在是<b>零时长</b>（<code>RitualEffects.java:278</code> 即时结算，类注释 <code>:46</code> 点明），多一档 10 秒更有层次</td></tr>
+<tr><td>消耗</td><td><b>清空法杖里的情绪</b>（<code>payload.drained()</code>，<code>EmotionPayload.java:91</code>）；<b>不消耗记录</b></td><td>与绽裂一致 —— 它的输入是杖，不是书</td></tr>
+</table>
+<p><b>入场条件（建议）</b>：</p>
+<ul>
+<li><b>不要求超容量</b>（那是绽裂的入场券，<code>RitualEffects.java:287</code>），</li>
+</ul>
+<p>  但要求含量达门槛：建议 <code>amount &gt;= 8</code>（最低档一条记录的量，<code>GuideBookItem.java:393</code>）。</p>
+<p>  这样两个消费法杖的仪式分工清楚：</p>
+<p>  <b>绽裂 = 把超量的单一极性拆成心绪；熔炼 = 把任意含量的混合情绪铸成建材。</b></p>
+<ul>
+<li><b>允许正负参半</b> —— 这是熔炼<b>相对绽裂最大的互补价值</b>：</li>
+</ul>
+<p>  绽裂明确拒绝参半（<code>:296-305</code>，"杖里的情绪正负参半，拆不开"），</p>
+<p>  而熔炼<b>按比例拆成明暗两种方块</b>，参半的杖第一次有了用处。</p>
+<h4>4.4 熔炼规则与转换比（大概数）</h4>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+blocks = clamp(floor(amount / 8), 1, 32)     // 总量
+lit    = (blocks + 1) / 2 ... 见下
+（正确写法：lit = round(blocks * ratio)，dark = blocks - lit，ratio 取 payload.ratio()）
+</pre>
+<ul>
+<li><b>8 点 / 块</b>：最低档一条记录（8 点）产 1 块；最高档（32 点）产 4 块；</li>
+</ul>
+<p>  一根灌到 336 点的杖产 32 块（正好到上限）。</p>
+<ul>
+<li><b>上限 32 / 次</b> —— 必须有，否则"一次性把房间砌满"，会让梦境建造失去劳作感。</li>
+<li><b>参半示例</b>：<code>amount = 40</code>、<code>ratio = 0.5</code> → <code>blocks = 5</code> → 明 3 / 暗 2。</li>
+</ul>
+<p>  ⚠️ 用 <code>round</code> 在 0.5 处有偏向，建议写确定性分配（例如 <code>dark = blocks / 2; lit = blocks - dark</code>），</p>
+<p>  避免同一批方块数量随舍入方向漂移。</p>
+<ul>
+<li><b>外围同类加成</b>：建议<b>沿用绽裂的写法</b>（<code>RitualEffects.java:317-326</code>，只取外围一层</li>
+</ul>
+<p>  <code>multiplierFor(mAttr, eAttr, positive)</code>），<b>不要</b>用升华/沉坠的两层 —— 熔炼的主体是杖。</p>
+<p>  ⚠️ 但绽裂那段的注释（<code>:319-320</code>）承认它曾写错过一次（把同一个属性传两遍 = 恒定 ×1.00），</p>
+<p>  <b>照抄时别把那个错误一起抄过来</b>。</p>
+<ul>
+<li><b>正负不平衡的额外惩罚</b>：建议<b>先不加</b>，看 A 案跑一轮再定。</li>
+</ul>
+<h4>4.5 接入"梦境房间原料"的接口在哪 —— 就在 <code>piece</code> / <code>room</code> 那套</h4>
+<p><b>答：接口已经通了，而且有三条通路。</b></p>
+<table>
+<tr><th>通路</th><th>现在的走法</th><th>情绪方块接入后</th></tr>
+<tr><td><b>① 玩家自建组件</b></td><td>梦境里搭地台 → <code>/madnesstheory piece save &lt;名字&gt; [intensity]</code>（<code>MadnessCommands.java:558</code>、<code>savePiece</code> <code>:590</code>）→ <code>capturePad</code>（<code>DreamRoom.java:321</code>）→ <code>symbolOf</code>（<code>:336</code>）→ 写 <code>run/madnesstheory_pieces/&lt;名字&gt;.json</code>（<code>DreamPieces.SAVE_DIR</code>，<code>:51</code>）</td><td><b>零改动</b> —— <code>symbolOf</code> 第 <code>:337-338</code> 行直接认这两个方块</td></tr>
+<tr><td><b>② 生成时抽取与放置</b></td><td><code>DreamSession.enterDream</code>（<code>:84-132</code>）→ <code>DreamPieces.plan</code>（<code>:166-185</code>）→ <code>DreamRoom.build</code>（<code>:96</code>）→ <code>applyFace</code>（<code>:159</code>）</td><td><b>零改动</b> —— <code>applyFace</code> 的 <code>case 'L'/'D'</code>（<code>:199-200</code>）直接产出这两个方块</td></tr>
+<tr><td><b>③ 让心绪决定房间长什么样</b></td><td><code>progressOf</code>/<code>setProgress</code>（<code>DreamSession.java:398-404</code>）<b>目前只能靠命令改</b>（<code>DreamSession.java:34-37</code> 写明"进度现在不参与任何判定"）</td><td><b>这是"特殊玩法"的真正接口</b></td></tr>
+</table>
+<p><b>③ 的具体落点（本方案最值得做的一段）</b>：</p>
+<p><code>DreamPieces.pick</code> 现在的选择依据<b>只有 <code>intensity</code> 与权重</b>（<code>:188-213</code>）。</p>
+<p>可以让<b>玩家的心绪存储</b>参与权重：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+pick(pool, progress, random)
+  → 先按 intensity 窗口 WINDOW=0.3 硬筛（:191-194，不动）
+  → 【新增】给每个候选算一个"心绪契合度"：
+        组件里 L（明）的占比  vs  玩家正面心绪占总量的比例
+        （正面总量可用 EmotionMoodStore.decodeTotals 拿到 HUD 用的那个数组，:145-158）
+  → 契合度只在加权时乘一个系数，不改 intensity 硬筛
+</pre>
+<p>效果：<b>心绪里正面占多数 → 房间更可能抽到"明多暗少"的组件；反之亦然。</b></p>
+<p>这把"心绪存储"从一个<b>只进不出的计数器</b>，变成<b>会反过来塑造梦境世界的东西</b> ——</p>
+<p>这正是"参与之后的特殊玩法"最自然的一种实现。</p>
+<p><b>代价与风险</b>：</p>
+<ul>
+<li><b>建议不改 <code>pick</code> 签名</b>：由 <code>DreamSession.enterDream</code>（<code>:121-123</code>）在外面算好权重传进去更省。</li>
+<li>⚠️ <b>种子确定性</b>：<code>DreamPieces.plan</code> 的注释写明"random 由调用方提供，</li>
+</ul>
+<p>  这样同一个种子能完整复现'选组件 + 旋转'的全过程"（<code>:162-165</code>），</p>
+<p>  而 <code>/madnesstheory room save|load</code> 正是靠它复现预设（<code>RoomPresets.java:28</code>）。</p>
+<p>  <b>把玩家心绪混进权重，会让同一个种子在不同心绪下抽出不同房间 —— 预设复现失效。</b></p>
+<p>  建议：<b>只在真实入睡路径上用心绪加权；<code>room build/load/force</code> 命令路径保持纯种子</b>，</p>
+<p>  并在 <code>room save</code> 的提示里说明这一点。</p>
+<h4>4.6 为什么这个方向比砖窑好</h4>
+<table>
+<tr><th></th><th>砖窑（被否）</th><th>熔炼（新方向）</th></tr>
+<tr><td>产出</td><td>一件<b>物品</b>（余烬砖）</td><td>一批<b>建材方块</b></td></tr>
+<tr><td>连到哪</td><td>只能再灌回法杖 —— <b>绕回自己</b></td><td>连到<b>梦境维度</b>（模组的主线舞台）</td></tr>
+<tr><td>是否新行为</td><td>不是（仪式流程一字不变，只是多捡一块）</td><td><b>是</b>（多了一条"情绪 → 建材"的生产线）</td></tr>
+<tr><td>与其它材质例外同级吗</td><td>不同级（只是多收一点）</td><td><b>同级</b>（灵魂/紫颂花/紫珀砖各有一个"别人做不到的事"，下界砖终于也有了）</td></tr>
+<tr><td>复用已有代码</td><td>要新物品 + 新组件</td><td><b>方块复用现成的两种，接口复用现成的一套</b></td></tr>
+</table>
+<p><b>一句话</b>：砖窑是"给下界砖多加一个抽屉"，熔炼是"给下界砖一个<b>下游产业</b>"。</p>
+<h4>4.7 两个必须一起改的实现细节</h4>
+<p>1. <b><code>symbolOf</code> 是这条链的闸门</b>（<code>DreamRoom.java:336-343</code>）。</p>
+<p>   它现在只认 5 个方块（<code>MOOD_LIGHT</code>/<code>MOOD_DARK</code>/三个 marker），<b>其它一律返回 <code>'.'</code></b>。</p>
+<p>   若"情绪方块"做成<b>任何新注册的方块</b>，玩家用它搭的房间</p>
+<p>   <code>piece save</code> 会<b>静默地把它们读成空气</b>（<code>'.'</code> = 保持底色），存出来的是一张空白图 ——</p>
+<p>   <b>而且不会报错</b>。→ 这直接决定 §4.2 的取舍：**要么复用这两个方块（A 案，零改动），</p>
+<p>   要么必须同步扩 <code>symbolOf</code>**。没有第三条路。</p>
+<p>2. <b><code>EmotionStatueKind.initSources</code> 里紫水晶的归属</b>（<code>:304-306</code>，见 §3.4）。</p>
+<p>   它同时影响 §3（洗炼基座）与 §4（外围种类选择），<b>两件事都动同一个枚举</b>，</p>
+<p>   建议<b>放在同一轮改</b>，不要分两次动 <code>EmotionStatueKind</code>。</p>
+<hr>
+<h3>5　第 7 条"得修"—— trait 下沉到材质级的修法</h3>
+<h4>5.1 现状（本次新核对）</h4>
+<ul>
+<li><code>EmotionStatueKind</code> 的 <code>trait</code> 是<b>构造参数的第 6 项</b>，每 kind 一个（<code>EmotionStatueKind.java:90-99</code>）。</li>
+<li><code>StatueMaterial</code> <b>也有 <code>kind()</code></b>（<code>StatueMaterial.java:198</code>），110 条材质各自指向一个 kind；</li>
+</ul>
+<p>  它<b>没有自己的 trait 字段</b>（字段集见 <code>:174-186</code>：id / kind / sideTexture / topTexture）。</p>
+<ul>
+<li>所以"材质级差异"在数据上<b>不存在</b>，现在只有"长相"不同。</li>
+</ul>
+<h4>5.2 真下沉要动哪些地方</h4>
+<table>
+<tr><th>要改</th><th>内容</th><th>量级</th></tr>
+<tr><td><code>StatueMaterial</code></td><td>加 <code>trait</code> 字段 + 构造参数</td><td><b>110 条</b>（脚本生成则重跑；手改必错）</td></tr>
+<tr><td>所有取 trait 的地方</td><td>现在一律 <code>kind.trait()</code>，要改成"材质优先、回落 kind"</td><td><code>RitualEffects.java:182/183/324</code>、<code>EmotionStatueItem.java:63</code>、<code>BiomeMoodHintDebug.java:208-221</code>、<code>MadnessCommands.java:223</code></td></tr>
+<tr><td>仪式路径</td><td><code>Result.outerKind()</code> <b>只有 kind、没有材质</b>；<code>tryBurst</code> 的注释明确写了"现有数据模型里'材质'就是 <code>EmotionStatueKind</code>，没有更细的一级"（<code>RitualStructure.java:153-155</code>）</td><td><b>要扩 <code>Result</code></b>，牵连 <code>match</code> 三个分支 + <code>dbgRitual</code> 输出</td></tr>
+<tr><td>展示</td><td>tooltip（<code>EmotionStatueItem.java:59-80</code>）与 <code>/emotion statue</code> 输出</td><td>中</td></tr>
+</table>
+<p><b>结论：真下沉是"大"工程（同时动 110 条材质 + 判定链），而目前真正需要材质级的只有紫颂花一个。收益不成比例。</b></p>
+<h4>5.3 我建议的省法（推荐）</h4>
+<p><b>保留 kind 级 trait 不动，只在确实需要材质级的那几条特性上做局部特判。</b></p>
+<p>理由是<b>数据已经在手上</b>：</p>
+<ul>
+<li><b>法杖侧</b>：<code>EmotionPayload.materialId()</code>（<code>EmotionPayload.java:45</code>，<code>GuideBookItem.java:346</code> 写入）</li>
+</ul>
+<p>  —— 判紫水晶/紫颂花<b>不需要任何新字段</b>。</p>
+<ul>
+<li><b>环境侧（雕像方块）</b>：<code>state.getValue(EmotionStatueBlock.MATERIAL)</code>（<code>EmotionStatueBlock.java:59-61</code>）。</li>
+</ul>
+<p>写成一个<b>纯函数</b>即可，不牵动枚举结构：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+// 建议放在 StatueTrait 或一个新的工具类里
+public static boolean isMaterialOf(EmotionPayload p, EmotionStatueKind want) {
+    StatueMaterial m = StatueMaterial.byIdOrNull(p.materialId());
+    return m != null ? m.kind() == want
+                     : EmotionStatueKind.byId(p.kindId()) == want;
+}
+</pre>
+<p><b>额外好处</b>：它天然兼容<b>旧法杖</b> —— 旧载荷没有 <code>material</code> 字段，<code>EmotionPayload</code> 的 codec</p>
+<p>用 <code>optionalFieldOf("material", "")</code>（<code>:44-45</code>）读成空串，于是回落到 kind 判据。</p>
+<p><b>这正是"下沉到材质级"想要的效果，却不用动 110 条数据。</b></p>
+<p><b>建议</b>：把"要不要真下沉"推迟到出现<b>第二个</b>需要材质级功能的特性时再决定；</p>
+<p>现在用局部判据，把 <code>StatueTrait</code> 留作"kind 级的粗粒度开关"。</p>
+<hr>
+<h3>6　第 8 条（<code>ritualPayload</code> 不序列化）的具体修法</h3>
+<h4>6.1 现状（复核确认）</h4>
+<p><code>EmotionStatueBlockEntity.writeContained</code>（<code>:549-557</code>）只写两样：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+output.putInt("ritualTicks", this.ritualTicks);
+if (!this.contained.isEmpty()) output.store(KEY_ITEM, ItemStack.CODEC, this.contained);
+</pre>
+<p>而 <code>ritualPayload</code>（<code>:94-95</code>，类型 <code>EmotionPayload</code>）<b>不在里面</b>。</p>
+<p>后果：升华/沉坠的注入是<b>600 刻后才落地</b>（<code>RitualEffects.java:202-216</code>），</p>
+<p>这 30 秒里<b>区块卸载或退出游戏 → 待结算的注入永久丢失</b>，</p>
+<p>而记录<b>已经</b>在 <code>:220-221</code> 被打上已消耗标记（且 <code>cancelRitual</code> 明确不退还，<code>:175-176</code>）。</p>
+<h4>6.2 修法</h4>
+<p><b>① 要序列化哪些字段</b></p>
+<ul>
+<li><b>必须</b>：<code>ritualPayload</code>（有现成 Codec：<code>EmotionPayload.CODEC</code>，<code>EmotionPayload.java:33-46</code>）。</li>
+<li><b>建议一并</b>：<code>ritualKind</code>（<code>:81</code>）与 <code>ritualDuration</code>（<code>:83</code>）。</li>
+</ul>
+<p>  它们现在也没存 —— 读回来恒为 <code>AWAKENING</code> 与 <code>RITUAL_TICKS</code>（140），</p>
+<p>  导致 <code>serverTick</code> 里 <code>if (be.ritualKind != RitualKind.AWAKENING)</code>（<code>:312</code>）<b>判错分支</b>：</p>
+<p>  一场升华仪式在存档往返后会走"唤醒仪式"的粒子逻辑。</p>
+<ul>
+<li><b>建议一并</b>：<code>ritualOuter</code>（<code>:85</code>）—— 因为 <code>cancelRitualOwningThisPosition</code>（<code>:240-258</code>）</li>
+</ul>
+<p>  靠它判断"本坐标是不是某场仪式的外围"，不存的话"拆掉外围雕像应当打断"这条语义会失效。</p>
+<ul>
+<li><b>不必存</b>：<code>ritualPlayer</code>（玩家可能已离线）、<code>ritualColor</code>（<code>:88-93</code> 已注明不再使用）。</li>
+</ul>
+<p><b>② <code>writeContained</code> 与 <code>getUpdateTag</code> 是否都要改 —— 建议只改一半</b></p>
+<p>理由来自这个类自己的注释（<code>:470-475</code>）：<code>getUpdateTag</code> 是<b>同步给客户端</b>，<code>saveAdditional</code> 是<b>存档</b>。</p>
+<ul>
+<li><b><code>saveAdditional</code> 侧：必须加</b> <code>ritualPayload</code>（否则就是现在的丢注入 bug）。</li>
+<li><b><code>getUpdateTag</code> 侧：不要加</b>。因为：</li>
+</ul>
+<p>  1. 客户端<b>不需要</b>知道待结算载荷 —— 台座上那根杖此刻的数值<b>故意</b>还是旧值</p>
+<p>     （<code>:202-204</code> 解释了为什么不能立刻写入：动画期间状态不能自相矛盾）。</p>
+<p>     同步过去会让<b>中途加入的玩家</b>看到"法杖已经是新数值"，与房主看到的动画不一致。</p>
+<p>  2. 同步包越小越好（<code>EmotionPayload</code> 有 8 个字段，含两个 String）。</p>
+<p>→ <b>实现</b>：把 <code>writeContained</code> 拆成两个入口（或加 <code>boolean forClient</code> 参数）：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+writeContained(output)   → 客户端也要的（ritualTicks + contained）—— 维持原样
+writeSaved(output)       → 存档专属（调 writeContained，再加 ritualPayload / ritualKind / duration / outer）
+</pre>
+<p>⚠️ 类注释说"两边的字段必须保持一致"（<code>:474</code>）—— **那条规矩的用意是"防止漏改"，</p>
+<p>不是"两边字段必须相同"<b>。这次是</b>有意分叉**，所以要把注释一并改掉，</p>
+<p>否则下一个人会以为这是漏改，反而把 <code>ritualPayload</code> 也同步给客户端。</p>
+<p><b>③ 旧存档兼容</b></p>
+<ul>
+<li>读的时候用 <code>Optional</code> 形态：<code>input.read("ritualPayload", EmotionPayload.CODEC).orElse(null)</code></li>
+</ul>
+<p>  （照 <code>:573</code> 读 <code>contained</code> 的写法）。旧存档没这个 key → 读到 null。</p>
+<ul>
+<li><b><code>null</code> 是合法状态</b>：<code>finishOuterRitual</code> 已经判了 <code>if (be.ritualPayload != null ...)</code>（<code>:682</code>），</li>
+</ul>
+<p>  <code>cancelRitual</code> 也把它置 null（<code>:184</code>）—— <b>不会 NPE</b>。</p>
+<ul>
+<li><code>ritualKind</code> / <code>ritualDuration</code> 用带默认值的读取（照 <code>:572</code> 的 <code>getIntOr</code>）。</li>
+<li><b>必须在第二阶段方案 §9 的"新增持久字段登记表"里记行</b></li>
+</ul>
+<p>  （字段名 / 加入版本 / 默认值 / 缺失时的行为）—— 该文档 <code>:214-215</code> 明确要求每加一个持久字段记一行。</p>
+<p><b>④ 顺带</b>：在 <code>/madnesstheory debug</code> 里把"是否有待结算载荷"打出来，</p>
+<p>这样以后这条 bug 能<b>一眼看见</b>，而不是靠玩家报告"我的注入不见了"。</p>
+<hr>
+<h3>7　"雕像以外的工具派系"我猜是什么（逐条归类）</h3>
+<h4>7.1 推测</h4>
+<p><b>推测：作者说的"工具派系"= 与「雕像 + 仪式」并列的、以【物品】或【系统】为载体的几套交互。</b></p>
+<p>从代码现状看至少有四条：</p>
+<table>
+<tr><th>派系</th><th>载体</th><th>代码现状</th></tr>
+<tr><td><b>① 雕塑派系</b></td><td>雕像方块 + 三种仪式 + 雕刻刀</td><td><code>EmotionStatueBlock(Entity)</code>、<code>RitualStructure</code>、<code>RitualEffects</code>、<code>CarvingKnifeItem</code> —— 最成熟</td></tr>
+<tr><td><b>② 书页派系</b></td><td>指南书（Modonomicon）+ 记录页 + 每玩家条件</td><td><code>GuideBookItem</code>、<code>GuideBookPages</code>、<code>book/GuideRecordsPage</code>、<code>book/HasRecordGroupCondition</code>（<b>本轮未逐行读</b>）</td></tr>
+<tr><td><b>③ 法杖派系</b></td><td>情绪之杖的三种释放用法</td><td><code>EmotionStaffItem</code>（已实现，<code>:36-40</code>）</td></tr>
+<tr><td><b>④ 梦境建造派系</b></td><td><code>piece</code> / <code>room</code> 命令 + 组件 JSON + <code>mood_light/dark</code></td><td><code>DreamPiece(s)</code>、<code>DreamRoom</code>、<code>RoomPresets</code>、<code>MadnessCommands.room()/piece()</code></td></tr>
+</table>
+<p>**我理解作者的意思是：这些点子的【交互入口】不该是"摆一堆雕像 + 右键书"，</p>
+<p>而应该落在 ②③④ 里（或做成一件新道具）。** 旁证：作者刚给下界砖的新方向</p>
+<p>（熔炼 → 情绪方块 → 梦境房间）<b>本身就是一次"从①跨到④"的示范</b>。</p>
+<h4>7.2 逐条归类（均标"推测"）</h4>
+<table>
+<tr><th>#</th><th>点子</th><th>症结是不是"雕像"？</th><th>我推测的派系</th><th>理由</th></tr>
+<tr><td>5</td><td>陈化 <code>AGED</code></td><td><b>不是</b> —— 它动的是<b>记录</b>，而记录的唯一界面是<b>书</b></td><td><b>② 书页派系</b></td><td>"这条放了几天"只有书页能表达，且<b>不需要任何方块</b>。⚠️ 前置：<code>EmotionRecords</code> 的存档段<b>没有时间戳</b>（<code>EmotionRecords.java:104-107</code>），必须先扩分段</td></tr>
+<tr><td>7</td><td>补料 <code>SUBSTITUTE</code></td><td><b>是</b> —— 它改的正是"外围四尊必须同类"（<code>RitualStructure.java:185-188</code>）</td><td><b>① 雕塑派系（唯一搬不走的例外）</b>，但可换成"<b>一件能顶替一尊雕像的道具</b>"</td><td>它的症结就在结构判定里；若要做成工具派系，就该做成道具而非放宽规则</td></tr>
+<tr><td>8</td><td>基站 <code>BEACON</code></td><td><b>是</b> —— 我原本硬挂在雕像上</td><td><b>④ 梦境/环境派系</b>，或 <b>③ 法杖</b></td><td>环境提示是独立系统（<code>BiomeMoodHint</code>）；"减少提示冷却"更像<b>一件道具的被动效果</b>，而不是摆一排雕像</td></tr>
+<tr><td>9</td><td>回收 <code>SALVAGE</code></td><td>半是 —— 效果在仪式里，但"回收"的语义是<b>工业/自动化</b></td><td><b>新派系：道具/自动化</b></td><td>更可能是一件"情绪回收器"道具或一个功能方块</td></tr>
+<tr><td>10</td><td>延时绽裂 <code>DELAYED</code></td><td><b>不是</b> —— 它改的是<b>时序</b></td><td><b>④ 梦境建造派系</b> 或 <b>新派系：红石</b></td><td>"延时/触发"是红石语言；拿雕像当延时装置正是<b>把①当工具箱用</b></td></tr>
+<tr><td>11</td><td>交换台 <code>BARTER</code></td><td><b>不是</b> —— 它动的是<b>记录顺序</b></td><td><b>② 书页派系</b>，或 <b>③ 法杖</b></td><td>撕页/换页天然是书的事。且有<b>命令形态的先例</b>：<code>debug records remove</code>（<code>:661</code>）与 <code>debug records consume</code>（<code>:705</code>）—— 可先做命令版验证玩法，再做实体界面</td></tr>
+</table>
+<p><b>一个共同的筛选标准（建议作者用它）</b>：<b>问"这件事如果没有雕像，还成立吗？"</b></p>
+<p>成立 → 它不属于雕塑派系，<b>别硬挂到雕像上</b>（我第一轮就是这么硬挂的，见 §1.3）。</p>
+<hr>
+<h3>8　下一步的正确顺序（3 条）</h3>
+<h4>第 1 条：先修 <code>ritualPayload</code>（+ <code>ritualKind</code>/<code>ritualDuration</code>/<code>ritualOuter</code>）的序列化</h4>
+<ul>
+<li><b>为什么第一</b>：它是<b>唯一一条正在造成实际数据损失</b>的问题</li>
+</ul>
+<p>  （30 秒仪式中途退出 = 一条记录 + 一次注入凭空消失，而记录<b>已被标记消耗且不退还</b>）。</p>
+<p>  它<b>零设计争议、零依赖</b>（作者已裁决"确实得修"），</p>
+<p>  而且做下界砖熔炼（§4.3 建议 200 刻时长）<b>一定会再碰这个类</b> ——</p>
+<p>  先把坑填了，后面那次改动就不必背"顺手修 bug"的风险。</p>
+<ul>
+<li><b>范围</b>：<code>EmotionStatueBlockEntity</code> 一个文件 + <code>/madnesstheory debug</code> 加一行（§6）。</li>
+</ul>
+<h4>第 2 条：做「偏食」（点子 3）的落地版 —— 它同时是<b>下界砖特化的载体</b></h4>
+<ul>
+<li><b>为什么第二</b>：作者已点名"<b>下一步就做</b>"，是唯一被明确排进日程的功能。</li>
+<li><b>为什么和下界砖绑在一起</b>：作者对下界砖的新方向原话是</li>
+</ul>
+<p>  "<b>不如特化 3 里加入的下界特色</b>……"—— 即<b>下界砖的特化挂在偏食这条线上</b>。</p>
+<p>  建议顺序：先在 <code>RitualEffects.inject</code> 加偏食分支（一个 trait 开关 + 一行算术），</p>
+<p>  <b>再让下界砖中心的偏食表现得"更像熔炉"</b>（例如：偏食回收的那一份**不注入法杖，</p>
+<p>  而是直接凝成一块情绪方块<b>）。两条线</b>共用同一个落点**（<code>RitualEffects.java:139</code> 之后），不重复劳动。</p>
+<ul>
+<li><b>实现前提</b>：偏食会改 <code>total</code>，而 <code>total &lt;= 0</code> 有<b>独立的失败分支</b>（<code>:148-166</code>）。</li>
+</ul>
+<p>  加偏食后要确认"被抛弃份额的回填"<b>不会把本该失败的记录救成活</b>，</p>
+<p>  否则"情绪太平淡了"这条失败反馈会被静默吃掉。</p>
+<ul>
+<li><b>范围</b>：<code>StatueTrait</code>（加 trait 值 + <b>两个 switch 都要加 case</b>）+ <code>RitualEffects.inject</code>。</li>
+</ul>
+<h4>第 3 条：下界砖的熔炼仪式 —— <b>先只做 A 案（两极、复用 <code>mood_light/dark</code>）</b>，把接口跑通</h4>
+<ul>
+<li><b>为什么第三而不是第二</b>：它是本轮最大的新功能（新 kind、新外围类别、新仪式效果、</li>
+</ul>
+<p>  与梦境建造系统对接），改动面比前两条加起来还宽；但<b>价值也最高</b>。</p>
+<ul>
+<li><b>为什么必须"先 A 案"</b>（§4.2 / §4.7）：<code>symbolOf</code>（<code>DreamRoom.java:336-343</code>）是</li>
+</ul>
+<p>  "情绪方块能否被 <code>piece save</code> 捕获"的<b>唯一闸门</b>，而它现在只认那两个方块。</p>
+<p>  <b>复用 = 整条链零改动、零美术</b>；一旦新注册方块，就必须同步扩</p>
+<p>  <code>symbolOf</code> + <code>applyFace</code> + <code>DreamPiece</code> 的字符语义，而组件有<b>数据包与玩家本地文件两种来源</b>，</p>
+<p>  格式一改就要处理旧组件兼容。**先用 A 案把"熔炼 → 方块 → 搭房间 → 保存 → 复现"走通，</p>
+<p>  再决定要不要为"十种心绪"付那份代价。**</p>
+<ul>
+<li><b>范围</b>：<code>EmotionStatueKind</code>（新增 <code>OBSIDIAN</code> 外围类 + <code>AMETHYST</code>，<b>与 §3.4 的紫水晶解绑同一轮做</b>）</li>
+</ul>
+<p>  + <code>RitualStructure</code>（第三个外围类别 + <code>tryInward</code> 加维度）</p>
+<p>  + <code>RitualEffects</code>（新效果分支）</p>
+<p>  + <code>EmotionStatueBlockEntity</code>（时长与打断，复用现成框架）。</p>
+<p><b>明说被我排到后面的</b>：紫水晶洗炼（§3）是好点子，但它<b>依赖 <code>AMETHYST</code> 这个新 kind</b>，</p>
+<p>而那个 kind 与第 3 条<b>动同一个枚举</b> —— 两件事应一起改。</p>
+<p>所以真实执行顺序是：<b>第 3 条与 §3 的紫水晶在同一次改动里落地</b>（共用一次 <code>EmotionStatueKind</code> 变更）。</p>
+<hr>
+<h3>9　本轮新增的核对与仍未核对的</h3>
+<h4>本轮新逐行读的文件（9 份）</h4>
+<p><code>DreamPiece.java</code>、<code>DreamPieces.java</code>、<code>DreamRoom.java</code>、<code>RoomPresets.java</code>、</p>
+<p><code>MoodAttachments.java</code>、<code>statue/EmotionStatueBlock.java</code>、<code>ModBlocks.java</code>（第 45-94 行）、</p>
+<p><code>DreamSession.java</code>（grep + 第 380-409 行）、<code>MadnessCommands.java</code>（第 588-632 行）、</p>
+<p><code>statue/StatueFacing.java</code>（第 1-70 行）。</p>
+<h4>本轮新增的三条硬结论（都影响方案能否成立）</h4>
+<p>1. <b><code>DreamRoom.symbolOf</code>（<code>:336-343</code>）只认 5 个方块，其它一律 <code>'.'</code> 且不报错</b> ——</p>
+<p>   决定"情绪方块"<b>必须复用 <code>mood_light</code>/<code>mood_dark</code>，或必须同步扩 <code>symbolOf</code></b>（§4.7）。</p>
+<p>2. <b><code>EmotionStatueKind.initSources</code> 把紫水晶绑给了 SCULK</b>（<code>:304-306</code>）——</p>
+<p>   做洗炼基座<b>必须先解绑并新建 <code>AMETHYST</code></b>（§3.4）。</p>
+<p>3. <b><code>MoodAttachments.java:155</code> 注释说"总量上限 100"，代码是每类 150</b>（<code>EmotionMoodStore.java:34</code>）——</p>
+<p>   做"无中生有"时<b>别照注释写</b>（§2.4 风险 B）。</p>
+<h4>仍未核对</h4>
+<p>1. <b><code>BiomeMoodHint.java</code> 未逐行读</b> —— 点子 8 若真要做，仍必须先读它。</p>
+<p>2. <b><code>MadnessCommands.java</code>（54 KB）仍只 grep + 局部读</b> ——</p>
+<p>   "<code>EmotionMoodStore.take</code> 只在调试指令里被调用"<b>仍是 grep 结论</b>。</p>
+<p>3. <b><code>GuideBookPages.java</code> / <code>book/ModBookContent.java</code> 未读</b> ——</p>
+<p>   §7 把陈化/交换台归到"书页派系"是<b>基于职责推断</b>，不是读过实现。</p>
+<p>4. <b><code>StatueMaterial</code> 的生成脚本是否存在、叫什么未核对</b> —— §3.4 的"重跑生成器"请当待查。</p>
+<p>5. <b>kind 与材质的确切数量未在本文重新点数</b> —— 沿用第一轮记录（19 kind / 110 材质）。</p>
+<p>6. <b>336 点这个上限仍是引用</b>（《平衡参谋-倍率总表与意见》§9.8 的预测），<b>不是我从代码重算的</b>。</p>
+<hr>
+<p>*（子智能体回应结束。以下为正文原样。）*</p>
+<h2>雕像特殊功能点子</h2>
+<div class="card small">本文档由只读通读 <code>D:\mods\MadnessTheory\src\main\java</code> <b>全仓</b>（共 41 个 Java 文件）后写成，</div>
+<div class="card small"><b>未修改仓库任何一行</b>，也没有写入任何 Java 代码。</div>
+<div class="card small">凡与 <code>癫狂构想-实现设计.txt</code> / <code>癫狂构想-第二阶段实施方案.txt</code> / <code>平衡参谋-倍率总表与意见.md</code> 冲突处，<b>一律以代码为准</b>并已标注。</div>
+<div class="card small">核对日期：本轮会话。凡未亲自读到的行为，一律写「未核对」，不编造。</div>
+<hr>
+<h2>第一节　现有特殊功能的接线情况（首要任务）</h2>
+<h3>1.1 结论先行（一句话）</h3>
+<p>**<code>StatueTrait</code> 里 7 个"特殊功能"方法中，只有 1 个真正接线了，而且它是"乘数"不是"功能"。</p>
+<p>另外 3 个「机制型特性」是全仓零调用 —— 它们只出现在 tooltip 和 <code>/madnesstheory debug</code> 的打印文本里，</p>
+<p>是「写了没接线」的空功能。** 所以后面的点子如果只挂到这三个方法上，等于白写。</p>
+<h3>1.2 逐方法核对表（全仓穷举，非抽样）</h3>
+<p>搜索方式：在 <code>D:\mods\MadnessTheory\src\main\java</code> 下对每个方法名做全仓 grep，</p>
+<p>并额外 grep 了 <code>\.trait\(\)</code> 与 <code>StatueTrait\.</code> 两个模式以防漏掉间接调用。</p>
+<table>
+<tr><th>方法</th><th>定义行</th><th>全仓命中数</th><th>命中的位置</th><th>判定</th></tr>
+<tr><td><code>multiplierFor(...)</code></td><td><code>StatueTrait.java:198</code></td><td>3 处调用</td><td><code>RitualEffects.java:182</code>、<code>:183</code>（升华/沉坠的偏好）、<code>RitualEffects.java:324</code>（绽裂的外围偏好）、<code>BiomeMoodHintDebug.java:221</code>（F3 展示）</td><td>✅ <b>真接线</b></td></tr>
+<tr><td><code>challengeMultiplier()</code></td><td><code>StatueTrait.java:169</code></td><td>1 处<b>内部</b>调用 + 2 处展示</td><td>内部：<code>StatueTrait.java:212</code>（<code>multiplierFor</code> 里）；展示：<code>EmotionStatueItem.java:73</code>、<code>MadnessCommands.java:240</code></td><td>✅ <b>真接线</b>（但只能经 <code>multiplierFor</code> 生效）</td></tr>
+<tr><td><code>unconditionalMultiplier()</code></td><td><code>StatueTrait.java:164</code></td><td>1 处<b>内部</b>调用 + 2 处展示</td><td>内部：<code>StatueTrait.java:218</code>（<code>multiplierFor</code> 末尾）；展示：<code>EmotionStatueItem.java:71-72</code>、<code>MadnessCommands.java:238-239</code></td><td>✅ <b>真接线</b>（同上）</td></tr>
+<tr><td><code>allowsMixing()</code></td><td><code>StatueTrait.java:176</code></td><td><b>0 处调用</b></td><td>仅出现于 <code>EmotionStatueItem.java:77</code>（tooltip 字符串）、<code>MadnessCommands.java:246</code>（打印"混装 允许/禁止"）</td><td>❌ <b>空功能</b></td></tr>
+<tr><td><code>randomFluctuation()</code></td><td><code>StatueTrait.java:181</code></td><td><b>0 处调用</b></td><td>仅出现于 <code>EmotionStatueItem.java:78</code>（tooltip）、<code>MadnessCommands.java:247</code>（打印"随机增减 有/无"）</td><td>❌ <b>空功能</b></td></tr>
+<tr><td><code>sharedStorage()</code></td><td><code>StatueTrait.java:186</code></td><td><b>0 处调用</b></td><td>仅出现于 <code>EmotionStatueItem.java:79</code>（tooltip）、<code>MadnessCommands.java:248</code>（打印"共享存储 有/无"）</td><td>❌ <b>空功能</b></td></tr>
+<tr><td><code>positiveMultiplier()</code> / <code>negativeMultiplier()</code></td><td><code>StatueTrait.java:109</code> / <code>:134</code></td><td>各 1 处内部调用 + 3 处展示</td><td>内部：<code>StatueTrait.java:216</code>（<code>multiplierFor</code>）；展示：<code>BiomeMoodHintDebug.java:209-210</code>、<code>EmotionStatueItem.java:69-70</code>、<code>MadnessCommands.java</code></td><td>✅ <b>真接线</b>（同上）</td></tr>
+</table>
+<p>补充：<code>EmotionStatueKind.java:21</code> 的类注释、<code>StatueTrait.java:71</code> 的枚举注释、</p>
+<p><code>EmotionStatueKind.java:55</code> 灵魂那一行的 <code>note</code> 字符串里都提到了"允许混装"，</p>
+<p>但<b>提到 ≠ 接线</b>，它们都只是文字。</p>
+<h3>1.3 「空功能」到底空在哪（逐个交代，附证据）</h3>
+<p>三条机制型特性之所以无处生效，是因为<b>它们要挂的那个环节在这套代码里根本不存在</b>：</p>
+<h4>① <code>allowsMixing()</code>（灵魂 / SOUL）—— 没有"混装"这个概念可违反</h4>
+<ul>
+<li>「混装」要成立，必须先有「<b>不</b>允许混装」的默认规则，也就是"一根杖里不许同时装不同情绪组"的校验。</li>
+<li>全仓搜索：<code>EmotionPayload</code> 里唯一与"装什么"有关的字段是 <code>group</code>（<code>EmotionPayload.java:31</code>），</li>
+</ul>
+<p>  它由<b>仪式那一刻的记录</b>写入（<code>RitualEffects.java:195</code> 是 <code>payload.group()</code> 原样透传，</p>
+<p>  单个雕像流程是 <code>GuideBookItem.java:345</code> 写 <code>st.group()</code>）。</p>
+<p>  没有任何一处对 <code>group</code> 做<b>一致性校验</b>。</p>
+<ul>
+<li>结论：<b>"混装"从来没有被禁止过，所以"允许混装"没有可放行的东西。</b></li>
+</ul>
+<p>  灵魂雕像现在的实际状态是：等级 1、容量 96、空无属性、特性中性（<code>EmotionStatueKind.java:55</code>），</p>
+<p>  <b>与"允许混装"这四个字毫无关系</b>。</p>
+<h4>② <code>randomFluctuation()</code>（紫颂花 / CHORUS）—— 随机浮动被写死在 <code>burst()</code> 里，与 trait 无关</h4>
+<ul>
+<li>代码里确实有"随机浮动"，但它<b>硬编码在 <code>RitualEffects.burst()</code></b>：</li>
+</ul>
+<p>  <code>RitualEffects.java:338</code>：<code>int amount = (int) Math.max(1, Math.round(per * (0.8 + rng.nextDouble() * 0.4)));</code></p>
+<p>  这一行对<b>所有</b>雕像一视同仁，<code>StatueTrait</code> 完全不参与。</p>
+<ul>
+<li>也就是说：<b>"随机增减"这个效果现在【所有材质都有】，紫颂花的特性没有增加任何东西。</b></li>
+<li>唯一与紫颂花有关的是 <code>RitualEffects.java:315</code> 的转换比 <code>×1.5</code> 和 <code>payload.amount()</code>（含量），</li>
+</ul>
+<p>  那也不是它的特性，是全局规则。</p>
+<h4>③ <code>sharedStorage()</code>（紫珀砖 / PURPUR）—— 情绪存在物品的数据组件上，天生无法"共享"</h4>
+<ul>
+<li>情绪挂在法杖物品的数据组件 <code>ModComponents.EMOTION</code>（<code>ModComponents.java:24-27</code>）上，</li>
+</ul>
+<p>  这是<b>刻意的设计</b>（见 <code>EmotionPayload.java:15-18</code> 的注释：杖会被丢、被捡、被箱子装）。</p>
+<ul>
+<li>要"多根杖共享"，就需要一个<b>物品之外</b>的存储，而且要有"哪些杖算同一个共享池"的归属键。</li>
+</ul>
+<p>  <code>EmotionPayload</code> 里没有任何这类字段（字段全集见 <code>EmotionPayload.java:31</code>：8 个）。</p>
+<ul>
+<li>结论：<b>这条特性要落地必须新增一个服务端存储 + 一个新的载荷字段，属于"中～大"工程，不是接一根线。</b></li>
+<li>附带发现：<code>EmotionPayload</code> 的 <code>ratio</code> 是<b>单值</b>（<code>EmotionPayload.java:31</code>），</li>
+</ul>
+<p>  而 <code>inject()</code> 每次都把 <code>ratio</code> <b>覆盖</b>成 <code>positive ? 1.0 : 0.0</code>（<code>RitualEffects.java:200</code>）。</p>
+<p>  所以"共享存储"即便做出来，也要一并决定"混合后的 ratio 怎么算"。</p>
+<h3>1.4 顺带核对出的「注释/文档 与 代码不一致」（供作者决定是否顺手修，不属于本次任务）</h3>
+<table>
+<tr><th>位置</th><th>注释/文档说</th><th>代码实际</th><th>影响</th></tr>
+<tr><td><code>EmotionStatueKind.java:59</code> 的 <code>note</code></td><td>「正面 ×1.80 · 负面 ×1.30」</td><td><code>StatueTrait.java:119</code> <code>CHORUS -&gt; 1.80</code>、<code>:144</code> <code>CHORUS -&gt; 1.30</code> → <b>一致</b> ✅（此处无误，列出仅为消歧）</td></tr>
+<tr><td><code>StatueTrait.java:71</code> 注释</td><td>「灵魂：容量特别大…本次改动未涉及，保持原样」</td><td><code>EmotionStatueKind.java:55</code> 灵魂已是 <b>容量 96 / 等级 1</b>（已被平衡调整改过）</td><td>仅注释过期，无数值问题</td></tr>
+<tr><td><code>RitualEffects.java:38-41</code> 类注释</td><td>「绽裂（已实现）…入场：法杖含量【超过容量】」</td><td><code>RitualEffects.java:287</code> 判据确实是 <code>amount &lt;= effectiveCapacity()</code> 就拒绝 → <b>一致</b> ✅</td><td>无</td></tr>
+<tr><td>设计文档 §13.3 / §14.4 多行容量</td><td>泥土 8、灵魂 128、紫珀砖 32</td><td>代码：泥土 16、灵魂 96、紫珀砖 64（<code>EmotionStatueKind.java:38/55/60</code>）</td><td><b>文档过期，以代码为准</b></td></tr>
+</table>
+<h3>1.5 这一节的直接结论（对后面点子列表的约束）</h3>
+<p>1. <b>能靠"接线"补上的只有那三条机制型特性</b>；要新增点子，最稳的落点是</p>
+<p>   <b><code>RitualEffects.inject()</code> / <code>RitualEffects.burst()</code> / <code>EmotionStaffItem.use()</code> 这三个方法</b>，</p>
+<p>   因为它们已经是"效果层"，且手上都有 <code>EmotionStatueKind</code>（能取到 trait）。</p>
+<p>2. <b><code>StatueTrait</code> 是挂在"种类（19 种）"上的，不是挂在"材质（110 种）"上的</b></p>
+<p>   （<code>EmotionStatueKind.java:90-99</code> 的构造参数里 trait 是 per-kind 的，<code>StatueMaterial</code> 只有 kind/贴图）。</p>
+<p>   所以<b>"给下界砖定一个专属功能"有两种落法</b>：</p>
+<ul>
+<li><b>落法 A（推荐）</b>：不动种类表，在效果层按 <b><code>payload.materialId()</code></b> 或</li>
+</ul>
+<p>     <code>state.getValue(EmotionStatueBlock.MATERIAL)</code> 判断"是不是下界砖家族"，</p>
+<p>     ——材料 id 已经存在载荷里（<code>EmotionPayload.java:45</code> 的 <code>material</code> 字段），</p>
+<p>     下界砖家族的 4 个方块 id 见 <code>EmotionStatueKind.java:288-289</code>。</p>
+<ul>
+<li><b>落法 B</b>：给下界砖单独拆一个 <code>EmotionStatueKind</code>。<b>不推荐</b>：会动 19→20，</li>
+</ul>
+<p>     牵连 <code>StatueMaterial</code> 生成、书页清单、命令输出，成本高且收益相同。</p>
+<p>   <b>本文档给出的下界砖方案均按落法 A 写实现落点。</b></p>
+<p>3. 每次改 <code>StatueTrait</code> 的 switch 都要注意：<code>positiveMultiplier</code> / <code>negativeMultiplier</code></p>
+<p>   是 <code>default -&gt; 1.00</code>，<b>漏写 case 不报错、只是静默拿 1.00</b>（<code>StatueTrait.java:89-90</code> 自己写了这条教训）。</p>
+<hr>
+<h2>第二节　点子清单（12 个）</h2>
+<div class="card small">每个点子格式：<b>名字（中文 + 建议 trait 名）→ 挂给谁 → 效果 → 它创造了什么玩法 → 实现落点 → 平衡风险 → 实现难度</b></div>
+<div class="card small"></div>
+<div class="card small">统一参照约束（后文所有风险都用它衡量）：</div>
+<div class="card small">- 单次注入上限 ≈ <b>336 点</b> —— ★ 这个数字<b>引用自《平衡参谋-倍率总表与意见》§9.8 的预测</b></div>
+<div class="card small">  （<code>0.90 × 0.90 × (3.60 × 3.60)</code>，其中 3.60 = 紫颂花同类 2.00 × 极性 1.80），</div>
+<div class="card small">  <b>不是我从代码重算的</b>；现行代码里紫颂花/紫珀砖的极性层确实已是 1.80/1.30 与 1.10/1.70</div>
+<div class="card small">  （<code>StatueTrait.java:119</code>、<code>:144</code>、<code>:120</code>、<code>:145</code>），与该预测的前提一致，但我未跑全枚举。</div>
+<div class="card small">- 一条记录折算 <b>8 / 16 / 24 / 32 点</b>（<code>GuideBookItem.java:393-394</code>，按 <code>bandOf</code> 档位）</div>
+<div class="card small">- 心绪存储 <b>每类各自 150</b>，不可扩容（<code>EmotionMoodStore.java:34</code>）</div>
+<div class="card small">- 升华/沉坠时长 <b>600 刻</b>，绽裂<b>无时长（立即结算）</b>（<code>RitualEffects.java:55</code>、<code>:278</code>）</div>
+<div class="card small">- 外围四尊<b>必须同类</b>（<code>RitualStructure.java:185-188</code>）；外围<b>永远吃不到等级 3 的 1.00</b></div>
+<div class="card small">  （因为 3 级只有钻石与紫珀砖，都不在木/石类里，见 <code>RitualStructure.java:206-217</code>）</div>
+<hr>
+<h3>点子 1　回响（<code>ECHO</code>）—— 释放的"形状"由杖的材质决定</h3>
+<p><b>挂给谁</b>：新种类，不新增方块。给已有的 <b>SCULK / ABYSSAL / DRIPSTONE / CORROSION / TRIAL</b> 这 5 个</p>
+<p>「第二批」种类各派一种释放形态（它们现在除了乘数之外一无所有，是最空的一批）。</p>
+<p><b>效果</b>：挥杖时的作用形态随杖的种类变化 ——</p>
+<ul>
+<li>潜声石像 → 作用域内所有生物<b>互相</b>传导（对 A 施加的同时，A 附近的 B 也吃到一半）</li>
+<li>深海石像 → 作用域改为<b>沿视线一条直线</b>（穿一条走廊），半径换成长度</li>
+<li>石笋石像 → 作用域变成<b>自己脚下起跳的垂直柱</b>（向上/向下各 N 格）</li>
+<li>蚀痕石像 → 效果<b>贴上目标一段时间</b>（离开范围后仍然延续一次）</li>
+<li>试炼石像 → 作用域随<b>在场敌对生物数量</b>放大</li>
+</ul>
+<p><b>它创造了什么玩法</b>：玩家选杖不再只看数值，而是看<b>战场形状</b>。</p>
+<p>窄走廊用深海、刷怪笼房间用潜声、下矿竖井用石笋。</p>
+<p>这让"去哪个群系记录情绪"这件事第一次和"我要打什么"挂钩 ——</p>
+<p>现在这两件事是<b>完全脱钩</b>的（<code>EmotionStaffItem.java:136-153</code> 只有"半径"一种形态）。</p>
+<p><b>实现落点</b>：</p>
+<ul>
+<li><code>EmotionStaffItem.java:135-153</code>：把 <code>releaseAround()</code> 拆成按 kind 分派的一组形态函数，</li>
+</ul>
+<p>  入参已有 <code>EmotionPayload p</code>，<code>p.kindId()</code> 直接可取到种类。</p>
+<ul>
+<li><code>EmotionStaffItem.java:155-170</code>：<code>applyEffect</code> 增加一个"延迟一次"的参数（蚀痕用）。</li>
+<li>无需新状态、无需新包。</li>
+</ul>
+<p><b>平衡风险</b>：低。作用域变化影响的是<b>打击面</b>而不是<b>强度</b>，</p>
+<p>而强度公式 <code>EmotionStaffItem.java:157</code> 的 <code>duration = clamp(power × 20, 20, 600)</code> 完全不动。</p>
+<p>唯一要注意的是深海"直线"可能被用来隔墙打人 —— <code>findTarget</code> 已经要求 <code>hasLineOfSight</code></p>
+<p>（<code>EmotionStaffItem.java:113</code>），复用同一个判定即可。</p>
+<p><b>实现难度</b>：<b>小</b>。纯服务端分派，无新数据结构。</p>
+<hr>
+<h3>点子 2　同调（<code>ATTUNED</code>）—— 雕像<b>群</b>的"成套"加成</h3>
+<p><b>挂给谁</b>：不挂给某一种类，挂成一条<b>通用规则</b>，但由 trait 开关（首发给 COBBLE / NETHER_BRICK / END_ROCK 这些"砖石"类）。</p>
+<p><b>效果</b>：以中心雕像为原点、半径 8 格内，<b>每有一尊与中心【同一种类】的雕像</b>（不论朝哪、不论台座里有没有东西），</p>
+<p>中心那尊的属性偏好额外 <code>×(1 + 0.05 × n)</code>，<code>n</code> 上限 8（即最多 ×1.40）。</p>
+<p>玩家的雕像<b>收藏</b>第一次有了数值意义。</p>
+<p><b>它创造了什么玩法</b>：把"雕像"从功能性单件变成<b>建筑/收藏</b>。</p>
+<p>玩家会开始在基地里摆一整面下界砖雕像墙，而不是把雕像当一次性耗材。</p>
+<p>同时它天然奖励"不要到处乱摆"——集中摆放才有收益，与 <code>RitualStructure</code> 要求的</p>
+<p>"外围必须同类、必须紧邻"形成同一种审美（"仪式场"），强化了模组的空间语言。</p>
+<p><b>实现落点</b>：</p>
+<ul>
+<li><code>RitualEffects.inject()</code> 里 <code>double loss = ...</code> 那一行<b>之前</b>（<code>RitualEffects.java:186</code>）插一层：</li>
+</ul>
+<p>  扫中心周围 8 格内的 <code>EmotionStatueBlock</code>，数同类。</p>
+<ul>
+<li><code>RitualEffects.burst()</code> 同理，插在 <code>RitualEffects.java:327</code> 的 <code>boosted</code> 计算之前。</li>
+<li>需要一个 <code>RitualStructure</code> 上的静态工具方法（如 <code>countSameKindNear(level, center, kind, radius)</code>），</li>
+</ul>
+<p>  复用 <code>RitualStructure.statueKind(...)</code>（<code>RitualStructure.java:240-245</code>）。</p>
+<ul>
+<li><b>性能注意</b>：半径 8 = 17×17×3 ≈ 867 个方块状态读取，<b>只在仪式触发那一刻跑一次</b>，</li>
+</ul>
+<p>  可以接受；但<b>不要</b>放进每刻的 <code>serverTick</code>。</p>
+<p><b>平衡风险</b>：中。它直接乘在偏好层上，而偏好层是<b>平方</b>的（外围 × 中心），</p>
+<p>所以 +40 % 的群加成在上述公式里会变成接近 +96 %（1.4²）的实际增幅。</p>
+<p>建议<b>只在中心那一层加</b>（<code>×1.4</code> 而不是 <code>×1.96</code>），或者把系数降到 0.03/尊、上限 0.24。</p>
+<p>另外要防"用 9 尊泥土雕像凑数"——泥土属性是自然，对非自然记录本来就 ×1.00，所以蹭不到，</p>
+<p>这一点是自洽的。</p>
+<p><b>实现难度</b>：<b>小～中</b>（要一个邻域扫描工具；无新状态、无新包）。</p>
+<hr>
+<h3>点子 3　属性即偏食（<code>PALATE</code>）—— 雕像属性改写"哪一半被抛弃"</h3>
+<p><b>挂给谁</b>：通用规则，<b>下界四件套</b>为默认持有者（见第三节，这条与下界砖方案 B 强相关）。</p>
+<p><b>效果</b>：升华时本该"只取正面、负面彻底消失"（<code>RitualEffects.java:138-139</code>）。</p>
+<p>拥有本特性的雕像，把"抛弃"改成"<b>吃干榨净</b>"：</p>
+<p>被抛弃的那一半 <code>(1 - ratio)</code> 不再蒸发，而是按 <b>15 %</b> 的比例<b>折进本次注入量</b>。</p>
+<p><b>极性方向不变</b>（升华仍然只产出正面），变大的只是点数。</p>
+<p>所以极端记录（<code>ratio</code> 接近 0 或 1）几乎无感，</p>
+<p>而中间态记录（<code>ratio ≈ 0.5</code>）能多榨出约 7.5 %。</p>
+<p><b>它创造了什么玩法</b>：让"参半记录"（<code>ratio ≈ 0.5</code>，现在两头都不划算、最鸡肋的一类）</p>
+<p>第一次有额外价值，从而把玩家的行为从"只留极端记录、其它随手烧掉"</p>
+<p>推向"<b>中间态也值得攒</b>"。</p>
+<p>配合 <code>Config.GROUP_DEFAULT_RATIOS</code>（<code>Config.java:194-198</code>）里 <code>haunted/void</code> 的 0.00-0.25 区间，</p>
+<p>玩家会为了"让每条记录都不浪费"而愿意在普通群系多记几条 —— 这是目前最缺的"低档记录的价值"。</p>
+<p><b>实现落点</b>：</p>
+<ul>
+<li><code>RitualEffects.inject()</code>：<code>int total = (int) Math.round(amount * share);</code>（<code>RitualEffects.java:139</code>）</li>
+</ul>
+<p>  这一行之后加分支：若中心 kind 的 trait 有此特性，</p>
+<p>  <code>total = total + round(amount × (1 - share) × 0.15)</code>。</p>
+<ul>
+<li><b>建议只让"中心雕像"吃这个特性</b>（外围四尊已经是纯粹的效率件），</li>
+</ul>
+<p>  否则外围同类 ×4 又要纠结是不是乘四次方（<code>RitualEffects.java:174-178</code> 的注释已经踩过这个坑）。</p>
+<p><b>平衡风险</b>：中低。</p>
+<p><code>ratio = 0.50</code> 时 <code>total</code> 从 16 变 <code>16 + 32×0.5×0.15 ≈ 18</code>（+15 %）；</p>
+<p><code>ratio = 1.00</code> 或 <code>0.00</code> 时<b>完全无变化</b>（被抛弃份额为 0）。</p>
+<p>所以它<b>天然只作用在中间态记录上</b>，不会推高现有极值。</p>
+<p><b>真正的风险是与点子 2（同调，群加成最多 ×1.40）叠加</b> —— 若两条挂到同一种类，</p>
+<p>会一起把注入顶向 336 点以上，冲爆"心绪两次才满"的节奏设计</p>
+<p>（<code>RitualEffects.java:315</code> 的 <code>×1.5</code> 转换比与 <code>EmotionMoodStore.java:34</code> 的 150 是配套的）。</p>
+<p><b>建议</b>：两条<b>不要挂在同一个种类上</b>。</p>
+<p><b>实现难度</b>：<b>小</b>（纯算术分支）。</p>
+<hr>
+<h3>点子 4　共鸣消耗（<code>RESONANT</code>）—— 用心绪"喂"仪式</h3>
+<p><b>挂给谁</b>：新种类，建议绑 <b>紫水晶块 / 紫水晶簇 / 重生锚</b>（发光、结晶感的方块家族，目前完全未被使用）。</p>
+<p><b>效果</b>：举行升华/沉坠时，若玩家心绪存储里<b>某一种心绪 ≥ 40 点</b>，</p>
+<p>可以（在右键时潜行 = 主动选择）投入 40 点该心绪，使本次注入 <b>直接按该心绪的属性重算属性层</b>，</p>
+<p>并且额外 <code>×1.35</code>。投入的心绪从存储扣掉。</p>
+<p><b>它创造了什么玩法</b>：<b>这是把第二阶段的"心绪"接回第一阶段"仪式"的唯一一条线</b>，</p>
+<p>而这条线现在是断的 —— 心绪目前只有一个出口（HUD 显示 + <code>burst()</code> 的产物），</p>
+<p><b>没有任何消耗途径</b>（全仓 <code>EmotionMoodStore.take(...)</code> 只在 <code>MadnessCommands</code> 的调试指令里被调用，</p>
+<p>"未核对是否还有其它调用点"，但至少仪式路径上没有）。</p>
+<p>玩家会形成"<b>攒心绪 → 换仪式效率 → 攒更快</b>"的正循环，</p>
+<p>并且第一次需要<b>在两个池子之间做取舍</b>（心绪要不要留着以后用体力类能力）。</p>
+<p><b>实现落点</b>：</p>
+<ul>
+<li><code>GuideBookItem.useOn()</code>（<code>GuideBookItem.java:268-279</code>）是唯一的仪式入口：</li>
+</ul>
+<p>  这里读出 <code>player.isShiftKeyDown()</code>，把"投入哪种心绪"塞进 <code>RitualStructure.Result</code></p>
+<p>  （或做成 <code>perform</code> 的额外参数）。</p>
+<ul>
+<li>扣款：<code>EmotionMoodStore.take(data, mood, attrId, 40)</code>（<code>EmotionMoodStore.java:108</code>）+ <code>syncTo</code>。</li>
+<li>加成：<code>RitualEffects.inject()</code> 的 <code>pref</code> 末尾（<code>RitualEffects.java:184</code> 之后）。</li>
+<li>⚠️ 注意 <code>RitualStructure.match()</code> 的签名会被牵连（多一个 <code>java.util.function.Consumer&lt;String&gt; why</code></li>
+</ul>
+<p>  overload 已经存在，可以逐个加重载，不必拆掉现有调用）。</p>
+<p><b>平衡风险</b>：中。真正的风险不是数值，而是<b>"心绪被消耗后能不能回来"</b>——</p>
+<p><code>EmotionMoodStore</code> 没有回收机制，一旦某类心绪被换成效率，玩家可能<b>永久失去做某件事的资格</b></p>
+<p>（如果将来心绪能力是持久解锁）。<b>建议</b>：把投入量定为"<b>只扣超出 40 的那部分</b>"或做成</p>
+<p>"标记占用而非扣除"，等心绪的正式消耗语义定了再表态。</p>
+<p><b>实现难度</b>：<b>中</b>（要动 <code>RitualStructure.Result</code> 的字段与 <code>match</code> 的签名，牵连 3～4 个调用点）。</p>
+<hr>
+<h3>点子 5　酒意 / 陈化（<code>AGED</code>）—— 记录"放久了"会变浓也会变脏</h3>
+<p><b>挂给谁</b>：新种类，建议绑 <b>木桶 / 酿造台 / 炼药锅 / 堆肥桶</b>（"容器 + 时间"的意象，未被使用）。</p>
+<p><b>效果</b>：石碑类雕像在<b>雕像自身</b>上累计"陈化度"（每 Minecraft 日 +1，上限 +3）。</p>
+<p>举行仪式时，队首那条记录若<b>已经被记录过超过 3 个 MC 日</b>（用现有 <code>EmotionRecords</code> 的时间？</p>
+<p>——<b>代码里没有记录时间戳，未核对可行</b>），本次 <code>total</code> <code>×(1 + 0.25 × 陈化度)</code>，</p>
+<p>但同时<b>心绪的属性标签被清空</b>（走 <code>EmotionMoodStore</code> 里 <code>attrId = ""</code> 那条路子，</p>
+<p><code>EmotionMoodStore.java:55-63</code> 明确支持无标签条目）。</p>
+<p><b>它创造了什么玩法</b>：制造了"<b>囤 vs 用</b>"的经典取舍，而且是<b>有代价的囤</b>：</p>
+<p>浓了，但失去属性加成（<code>RitualEffects.java:181-184</code> 的属性层直接跳过）。</p>
+<p>玩家会刻意"攒一批记录放几天"，也会为了"等它陈化"而不敢立刻消耗。</p>
+<p>配合 <code>hintCooldownMin/MaxSeconds</code>（<code>Config.java:32-39</code>，默认 20～600 秒）的长冷却，</p>
+<p>"囤"是有意义的，因为<b>记录本身就很慢</b>。</p>
+<p><b>实现落点</b>：</p>
+<ul>
+<li><b>前置障碍</b>：<code>EmotionRecords</code> 的存档段（<code>EmotionRecords.java:104-107</code> 的 <code>segments(...)</code>）</li>
+</ul>
+<p>  <b>没有时间字段</b>。要落这条必须先往分段列表<b>再追加一段</b>（文档 §3.4 明确说分段是向后扩展的，</p>
+<p>  旧数据段数不够读出来是空串 → 天然兼容）。这一段需要作者先拍板"时间戳要不要进存档"。</p>
+<ul>
+<li>陈化度若要存在雕像上，要给 <code>EmotionStatueBlockEntity</code> 加字段，</li>
+</ul>
+<p>  且<b>必须同时改 <code>writeContained</code>（<code>EmotionStatueBlockEntity.java:549</code>）与 <code>getUpdateTag</code></b>——</p>
+<p>  该类注释（<code>:470-475</code>）明确写了"加字段时两处都要改"。</p>
+<p><b>平衡风险</b>：中低。因为它自带惩罚（丢属性标签），</p>
+<p>在属性层能吃到 ×2.00 的组合里，丢标签的损失远大于 +25 % 的收益，所以<b>不会被无脑滥用</b>。</p>
+<p>真正的风险是<b>存档兼容</b>：这是全文档里唯一会动 <code>EmotionRecords</code> 存档格式的点子，</p>
+<p>而那份文档 §3.4 与 <code>癫狂构想-第二阶段实施方案.txt</code> 的 §9（卸载与存档兼容）</p>
+<p>都把它列为高危区，必须单独一轮做。</p>
+<p><b>实现难度</b>：<b>大</b>（新持久字段 ×2 + 存档格式扩展 + 客户端表现）。</p>
+<hr>
+<h3>点子 6　跨维度回声（<code>REMOTE</code>）—— 末地雕像的"末影箱"式联动</h3>
+<p><b>挂给谁</b>：<b>紫珀砖（PURPUR）</b> —— 它现在的 <code>sharedStorage()</code> 是空功能（见 §1.3③），</p>
+<p>这条是它的<b>可落地替代品</b>，保留了"末影箱式共享"的<b>设计意图</b>，但换了一个能实现的机制。</p>
+<p><b>效果</b>：同一玩家在<b>任意维度</b>的两尊紫珀砖雕像<b>互相绑定</b>（用方块实体存一个共享 UUID，</p>
+<p>或更省事：用"玩家 UUID + 雕像坐标"做成固定配对）。在 A 处举行升华/沉坠，</p>
+<p>法杖里注入的情绪会<b>同时镜像到 B 处台座上的法杖</b>（B 处的杖必须也是紫珀砖材质、且含量不冲突）。</p>
+<p><b>它创造了什么玩法</b>：<b>这是目前唯一的"跨维度物流"</b>，直接改变玩家的基地布局：</p>
+<p>在主世界基地摆一尊紫珀砖雕像、在下界矿场摆一尊，</p>
+<p>下界记到的负面情绪可以<b>就地仪式、基地提货</b>。</p>
+<p>它把"要不要跑回家"这个日常摩擦变成了可投资的基建。</p>
+<p><b>实现落点</b>：</p>
+<ul>
+<li>绑定关系：<code>EmotionStatueBlockEntity</code> 新增可选的"配对坐标 + 维度"字段</li>
+</ul>
+<p>  （<b>又是那个坑</b>：<code>writeContained</code> <code>:549</code> 与 <code>getUpdateTag</code> <code>:477</code> 都要改）。</p>
+<ul>
+<li>镜像写入：<code>EmotionStatueBlockEntity.finishOuterRitual()</code>（<code>:672-688</code>）</li>
+</ul>
+<p>  是注入真正落地的那一刻，<b>这是唯一的写入点</b>，在这里加镜像最干净。</p>
+<ul>
+<li>目前未见任何"雕像之间互相寻找"的先例，需要新写一个跨维度坐标查找</li>
+</ul>
+<p>  （<code>level.getServer().getLevel(dim)</code> + <code>getBlockEntity</code>）。</p>
+<p><b>平衡风险</b>：中。它<b>不增加任何数值</b>，纯粹是物流便利，所以不会被"滥用"。</p>
+<p>风险在两点：① 目标区块<b>未加载</b>时镜像会静默失败 → 必须给玩家明确反馈（不能静默，</p>
+<p>   本项目已经吃过"静默失败被误判成功能坏了"的亏，见 <code>RitualEffects.java:141-146</code> 的注释）；</p>
+<p>② 若允许多尊互联，会变成"一根杖全网同步"的怪东西，<b>必须限制为 1 对 1</b>。</p>
+<p><b>实现难度</b>：<b>中～大</b>（要新状态 + 跨维度查找 + 未加载处理）。</p>
+<hr>
+<h3>点子 7　补料（<code>SUBSTITUTE</code>）—— 结构不完美时，"牺牲"一尊雕像来补</h3>
+<p><b>挂给谁</b>：新种类，建议绑 <b>砂轮 / 铁砧 / 锻造台 / 高炉</b>（"加工 / 修补"意象，未被使用）。</p>
+<p><b>效果</b>：升华/沉坠要求外围四尊齐备且同类（<code>RitualStructure.java:164-201</code>）。</p>
+<p>拥有本特性的雕像放在<b>中心</b>时，允许<b>缺一尊</b>外围，但代价是：</p>
+<p>被缺的那一尊所代表的效率按 <b>×0.60</b> 计（而不是 ×0.90），并且<b>本次仪式的记录消耗翻倍</b>（烧两条）。</p>
+<p><b>它创造了什么玩法</b>：<b>这是"降低门槛"型的功能，专门解决新玩家的第一道墙</b> ——</p>
+<p>凑四尊同类雕像对刚入门的玩家是真实的门槛（尤其是"同一种类"这个要求，</p>
+<p><code>RitualStructure.java:185-188</code> 会明确拒绝混类）。</p>
+<p>有了补料，玩家可以"三尊 + 一尊补料"先跑起来，付双倍记录费。</p>
+<p>它把"结构判定失败"从<b>硬墙</b>变成<b>可议价的成本</b>，显著改善前 2 小时的体验。</p>
+<p><b>实现落点</b>：</p>
+<ul>
+<li><code>RitualStructure.tryInward()</code>（<code>:164</code>）：<code>if (!(... instanceof EmotionStatueBlock))</code> 那一处（<code>:172</code>）</li>
+</ul>
+<p>  返回 null → 改成"记一个缺口，继续扫描"，最后 <code>Result</code> 里多带一个 <code>shortfall</code> 字段。</p>
+<ul>
+<li><code>RitualEffects.inject()</code>：<code>r.injectionLoss()</code>（<code>:186</code>）用一个按缺口打折的值；</li>
+</ul>
+<p>  记录消耗在 <code>:220-221</code>，改成循环两次（注意第二条可能不存在 → 要兜底）。</p>
+<p><b>平衡风险</b>：中。风险集中在"双倍记录消耗"是否真的构成代价 ——</p>
+<p>现在一条记录很慢（<code>Config.HINT_COOLDOWN_MIN_SECONDS = 20</code>，<code>HINT_RECORD_WINDOW_SECONDS = 60</code>），</p>
+<p>所以是的，代价是真的。但<b>要防止"补料被当成常态最优解"</b>：</p>
+<p>如果 4 尊齐全的收益是 <code>0.90²</code>，缺一是 <code>0.60 × 0.90 = 0.54</code>，差 33 %，</p>
+<p>换一条记录……<b>这条账玩家可能算得过来"其实差不多"</b>。建议把缺口折扣压到 <b>×0.50</b>。</p>
+<p><b>实现难度</b>：<b>中</b>（要改 <code>RitualStructure.Result</code> 的结构，牵连 <code>match</code> 三个分支与调试指令输出）。</p>
+<hr>
+<h3>点子 8　雕像即基站（<code>BEACON</code>）—— 环境提示的速度升级</h3>
+<p><b>挂给谁</b>：新种类，建议绑 <b>信标 / 潮涌核心 / 海晶灯 / 末地烛</b>（"信号 / 扩散"意象）。</p>
+<p><b>效果</b>：以该雕像为圆心、半径 16 格内，玩家的<b>环境提示冷却减半</b></p>
+<p>（<code>hintCooldownMin/MaxSeconds</code>，<code>Config.java:32-39</code>），</p>
+<p>并且 <code>Config.HINT_RECORD_WINDOW_SECONDS</code>（<code>Config.java:43</code>，默认 60 秒）<b>翻倍</b>到 120 秒</p>
+<p>（记录窗口更长 = 更不容易错过"已记录"的时机，这个字段配合 <code>activeRecorded</code> 使用，</p>
+<p>见实现设计文档 §1.3）。</p>
+<p><b>它创造了什么玩法</b>：<b>这是唯一一条直接作用于"第一阶段最慢那一环"的点子。</b></p>
+<p>现在玩家的实际体验是"到处走、等提示、等记录"，而记录是升级的唯一燃油。</p>
+<p>一尊信标雕像能把"效率"这件事从<b>运气</b>（走到哪个群系）变成<b>基建</b></p>
+<p>（把雕像摆在自己常待的地方，或者干脆摆在群系交界处）。</p>
+<p>它还会催生一个真实的位置选择问题：<b>摆在基地（常待）还是摆在群系边缘（产出多）？</b></p>
+<p><b>实现落点</b>：</p>
+<ul>
+<li><code>BiomeMoodHint</code>（负责冷却与提示触发，见实现设计文档 §1）——</li>
+</ul>
+<p>  <b>该类在本次通读中没有逐行读，标「未核对」</b>。</p>
+<p>  机制上需要在它每次计算冷却时，做一次"附近有没有 BEACON 雕像"的查询。</p>
+<ul>
+<li>查询建议<b>缓存</b>：不要每 tick 扫，用"玩家位置变化 &gt; 4 格才重算"或者用</li>
+</ul>
+<p>  <code>MoodAttachments</code> 里存一个带过期时间的缓存值。</p>
+<p><b>平衡风险</b>：<b>高</b>。这是本文档里最可能"失控"的一条，因为它作用在<b>系统的上游</b>：</p>
+<p>记录快了 → 一切都快。要控住必须<b>限幅</b>：</p>
+<p>半径不能大（16 格已经不小）、加成不能叠（多尊不叠，取最高）、</p>
+<p>且<b>明确不动 <code>hintsNeededForDream</code></b>（<code>Config.java:50-53</code>，梦境门槛不能一起降，</p>
+<p>否则整条主线都被压缩）。</p>
+<p>另外 <code>EmotionRecords.java</code> 与 <code>BiomeMoodHint</code> 的交互细节<b>未核对</b>，</p>
+<p>实现前必须先读那两处确认"冷却到底在哪个方法里算"。</p>
+<p><b>实现难度</b>：<b>中</b>（逻辑简单，但要摸清 <code>BiomeMoodHint</code> 的调用时机并做缓存）。</p>
+<hr>
+<h3>点子 9　回收（<code>SALVAGE</code>）—— 被抛弃的那一半，回来一点</h3>
+<p><b>挂给谁</b>：新种类，建议绑 <b>漏斗 / 投掷器 / 熔炉 / 烟熏炉</b>（"回收 / 再加工"意象）。</p>
+<p><b>效果</b>：升华沉坠时本该"彻底消失"的那一半（<code>RitualEffects.java:138-139</code>，</p>
+<p>作者在第二阶段方案 §11 Q6 明确定为「彻底消失」），</p>
+<p>在中心是这样的雕像时，<b>10 %</b> 以<b>当前法杖已有的极性</b>折回注入。</p>
+<p><b>它创造了什么玩法</b>：<b>与点子 3（偏食）方向相反的一条：偏食奖励极端，回收奖励中庸。</b></p>
+<p>回收让"参半记录"（ratio ≈ 0.5，两头都不划算）第一次有价值 ——</p>
+<p>现在 <code>ratio = 0.5</code> 的记录无论升华还是沉坠都只能取一半，是最"鸡肋"的一类。</p>
+<p>它会鼓励玩家<b>不要挑食</b>，把路上随手记的普通记录也拿去烧。</p>
+<p><b>实现落点</b>：</p>
+<ul>
+<li>与点子 3 同一处（<code>RitualEffects.java:139</code> 之后），但<b>用另一个 trait 名</b>，</li>
+</ul>
+<p>  两者互斥（同一次仪式只能吃一条）。</p>
+<ul>
+<li><b>不要</b>做成"存进法杖"（那会让法杖的极性变混，<code>ratio</code> 是单值的，</li>
+</ul>
+<p>  <code>RitualEffects.java:200</code> 会覆盖成 1.0 或 0.0 —— 与"混装"根本冲突）。</p>
+<p><b>平衡风险</b>：低。10 % 的回收率对应的期望增益很小（<code>ratio=0.5</code> 时 +5 %），</p>
+<p>且它<b>只作用在参半记录上</b>（因为极端记录的丢弃份额本来就接近 0，回收不到东西）。</p>
+<p>所以它天然是"新手友好 / 老手用不上"的良性特性 —— 这在一个已经有</p>
+<p>"紫颂花断层"（见《倍率总表与意见》§9.1 问题 1，2.56 倍断层）的体系里，是可取的。</p>
+<p><b>实现难度</b>：<b>小</b>。</p>
+<hr>
+<h3>点子 10　延时绽裂（<code>DELAYED</code>）—— 把"零时长"的绽裂变成可布置的陷阱</h3>
+<p><b>挂给谁</b>：新种类，建议绑 <b>TNT / 侦测器 / 标靶 / 红石灯</b>（"触发 / 延时"意象）。</p>
+<p><b>效果</b>：以这样的雕像为<b>外围</b>时，绽裂的结算<b>延后 200 刻（10 秒）</b>，</p>
+<p>并且在延迟期间<b>持续向外扩散染色粒子</b>（颜色取 <code>pool</code> 里心绪的配色，</p>
+<p><code>RitualEffects.java:368-373</code> 已有现成的实现可以复用）。</p>
+<p>若延迟期间玩家离开半径 16 格，绽裂<b>取消</b>（法杖不清空、心绪不发）。</p>
+<p><b>它创造了什么玩法</b>：现在的绽裂是<b>立即结算、零成本、零风险</b>的</p>
+<p>（<code>RitualEffects.java:278</code> 的注释明确写了"绽裂没有动画时长，是即时结算的"，</p>
+<p>《倍率总表与意见》§9.4 也把它列为失衡点）。</p>
+<p>加了延时之后，绽裂第一次有了<b>"表演性"与"风险"</b>：</p>
+<p>玩家可以把缀满情绪的法杖留在绽裂台上，10 秒里跑开去看效果，或者</p>
+<p><b>把绽裂台当陷阱</b>——引怪过来，在 10 秒里让扩散的粒子把怪堆在范围内</p>
+<p>（如果作者愿意让绽裂对范围内的生物也有微弱效果，那就是一个完整的"爆裂陷阱"）。</p>
+<p><b>实现落点</b>：</p>
+<ul>
+<li><code>RitualEffects.burst()</code>（<code>:278</code>）现在是同步的，需要改成</li>
+</ul>
+<p>  "算好 → 交给 <code>EmotionStatueBlockEntity</code> 延时执行"。</p>
+<p>  <b><code>EmotionStatueBlockEntity</code> 已经有现成的延时框架</b>：</p>
+<p>  <code>ritualTicks</code> / <code>ritualDuration</code> / <code>startOuterRitual</code> / <code>serverTick</code> 的</p>
+<p>  <code>if (be.ritualTicks &lt;= 0) finishOuterRitual(...)</code>（<code>:319-321</code>）—— <b>照抄这套即可</b>。</p>
+<ul>
+<li>⚠️ <code>RitualKind</code> 枚举（<code>:79</code>）要加 <code>BURST</code>，<code>serverTick</code> 里的</li>
+</ul>
+<p>  <code>if (be.ritualKind != RitualKind.AWAKENING)</code>（<code>:312</code>）分支要相应处理。</p>
+<ul>
+<li>⚠️ <b>打断路径必须接上</b>：<code>cancelRitual</code>（<code>:171</code>）已经被 <code>setRemoved</code>（<code>:223</code>）</li>
+</ul>
+<p>  和 <code>setContained</code>（<code>:447</code>）调用，新仪式<b>自动继承</b>打断保护 —— 这是本项目少见的</p>
+<p>  "基础设施已经铺好、可以直接接"的位置，<b>成本远低于看上去的样子</b>。</p>
+<p><b>平衡风险</b>：低。它<b>不改变任何数值</b>，只改变时序，而时序风险由玩家自己承担。</p>
+<p>唯一要小心的是"延迟期间服务器重启/区块卸载"——<code>setRemoved</code> 已经处理（卸载就当没发生），</p>
+<p>符合第二阶段方案 §9 的兼容要求。</p>
+<p><b>实现难度</b>：<b>中</b>（框架现成，但要动 <code>RitualKind</code> 枚举与 <code>serverTick</code> 的分支，</p>
+<p>且 <code>saveAdditional</code> 目前<b>只存了 <code>ritualTicks</code>，没存 <code>ritualPayload</code></b></p>
+<p>—— <code>EmotionStatueBlockEntity.java:549-557</code> 只写了 <code>ritualTicks</code> 和 <code>contained</code>。</p>
+<p><b>这意味着现在升华/沉坠仪式中途退出游戏，待结算的载荷会丢</b>。</p>
+<p>这是一条<b>既有隐患</b>，做点子 10 时必须一起处理。）</p>
+<hr>
+<h3>点子 11　交换台（<code>BARTER</code>）—— 雕像上的记录"换手"</h3>
+<p><b>挂给谁</b>：新种类，建议绑 <b>讲台 / 书柜 / 制图台 / 附魔台</b>（"书 / 交换"意象）。</p>
+<p><b>效果</b>：把<b>指南书的记录</b>变成<b>可搬运的实体</b>。</p>
+<p>对这样的雕像右键，可以取出一片"情绪残页"物品（带 <code>ModComponents</code> 数据组件，</p>
+<p>内容是某一条记录的 id/属性/档位）；残页可以交给<b>另一尊</b>同类雕像放回书里。</p>
+<p><b>它创造了什么玩法</b>：<b>这直接接上了文档 §10.5 与第二阶段方案 §4 里悬而未决的"撕页"设计。</b></p>
+<p>作者已经定了"撕页改成合成：书 + 剪刀 → 纸"（第二阶段方案 §4），</p>
+<p>但那个方案的问题是"纸"是个<b>没有内容</b>的材料。</p>
+<p><b>残页</b>是同一个交互的<b>更有内容</b>的版本：撕下来的不是空白纸，是<b>真的那一条记录</b>。</p>
+<p>副产品是：</p>
+<ul>
+<li>记录的<b>顺序</b>第一次可以被玩家改变（现在消耗严格按"最先未消耗"，</li>
+</ul>
+<p>  <code>RitualEffects.java:242-249</code> 的 <code>firstUnconsumedIndex</code>）——</p>
+<p>  这直接解决了 <code>StatueTrait.java:24-27</code> 注释里记的那个<b>死锁教训</b></p>
+<p>  （"想用空无雕像时必须先消耗掉前面所有其它属性的记录"）。</p>
+<ul>
+<li>玩家之间可以<b>交易具体记录</b>。</li>
+</ul>
+<p><b>实现落点</b>：</p>
+<ul>
+<li>新物品 + 新数据组件（照 <code>ModComponents.STATUE_KIND</code> 的写法，<code>ModComponents.java:38-41</code>，</li>
+</ul>
+<p>  <b>必须同时给 <code>persistent(CODEC)</code> 与 <code>networkSynchronized(STREAM)</code></b>，</p>
+<p>  该文件注释 <code>:12-17</code> 专门警告过只给一个的后果）。</p>
+<ul>
+<li>记录的搬运：<code>MoodAttachments.MoodData.recorded</code> 是 <code>List&lt;String&gt;</code>，</li>
+</ul>
+<p>  单条就是 <code>EmotionRecords</code> 的存档行，<b>天然可以整行搬走</b>。</p>
+<ul>
+<li>交换台逻辑挂在 <code>GuideBookItem.useOn</code> 旁边（或新物品的 <code>useOn</code>）。</li>
+<li>⚠️ <b>同步刷新的雷</b>：任何改动 <code>recorded</code> 的地方<b>都必须同时</b></li>
+</ul>
+<p>  <code>player.setData(MoodAttachments.RECORD_BOOK_TEXT, EmotionRecords.joinForSync(...))</code></p>
+<p>  （<code>RitualEffects.java:222</code>、<code>GuideBookItem.java:330</code> 都是这么做的，</p>
+<p>  实现设计文档 §7 的表最后一行专门警告过漏刷新）。</p>
+<p><b>平衡风险</b>：中。它<b>不给任何数值</b>，所以不会失控；但它是<b>操作记录顺序</b>的能力，</p>
+<p>而"顺序"现在是这套系统的<b>唯一约束</b>（也是死锁的来源）。</p>
+<p>一旦顺序可改，<code>RitualEffects.java:148-166</code> 那个"total ≤ 0 就烧掉队首"的失败分支</p>
+<p>会变得更常被触发（玩家可以把不想要的记录推到队首去烧）。</p>
+<p><b>这谈不上坏</b>，但作者要意识到这是<b>故意打开的一个口子</b>。</p>
+<p><b>实现难度</b>：<b>大</b>（新物品 + 新组件 + 新交互 + 记录搬移 + 同步刷新，</p>
+<p>是本文档里工程量最大的一条，但也是<b>设计价值最高</b>的一条）。</p>
+<hr>
+<h3>点子 12　温床（<code>HOTBED</code>）—— 下界砖的"负面偏爱"具象化</h3>
+<p><b>挂给谁</b>：<b>下界砖（NETHER_BRICK）专属</b>（其完整方案见第三节，此处只登记为清单第 12 条，</p>
+<p>避免与第三节重复）。</p>
+<p><b>效果一句话</b>：下界砖作为<b>中心</b>时，沉坠仪式里"被抛弃的那一半正面"不是消失，</p>
+<p>而是变成 <b>1 点</b>嘲讽性的反馈：注入量不变，但玩家获得"下界笑了"的提示与一段粒子。</p>
+<div class="card small"><b>说明</b>：本条在第三节会被更完整的方案取代，此处保留编号只为清单完整。</div>
+<div class="card small"><b>实际推荐方案见第三节的方案 A。</b></div>
+<hr>
+<h3>点子清单汇总（按"玩法价值 / 实现成本"排序）</h3>
+<table>
+<tr><th>#</th><th>名字</th><th>trait 名</th><th>主要落点</th><th>难度</th><th>玩法价值</th></tr>
+<tr><td>11</td><td>交换台</td><td><code>BARTER</code></td><td>新物品 + <code>ModComponents</code></td><td>大</td><td>★★★★★</td></tr>
+<tr><td>7</td><td>补料</td><td><code>SUBSTITUTE</code></td><td><code>RitualStructure.tryInward</code></td><td>中</td><td>★★★★★</td></tr>
+<tr><td>8</td><td>雕像即基站</td><td><code>BEACON</code></td><td><code>BiomeMoodHint</code></td><td>中</td><td>★★★★★</td></tr>
+<tr><td>1</td><td>回响</td><td><code>ECHO</code></td><td><code>EmotionStaffItem</code></td><td>小</td><td>★★★★</td></tr>
+<tr><td>4</td><td>共鸣消耗</td><td><code>RESONANT</code></td><td><code>GuideBookItem.useOn</code> + 消耗</td><td>中</td><td>★★★★</td></tr>
+<tr><td>2</td><td>同调</td><td><code>ATTUNED</code></td><td><code>RitualEffects.inject/burst</code></td><td>小～中</td><td>★★★★</td></tr>
+<tr><td>3</td><td>属性即偏食</td><td><code>PALATE</code></td><td><code>RitualEffects.inject</code></td><td>小</td><td>★★★（只惠及中间态记录）</td></tr>
+<tr><td>9</td><td>回收</td><td><code>SALVAGE</code></td><td><code>RitualEffects.inject</code></td><td>小</td><td>★★★</td></tr>
+<tr><td>10</td><td>延时绽放</td><td><code>DELAYED</code></td><td><code>EmotionStatueBlockEntity</code></td><td>中</td><td>★★★</td></tr>
+<tr><td>6</td><td>跨维度回声</td><td><code>REMOTE</code></td><td><code>finishOuterRitual</code></td><td>中～大</td><td>★★★</td></tr>
+<tr><td>12</td><td>（见第三节）</td><td>—</td><td>下界砖专属</td><td>中</td><td>见第三节</td></tr>
+<tr><td>5</td><td>酒意 / 陈化</td><td><code>AGED</code></td><td><code>EmotionRecords</code> 存档扩展</td><td>大</td><td>★★（存档风险高）</td></tr>
+</table>
+<hr>
+<h2>第三节　下界砖的专属功能（作者点名）</h2>
+<h3>3.0 下界砖的现状（逐行核对过）</h3>
+<table>
+<tr><th>项</th><th>值</th><th>出处</th></tr>
+<tr><td>等级</td><td>2（注入 90 %、输出 100 %）</td><td><code>EmotionStatueKind.java:54</code>、<code>:133-139</code></td></tr>
+<tr><td>容量</td><td><b>40</b></td><td><code>EmotionStatueKind.java:54</code></td></tr>
+<tr><td>属性</td><td><b>下界</b></td><td>同上</td></tr>
+<tr><td>特性</td><td><code>NETHER_BRICK</code>：正面 ×1.00 / 负面 ×1.50</td><td><code>StatueTrait.java:117</code>、<code>:142</code></td></tr>
+<tr><td>特殊功能</td><td><b>无</b> —— 三个机制型方法（<code>allowsMixing</code> / <code>randomFluctuation</code> / <code>sharedStorage</code>）<b>都不返回它</b></td><td><code>StatueTrait.java:176-188</code></td></tr>
+<tr><td>下辖材质</td><td>4 个：<code>nether_bricks</code> / <code>red_nether_bricks</code> / <code>chiseled_nether_bricks</code> / <code>cracked_nether_bricks</code></td><td><code>EmotionStatueKind.java:288-289</code></td></tr>
+<tr><td>能否当外围</td><td><b>不能</b>。<code>isWood</code>（<code>:206-210</code>）与 <code>isStone</code>（<code>:213-217</code>）都不含它</td><td>同上</td></tr>
+<tr><td>在倍率表里的位置</td><td>沉坠第 4（6.075，配合 4× 下界岩石 + 下界记录 → 194 点）</td><td>《倍率总表与意见》§7.2</td></tr>
+</table>
+<p><b>一句话诊断</b>：下界砖是<b>唯一一个"四面都到齐、却没有自己的一手"的种类</b>。</p>
+<p>它数值不弱（负面 ×1.50 是下界主题的正当表达），</p>
+<p>但<b>没有任何一条规则会让玩家为了它而改变行为</b> ——</p>
+<p>这正是作者说它"最平"的意思。所以下面三个候选<b>都不以"加强数值"为目标</b>，</p>
+<p>而是各自回答"<b>下界砖能让玩家多做一件什么事</b>"。</p>
+<hr>
+<h3>方案 A（推荐）　砖窑：把被抛弃的那一半"烧成砖"</h3>
+<p><b>建议 trait 名</b>：<code>NETHER_BRICK_KILN</code>（若按 §1.5 落法 A 实现，则不必新增枚举值）</p>
+<h4>效果</h4>
+<p>下界砖雕像（<b>作为中心</b>）举行<b>升华或沉坠</b>时，</p>
+<p>本该"彻底消失"的那一半情绪（<code>RitualEffects.java:138-139</code>）不再凭空蒸发，</p>
+<p>而是<b>凝成一块实体</b>：</p>
+<ul>
+<li>一块「<b>余烬砖</b>」（新物品）出现在中心雕像的台座旁边（掉落在地上，或塞进相邻的容器）</li>
+<li>每块余烬砖记录 <b>极性 + 属性 + 点数</b>（点数 = <code>round(被抛弃份额 × 0.25)</code>，</li>
+</ul>
+<p>  即 25 % 回收率，且<b>上限 32 点</b>）</p>
+<ul>
+<li>玩家手持余烬砖右键<b>任意雕像的台座</b>，可以把这 25 % <b>不加损耗地</b>灌进台座上的法杖</li>
+</ul>
+<p>  （不触发仪式、不耗时、不消耗记录）</p>
+<h4>它创造了什么玩法（最重要的一节）</h4>
+<p>1. <b>下界砖变成了"加工站"而不是"容器"</b>：玩家会<b>专门把下界砖雕像摆到仪式场</b>，</p>
+<p>   而不是随便找个石头当中心。这是下界砖第一次有"摆在哪"的问题。</p>
+<p>2. <b>诞生了一条新的物品流</b>：余烬砖是<b>可携带、可堆叠、可交易</b>的情绪载体 ——</p>
+<p>   目前模组里情绪的<b>唯一</b>载体是法杖（<code>EmotionPayload</code> 挂在 <code>ModComponents.EMOTION</code> 上），</p>
+<p>   所以"带一点情绪回家"这件事现在<b>做不到</b>（法杖会整根占用，且释放即清空）。</p>
+<p>   余烬砖补上了这个空缺。</p>
+<p>3. <b>它给了"参半记录"一个归宿</b>：<code>ratio ≈ 0.5</code> 的记录无论升华还是沉坠都只能取一半，</p>
+<p>   是最鸡肋的一类。有了砖窑，另一半不再白扔 —— <b>每次仪式都不亏</b>，</p>
+<p>   这会显著降低新手的挫败感（现在"烧掉一条记录拿 1 点"是真的会让人以为机制坏了，</p>
+<p>   见 <code>RitualEffects.java:148-166</code> 那条失败分支的血泪注释）。</p>
+<p>4. <b>为多玩家互动开门</b>：余烬砖是<b>第一件可以给别人的情绪</b>。</p>
+<h4>实现落点</h4>
+<ul>
+<li><b>触发点</b>：<code>RitualEffects.inject()</code>，即 <code>int total = (int) Math.round(amount * share);</code></li>
+</ul>
+<p>  （<code>RitualEffects.java:139</code>）之后。此处 <code>st</code>（<code>EmotionRecords.Stored</code>）与</p>
+<p>  <code>amount</code> / <code>share</code> / <code>positive</code> 全都在手，<b>算"被抛弃的那一半"不需要任何额外信息</b>。</p>
+<ul>
+<li><b>判断"中心是不是下界砖"</b>：</li>
+</ul>
+<p>  按 §1.5 落法 A，用 <code>level.getBlockState(center).getValue(EmotionStatueBlock.MATERIAL).id()</code></p>
+<p>  做前缀判断（4 个 id 见 <code>EmotionStatueKind.java:288-289</code>），</p>
+<p>  或更严格地做成一张 <code>Set&lt;String&gt;</code> 白名单。</p>
+<p>  <b>这样不必新增 <code>EmotionStatueKind</code> 枚举值</b>，不牵连 <code>StatueMaterial</code>、书页清单、命令输出。</p>
+<ul>
+<li><b>"延后到仪式结束"这一条要遵守</b>：现在的注入是<b>600 刻后才落地</b>的</li>
+</ul>
+<p>  （<code>RitualEffects.java:202-216</code>：载荷存进方块实体，<code>finishOuterRitual</code></p>
+<p>  <code>EmotionStatueBlockEntity.java:672-688</code> 才真写入）。</p>
+<p>  余烬砖<b>必须也在那一刻生成</b>，否则动画期间地上就多出一块砖，观感自相矛盾。</p>
+<p>  → 落点是 <code>finishOuterRitual()</code>，需要给方块实体多存一个"待产出的余烬砖参数"</p>
+<p>  （与现有 <code>ritualPayload</code> 同生命周期）。</p>
+<ul>
+<li><b>⚠️ 立刻要修的既有隐患</b>：<code>EmotionStatueBlockEntity.writeContained()</code>（<code>:549-557</code>）</li>
+</ul>
+<p>  <b>没有存 <code>ritualPayload</code></b>，所以现在<b>升华/沉坠仪式中途退出游戏，待结算的注入会丢</b>。</p>
+<p>  做本方案会往这里再加一个字段，<b>必须顺手把 <code>ritualPayload</code> 一起序列化</b>。</p>
+<ul>
+<li><b>余烬砖物品</b>：新物品 + 新数据组件。照 <code>ModComponents.STATUE_KIND</code>（<code>ModComponents.java:38-41</code>）</li>
+</ul>
+<p>  写，<b><code>persistent(CODEC)</code> 与 <code>networkSynchronized(STREAM)</code> 两个都必须给</b>（该文件 <code>:12-17</code> 的警告）。</p>
+<ul>
+<li><b>注入余烬砖</b>：读法杖载荷 → <code>payload.amount() + 砖点数</code> → 写回。</li>
+</ul>
+<p>  ⚠️ <b>不要</b>改 <code>ratio</code>（<code>EmotionPayload.java:31</code> 是单值，改了就破坏"极性纯粹"这个绽裂的前提）。</p>
+<h4>平衡风险</h4>
+<ul>
+<li><b>会不会绕过主体玩法？</b> 会一点，但已限幅：</li>
+</ul>
+<p>  25 % 回收 + 上限 32 点，意味着<b>一条 32 点记录最多回收 8 点</b>（32 × 0.25 × 被抛弃份额）。</p>
+<p>  它<b>远低于</b>正常仪式的注入量（最高 336 点），所以没人会为了余烬砖去刷仪式。</p>
+<ul>
+<li><b>会不会与绽裂叠加失控？</b> 这是<b>真正要盯的点</b>：余烬砖是"免仪式把点数灌进杖"，</li>
+</ul>
+<p>  而绽裂的入场券是"超容量"（<code>RitualEffects.java:287</code>）。</p>
+<p>  一个玩家可以用余烬砖<b>精确地把杖灌到刚好超容量</b>，从而<b>跳过 30 秒仪式</b>。</p>
+<p>  但这在《倍率总表与意见》§9.6 里本来就被点名为"超容量 1 点门槛太宽松"的问题，</p>
+<p>  余烬砖只是让它更省事 —— <b>建议与 #8（把门槛改成 <code>amount ≥ capacity × 1.5</code>）一起做</b>。</p>
+<ul>
+<li><b>会不会破坏"另一半彻底消失"的设定？</b> 会。</li>
+</ul>
+<p>  作者在第二阶段方案 §11 Q6 明确写"彻底消失"。</p>
+<p>  <b>但请注意</b>：那条设定是针对<b>通用规则</b>下的，而这里给的是<b>一种特定材质的特例</b>——</p>
+<p>  与"灵魂允许混装""紫珀砖共享"是同一层级的"材质例外"</p>
+<p>  （《实现设计》§13.3 "材质级的例外"那张表）。<b>建议以"加入那张表"的形式落地，而不是改通用规则。</b></p>
+<ul>
+<li><b>存档负担</b>：余烬砖是物品，跟着物品走，<b>不需要新存档格式</b>，风险低。</li>
+</ul>
+<h4>实现难度</h4>
+<p><b>中</b>：新物品 + 新组件 + 方块实体加一个待产出字段（并顺手修 <code>ritualPayload</code> 的序列化）+ 一处右键交互。</p>
+<hr>
+<h3>方案 B　炙烤：下界砖的沉坠"不挑食"</h3>
+<p><b>建议 trait 名</b>：<code>NETHER_BRICK_GREED</code></p>
+<h4>效果</h4>
+<p>下界砖作为<b>中心</b>时，<b>沉坠仪式取的是整条记录的全额，而不是负面那一份</b>。</p>
+<p>即 <code>share</code> 从 <code>(1 - ratio)</code> 改成 <code>1.0</code>，但注入量额外 <code>×0.55</code> 作为代价。</p>
+<h4>它创造了什么玩法</h4>
+<p>它把下界砖变成<b>"参半记录处理机"</b>：</p>
+<p><code>ratio = 0.5</code> 的记录，别人沉坠只能拿一半（16 点），下界砖能拿全部（32 × 0.55 ≈ 18 点）。</p>
+<p><b>对那些"随手记的普通记录"（占了玩家记录的大多数）更划算。</b></p>
+<p>玩法变化很小 —— 只是在配装时多一个"我手上参半记录多，那用下界砖"的判断。</p>
+<h4>实现落点</h4>
+<p><code>RitualEffects.inject()</code> 的 <code>double share = positive ? st.ratio() : (1.0 - st.ratio());</code></p>
+<p>（<code>RitualEffects.java:138</code>）之后加分支。</p>
+<h4>平衡风险</h4>
+<p><b>中</b>。这是<b>纯数值</b>特性，而纯数值特性的风险正是"让某一种类成为无脑最优"。</p>
+<p>算一下：<code>ratio = 0.5</code> 时 18 点 vs 普通中心 16 点（+12 %）；</p>
+<p>但 <code>ratio = 0.2</code>（负面重的记录）时，普通中心拿 0.8 × 32 = 25.6 点，</p>
+<p>下界砖只拿 32 × 0.55 = 17.6 点（<b>-31 %</b>）。</p>
+<p>所以它是<b>有得有失</b>的，不是支配 —— 这一点比方案 C 好。</p>
+<h4>实现难度</h4>
+<p><b>小</b>（一行算术）。<b>但玩法价值也最小</b> —— 它不会让玩家做任何新的事，</p>
+<p>只会让玩家在<b>已有的选择里换一个选项</b>。<b>不推荐作为独占特性</b>，</p>
+<p>但可以作为方案 A 的<b>附加小菜</b>。</p>
+<hr>
+<h3>方案 C　灼热执着：下界砖"不削弱负面"的升级版</h3>
+<p><b>建议 trait 名</b>：<code>NETHER_BRICK_ZEAL</code></p>
+<h4>效果</h4>
+<p>下界砖作为中心时，<b>负面注入额外 ×1.20</b>，</p>
+<p>并且<b>沉坠仪式的失败分支被取消</b> —— 即 <code>total ≤ 0</code> 时（<code>RitualEffects.java:148</code>）</p>
+<p>不消耗记录、也<b>不</b>报"情绪太平淡了"，而是照常以 <code>max(1, ...)</code> 注入 1 点。</p>
+<h4>它创造了什么玩法</h4>
+<p>几乎不创造。它只是把"下界砖当负面中心"这条路变得更稳。</p>
+<h4>实现落点</h4>
+<p><code>RitualEffects.java:148-166</code> 的失败分支加条件跳过 + <code>:184</code> 的 <code>pref</code> 乘一层。</p>
+<h4>平衡风险</h4>
+<p><b>高，且方向不对</b>。</p>
+<p>① 它<b>加大</b>了《倍率总表与意见》§9.1 已经点名的"沉坠天生弱 15 %"的不对称</p>
+<p>（因为沉坠的第 1 名是紫珀砖/末地岩石，第 4 名才是下界砖；</p>
+<p>给第 4 名加强只会让中间档更挤，不解决头部断层）。</p>
+<p>② 取消失败分支会让 <code>RitualEffects.java:148-166</code> 那条<b>花了一条记录换 0 收益</b>的</p>
+<p>"痛苦但诚实"的反馈消失，而这恰是该系统少见的<b>清晰失败信号</b>。</p>
+<h4>实现难度</h4>
+<p><b>小</b>。<b>但不推荐</b> —— 它属于"加了数值、没加玩法"，</p>
+<p>而作者这次明确说了"优先追求点子本身的玩法价值，而不是数值强弱"。</p>
+<hr>
+<h3>3.4 三个方案的横向对比</h3>
+<table>
+<tr><th></th><th>方案 A 砖窑</th><th>方案 B 炙烤</th><th>方案 C 灼热执着</th></tr>
+<tr><td>做什么</td><td>把废弃的那一半变成<b>可搬运物品</b></td><td>改"取哪一份"的算法</td><td>加乘数 + 取消失败</td></tr>
+<tr><td>玩家会改变的行为</td><td><b>会把下界砖摆进仪式场、会攒/带/交易余烬砖、会重新看待参半记录</b></td><td>配装时多一次判断</td><td>无</td></tr>
+<tr><td>新增内容</td><td>1 个物品 + 1 个数据组件</td><td>0</td><td>0</td></tr>
+<tr><td>是否新玩法</td><td>✅ 是</td><td>❌ 否（只是新的最优解）</td><td>❌ 否</td></tr>
+<tr><td>与既有设定的冲突</td><td>与"另一半彻底消失"冲突 → 但以"材质级例外"落地即可（有先例）</td><td>无</td><td>无</td></tr>
+<tr><td>滥用风险</td><td>低（25 %/上限 32），但<b>需与绽裂门槛调整一起做</b></td><td>中</td><td>高</td></tr>
+<tr><td>难度</td><td>中</td><td>小</td><td>小</td></tr>
+</table>
+<h3>3.5 推荐：<b>方案 A（砖窑）</b></h3>
+<p><b>推荐理由（四条，按重要性排序）</b></p>
+<p>1. <b>它是三者里唯一"让玩家多做一件事"的方案。</b></p>
+<p>   方案 B/C 都只是让下界砖在<b>已有的决策里更好一点</b>，</p>
+<p>   而《实现设计》§13.3 的整张"材质级例外"表（灵魂混装、紫颂花随机、紫珀砖共享）</p>
+<p>   <b>全部都是"增加一种新行为"，不是"增加一个乘数"</b>。</p>
+<p>   方案 A 与这张表同源，B/C 不是。</p>
+<p>2. <b>它复用了现成的最复杂那部分。</b></p>
+<p>   "被抛弃的那一半"这个数据在 <code>RitualEffects.java:139</code> 已经算出来了（<code>share</code> 与 <code>amount</code>），</p>
+<p>   而现在它是<b>直接扔掉</b>的。方案 A 是<b>把已有的废弃物利用起来</b>，</p>
+<p>   不是往系统里塞一个新概念 —— 这是最低摩擦的加法。</p>
+<p>3. <b>它顺手修掉两条既有隐患。</b></p>
+<p>   做 A 必须碰 <code>EmotionStatueBlockEntity</code> 的"仪式结束时产出"这段，</p>
+<p>   而这段现在<b>没有序列化 <code>ritualPayload</code></b>（<code>:549-557</code>），</p>
+<p>   意味着<b>升华/沉坠中途退出游戏会丢注入</b>。一次改动顺手修掉。</p>
+<p>4. <b>它对"下界砖最平"这个诊断是直击的。</b></p>
+<p>   下界砖的定位是"下界的砖"——<b>砖是建筑材料、是砌起来的东西</b>。</p>
+<p>   "把情绪砌成一块砖"是这个材质<b>语义上最自然</b>的能力，</p>
+<p>   比"负面 +20 %"（方案 C）或"多取一份"（方案 B）更贴合它是什么。</p>
+<p><b>落地建议的顺序</b>：先做方案 A 的<b>最小可用版</b>（只在 <code>finishOuterRitual</code> 生成一块砖 +</p>
+<p>右键灌入），把"砖的极性/属性/点数"这三个字段定下来；</p>
+<p>把它接进指南书（<code>GuideBookPages</code> / <code>ModBookContent</code>）作为下界砖条目的说明，</p>
+<p><b>这一步做完就算完整</b>，不需要一次做全套。</p>
+<hr>
+<h2>第四节　我的取舍建议</h2>
+<h3>如果只能做 3 个</h3>
+<p><b>做这 3 个，按这个顺序</b>：</p>
+<h4>第 1 个：<b>点子 1　回响（<code>ECHO</code>）</b> —— 先做，因为最便宜且立刻可感知</h4>
+<ul>
+<li><b>为什么</b>：它是全清单里<b>唯一的小工程 + 无新状态 + 无新包 + 无存档改动</b>的一条，</li>
+</ul>
+<p>  却直接改变玩家最常做的那件事（挥杖）。现在 <code>EmotionStaffItem</code> 的三种用法</p>
+<p>  （<code>EmotionStaffItem.java:84-101</code>）<b>只有一种形态</b>（半径），</p>
+<p>  加五种形态属于"在已有的一个方法里做分派"。</p>
+<ul>
+<li><b>为什么排第一</b>：它<b>零风险</b>（不碰数值、不碰乘数、不碰存储），</li>
+</ul>
+<p>  可以作为"证明这套特质机制能接线"的第一个样板 ——</p>
+<p>  而这恰好回应了你最担心的那件事（"不想再往一套没接线的机制上加东西"）。</p>
+<p>  它做完之后，<code>StatueTrait</code> 里就会<b>第一次</b>出现"能改变行为的布尔方法"，</p>
+<p>  后面几个点子的落点也就有了示范。</p>
+<h4>第 2 个：<b>第三节 方案 A　砖窑</b> —— 紧接着做，因为它是你点名要的，且顺手修隐患</h4>
+<ul>
+<li><b>为什么</b>：作者点名要下界砖的功能，且这条顺带修掉</li>
+</ul>
+<p>  <code>EmotionStatueBlockEntity</code> 不序列化 <code>ritualPayload</code> 的既有丢失问题。</p>
+<ul>
+<li><b>为什么排第二</b>：它需要新增物品 + 数据组件（有学习成本），</li>
+</ul>
+<p>  但<b>不依赖任何其它点子</b>，可以独立完成。</p>
+<ul>
+<li><b>注意</b>：与它一起做《倍率总表与意见》#8（绽裂门槛 <code>amount ≥ capacity × 1.5</code>），</li>
+</ul>
+<p>  否则余烬砖会让"超容量 1 点"这个本来就没意义的口子更没意义。</p>
+<h4>第 3 个：<b>点子 7　补料（<code>SUBSTITUTE</code>）</b> —— 最后做，因为它解决的是最痛的那道墙</h4>
+<ul>
+<li><b>为什么</b>：这条的收益<b>不在"强"而在"通"</b>。</li>
+</ul>
+<p>  现在凑齐"四尊同类外围"是真门槛（<code>RitualStructure.java:185-188</code> 明确拒绝混类），</p>
+<p>  而仪式是整条链的<b>唯一入口</b> —— 门槛卡住的不是收益，是<b>能不能玩到</b>。</p>
+<p>  让结构判定从硬墙变成可议价的成本，是这三条里对<b>留存</b>影响最大的。</p>
+<ul>
+<li><b>为什么排第三</b>：它要改 <code>RitualStructure.Result</code> 的结构，</li>
+</ul>
+<p>  牵连 <code>match()</code> 的三个分支与 <code>MadnessCommands</code> 的调试输出，改动面比前两条宽。</p>
+<h3>如果你愿意做第 4 个</h3>
+<p>做 <b>点子 11　交换台（<code>BARTER</code>）</b>。</p>
+<p>理由：它是<b>唯一一条能拆掉"记录顺序死锁"</b>的方案 ——</p>
+<p>而那个死锁是代码注释里<b>明确记录过</b>的设计教训</p>
+<p>（<code>StatueTrait.java:24-27</code>：删除「仅容纳」硬门槛的<b>唯一理由</b>就是它）。</p>
+<p>现在这个教训只是被"绕开"了（改成 ×2.00 奖励），<b>并没有被解决</b>。</p>
+<p>交换台是把它正面解决掉 —— 而且顺带覆盖了文档 §10.5 与第二阶段方案 §4 里</p>
+<p>悬着的"撕页"需求。它工程量大（新物品 + 新组件 + 同步刷新），</p>
+<p>所以放在前三条都跑通、模板都齐了之后做最合适。</p>
+<h3>明确<b>不建议</b>现在做的</h3>
+<table>
+<tr><th>点子</th><th>为什么不建议</th></tr>
+<tr><td><b>点子 5　酒意 / 陈化</b></td><td>它是唯一需要<b>扩展 <code>EmotionRecords</code> 存档格式</b>的一条。第二阶段方案 §9 专门写了"卸载与存档兼容"是 ★重要事项，而本项目已经因为分段顺序错位丢过一次数据（<code>EmotionRecords.java:112-118</code>）。<b>等存档兼容方案定了再做。</b></td></tr>
+<tr><td><b>点子 3　属性即偏食</b></td><td>它现在只惠及"参半记录"（<code>ratio ≈ 0.5</code>），本身风险已降到中低；但若与点子 2（同调）挂到同一种类，两者会一起把注入推高。<b>先做同调、观察一轮，再决定偏食挂给谁。</b></td></tr>
+<tr><td><b>点子 8　雕像即基站</b></td><td>玩法价值很高，但它作用在<b>系统上游</b>（记录冷却），而 <code>BiomeMoodHint</code> 我<b>没有逐行读</b>（标「未核对」）。<b>实现前必须先读那一块</b>，否则会像这个项目过去几次一样"改了但没生效"。</td></tr>
+</table>
+<h3>关于"先把空功能接上"这件事</h3>
+<p>最后提醒一句，<b>顺序上应该先于所有新点子</b>：</p>
+<p><code>allowsMixing()</code> / <code>randomFluctuation()</code> / <code>sharedStorage()</code> 这三条现在会**出现在玩家的</p>
+<p>F3+H tooltip 里<b>（<code>EmotionStatueItem.java:77-79</code>）和</b>调试指令的输出里**</p>
+<p>（<code>MadnessCommands.java:246-248</code>）。也就是说：<b>玩家现在能看见三个不存在的功能。</b></p>
+<p>这是一个<b>正在对玩家撒谎的 UI</b>，比"空功能"本身更值得优先处理。</p>
+<p>三条路，任选其一，<b>都很便宜</b>：</p>
+<ul>
+<li><b>接上</b>：<code>randomFluctuation()</code> 接进 <code>RitualEffects.java:338</code>（把 <code>0.8 + rng*0.4</code> 换成</li>
+</ul>
+<p>  trait 有特性时 <code>0.6 + rng*0.8</code>，其它材质不变 —— 一行）；</p>
+<p>  <code>allowsMixing()</code> 需要先定义"混装"是什么（中）；</p>
+<p>  <code>sharedStorage()</code> 见点子 6（大）。</p>
+<ul>
+<li><b>或摘掉</b>：把 tooltip 与调试指令里那三行删掉，注释标"未实现，见《雕像特殊功能点子.md》"。</li>
+<li><b>至少</b>：在 tooltip 那三行后面加"（未实现）"，别让玩家以为是自己没触发。</li>
+</ul>
+<hr>
+<h2>附录　本次核对的范围与未核对项（防止误读）</h2>
+<h3>逐行读过（20 个文件）</h3>
+<p><code>statue/StatueTrait.java</code>、<code>statue/EmotionStatueKind.java</code>、<code>statue/RitualStructure.java</code>、</p>
+<p><code>statue/RitualEffects.java</code>、<code>statue/EmotionStatueBlockEntity.java</code>、<code>statue/StatueMaterial.java</code>（grep）、</p>
+<p><code>EmotionStatueItem.java</code>、<code>EmotionStaffItem.java</code>、<code>EmotionPayload.java</code>、<code>EmotionMood.java</code>、</p>
+<p><code>EmotionMoodStore.java</code>、<code>EmotionRecords.java</code>（前 120 行）、<code>ModComponents.java</code>（grep）、</p>
+<p><code>GuideBookItem.java</code>（第 200-409 行）、<code>Config.java</code>（grep）、<code>BiomeMoodHintDebug.java</code>（grep）、</p>
+<p><code>MadnessCommands.java</code>（grep）、<code>EmotionStatueKind.initSources</code>（全）</p>
+<h3>未核对（如实列出）</h3>
+<p>1. <b><code>BiomeMoodHint.java</code> 没有逐行读</b> → 点子 8 的落点是<b>推断</b>的（"冷却应该在它里面算"，</p>
+<p>   依据是实现设计文档 §1.2 的描述，不是代码）。落地前必须读。</p>
+<p>2. <b><code>MadnessCommands.java</code>（54 KB）只做了 grep</b> → "<code>EmotionMoodStore.take</code> 只在调试指令里被调用"</p>
+<p>   这句是<b>基于 grep 的结论</b>；如果还有其它调用点没被 grep 命中，这句要改。</p>
+<p>3. <b><code>GuideBookPages.java</code> / <code>ModBookContent.java</code> 没有读</b> → 点子 11 的"接进指南书"这一步</p>
+<p>   只说方向，没指具体行号。</p>
+<p>4. <b>现行倍率的完整极值没有重算</b> → 336 点这个数字是引用《倍率总表与意见》§9.8 的预测值</p>
+<p>   （"改完后升华最大 336 点"），<b>不是我从代码算的</b>。代码里的 <code>CHORUS</code> 已是 1.80/1.30、</p>
+<p>   <code>PURPUR</code> 已是 1.10/1.70（<code>StatueTrait.java:119/144/120/145</code>），与该文档的预测一致，</p>
+<p>   但我没有跑全枚举。</p>
+<p>5. <b><code>EmotionStatueBlock.java</code> 没有读</b> → 涉及 <code>MATERIAL</code> 属性读取的那几处</p>
+<p>   （点子 12 / 方案 A）是<b>依 <code>GuideBookItem.java:346</code>、<code>:357</code> 的用法推断</b>的，</p>
+<p>   属性名与取值方式<b>大概率正确但未在定义处确认</b>。</p>
+<p>6. <b><code>Config.java</code> 里没有找到任何"注入上限"配置项</b> → 若存在别处的上限常量，我未发现。</p>
+<hr>
+<p>*（完）*</p></main></html>

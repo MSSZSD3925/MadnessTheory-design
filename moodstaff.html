@@ -1,0 +1,165 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<title>情绪之杖 · 癫狂构想设计站</title>
+<link rel="stylesheet" href="style.css">
+<nav><div class="t">设计站</div><a class="" href="index.html">总览与体检</a>
+<a class="" href="kinds.html">雕像种类</a>
+<a class="" href="materials.html">材质 ↔ 方块</a>
+<a class="" href="attributes.html">属性</a>
+<a class="" href="traits.html">特性与特殊功能</a>
+<a class="" href="moods.html">心绪</a>
+<a class="" href="numerics.html">数值与公式</a>
+<a class="" href="rituals.html">仪式</a>
+<a class="" href="storage.html">温养仪式</a>
+<a class="on" href="moodstaff.html">情绪之杖</a>
+<a class="" href="refs.html">参考文档</a>
+<a class="" href="intent.html">设计意图</a>
+<div class="t">说明</div>
+<div class="small dim" style="padding:4px 8px">本页内容由 <code>gen-design-site.mjs</code>
+从源码生成，改完代码重跑即可。</div></nav>
+<main><h1>情绪之杖</h1><div class="card"><b>情绪之杖</b>是绑定心绪之后用来施法的那柄；
+它的上一级是<b>感知之杖</b>—— 只存放原始情绪、不能施法（唤醒仪式产出它，升华/沉坠向它注入，凝结把它蒸成结晶）。
+情绪之杖一把只绑定一种心绪，
+右键【施法】消耗玩家身上该类心绪，换一段对应能力。<br>
+正式获取途径是<b>绑定仪式</b>（见「仪式」页）；调试时也可用
+<code>/madnesstheory debug mood staff &lt;心绪id&gt;</code> 取得。</div><h2>蓄力三档 <span class="dim small">（读自 MoodStaffItem.java）</span></h2>
+<table><tr><th>档位</th><th>蓄力时长</th><th>蓄力刻数</th><th>消耗</th><th>能力强度</th></tr><tr><td>I</td><td>3.0 秒</td>
+<td>60 刻</td><td>20 点</td><td>I 级</td></tr><tr><td>II</td><td>7.0 秒</td>
+<td>140 刻</td><td>60 点</td><td>II 级</td></tr><tr><td>III</td><td>12.0 秒</td>
+<td>240 刻</td><td>120 点</td><td>III 级</td></tr></table>
+<p class="small dim">效果时长固定 10 秒，档位只提高强度、不延长时间。
+每跨过一档会发一声提示音（三档三种音色：竖琴 / 钟琴 / 钟）。</p><h2>十种心绪能力 <span class="dim small">（来自设计记录 §四）</span></h2>
+<div class="card small"><b>这一节是设计原件，不是已实现的行为。</b>
+"设计原话"一列抄自作者的<b>设计记录 §四</b>，属于规划层；第三列才是当前实现到哪一步。
+与站内其它页面（由代码生成）冲突时，<b>一律以代码为准</b> —— 与
+<a href="refs.html">参考文档</a>页是同一条声明。</div>
+<table><tr><th>心绪</th><th>设计原话</th><th>当前实现</th></tr>
+<tr><td><span class="chip" style="background:#FFD966"></span>快乐</td><td class="small">机动 / 爆发跳跃</td><td class="small">跳跃提升 + 起手爆发跳</td></tr>
+<tr><td><span class="chip" style="background:#9FD8CB"></span>安宁</td><td class="small">防御 / 伤害减免</td><td class="small">抗性提升</td></tr>
+<tr><td><span class="chip" style="background:#C9A7E8"></span>期待</td><td class="small">辅助 / 预知闪避</td><td class="small">速度提升</td></tr>
+<tr><td><span class="chip" style="background:#F2A6C0"></span>喜爱</td><td class="small">辅助 / 绑定共享</td><td class="small">生命恢复（绑定共享留待 v2）</td></tr>
+<tr><td><span class="chip" style="background:#E8B04B"></span>自豪</td><td class="small">攻击 / 威慑嘲讽</td><td class="small">力量 + 发光（真嘲讽留待 v2）</td></tr>
+<tr><td><span class="chip" style="background:#7FD1E8"></span>好奇</td><td class="small">采集 / 幸运翻倍</td><td class="small">幸运（原版 LUCK 正合采集）</td></tr>
+<tr><td><span class="chip" style="background:#5B7DB1"></span>悲伤</td><td class="small">攻击 / 汲取</td><td class="small">力量 + 施法即回一点血</td></tr>
+<tr><td><span class="chip" style="background:#8E7CC3"></span>恐惧</td><td class="small">防御 / 惊骇</td><td class="small">自身速度 + 半径 6 内生物缓慢</td></tr>
+<tr><td><span class="chip" style="background:#D9534F"></span>愤怒</td><td class="small">攻击 / 狂暴</td><td class="small">力量（高一档；自伤代价留待 v2）</td></tr>
+<tr><td><span class="chip" style="background:#7A9B57"></span>厌恶</td><td class="small">防御 / 排斥</td><td class="small">把半径 6 内的生物推开</td></tr>
+</table><h2>心绪耗尽机制</h2><ul>
+<li>余量低于 <b>20</b> 点 → 屏幕提示"你感到心绪不宁"</li>
+<li>一次施法把该类心绪抽到 0 → 随机二选一：
+  <b>「一阵不正常的兴奋」</b>该类心绪锁定 60 秒（期间不能施法），
+  其他心绪的效力增长；<b>「突如其来的失落」</b>该类恢复失去总量的 10%，其他心绪减半。</li>
+<li class="dim">两条"其他心绪效力"目前落成限时力量/虚弱 —— 等能力的数值框架稳定后再改真乘算。</li>
+</ul><h2>眼部贴图（每心绪每档一张长条）<span class="dim small">（读自资源目录）</span></h2>
+<p class="small dim">形态同原版绯红菌柄：16×16 一帧、竖直排开、由各自的 mcmeta 决定帧速。
+全部放在 <code>textures/block/</code> —— 一个模型不能混用两个图集，这条踩过坑。</p>
+<table><tr><th>心绪</th><th>id</th><th>idle</th><th>I 档</th><th>II 档</th><th>III 档</th></tr><tr><td><span class="chip" style="background:#ffd966"></span>快乐</td>
+<td class="mono small">joy</td><td class="small">10 帧 / 6 刻</td><td class="small">10 帧 / 6 刻</td><td class="small">10 帧 / 14 刻</td><td class="small">10 帧 / 24 刻</td></tr><tr><td><span class="chip" style="background:#9fd8cb"></span>安宁</td>
+<td class="mono small">serenity</td><td class="small">10 帧 / 6 刻</td><td class="small">10 帧 / 6 刻</td><td class="small">10 帧 / 14 刻</td><td class="small">10 帧 / 24 刻</td></tr><tr><td><span class="chip" style="background:#c9a7e8"></span>期待</td>
+<td class="mono small">anticipation</td><td class="small">10 帧 / 6 刻</td><td class="small">10 帧 / 6 刻</td><td class="small">10 帧 / 14 刻</td><td class="small">10 帧 / 24 刻</td></tr><tr><td><span class="chip" style="background:#f2a6c0"></span>喜爱</td>
+<td class="mono small">affection</td><td class="small">10 帧 / 6 刻</td><td class="small">10 帧 / 6 刻</td><td class="small">10 帧 / 14 刻</td><td class="small">10 帧 / 24 刻</td></tr><tr><td><span class="chip" style="background:#e8b04b"></span>自豪</td>
+<td class="mono small">pride</td><td class="small">10 帧 / 6 刻</td><td class="small">10 帧 / 6 刻</td><td class="small">10 帧 / 14 刻</td><td class="small">10 帧 / 24 刻</td></tr><tr><td><span class="chip" style="background:#7fd1e8"></span>好奇</td>
+<td class="mono small">curiosity</td><td class="small">10 帧 / 6 刻</td><td class="small">10 帧 / 6 刻</td><td class="small">10 帧 / 14 刻</td><td class="small">10 帧 / 24 刻</td></tr><tr><td><span class="chip" style="background:#5b7db1"></span>悲伤</td>
+<td class="mono small">sadness</td><td class="small">10 帧 / 6 刻</td><td class="small">10 帧 / 6 刻</td><td class="small">10 帧 / 14 刻</td><td class="small">10 帧 / 24 刻</td></tr><tr><td><span class="chip" style="background:#8e7cc3"></span>恐惧</td>
+<td class="mono small">fear</td><td class="small">10 帧 / 6 刻</td><td class="small">10 帧 / 6 刻</td><td class="small">10 帧 / 14 刻</td><td class="small">10 帧 / 24 刻</td></tr><tr><td><span class="chip" style="background:#d9534f"></span>愤怒</td>
+<td class="mono small">anger</td><td class="small">10 帧 / 6 刻</td><td class="small">10 帧 / 6 刻</td><td class="small">10 帧 / 14 刻</td><td class="small">10 帧 / 24 刻</td></tr><tr><td><span class="chip" style="background:#7a9b57"></span>厌恶</td>
+<td class="mono small">disgust</td><td class="small">10 帧 / 6 刻</td><td class="small">10 帧 / 6 刻</td><td class="small">10 帧 / 14 刻</td><td class="small">10 帧 / 24 刻</td></tr></table><h2>闪烁模拟器 <span class="dim small">（与游戏同一套逻辑，不必进游戏看）</span></h2>
+<p class="small dim">帧速来自每张长条自己的 mcmeta（20 刻 = 1 秒），
+档位切换阈值来自 Java 里的 CHARGE_TICKS。按住下面的按钮蓄力，
+到 <b>3 / 7 / 12 秒</b>分别进 I / II / III 档，松手回到慢呼吸。</p>
+<div class="card">
+  <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+    <select id="ms-mood" style="background:#1e2228;color:var(--fg);border:1px solid var(--line);padding:4px 8px;border-radius:5px">
+      <option value="joy">快乐（joy）</option><option value="serenity">安宁（serenity）</option><option value="anticipation">期待（anticipation）</option><option value="affection">喜爱（affection）</option><option value="pride">自豪（pride）</option><option value="curiosity">好奇（curiosity）</option><option value="sadness">悲伤（sadness）</option><option value="fear">恐惧（fear）</option><option value="anger">愤怒（anger）</option><option value="disgust">厌恶（disgust）</option>
+    </select>
+    <button id="ms-hold" style="padding:6px 16px;border-radius:6px;border:1px solid var(--line);background:#22303a;color:var(--fg);cursor:pointer">按住蓄力</button>
+    <span id="ms-state" class="mono small dim">不蓄力</span>
+    <span id="ms-lum" class="mono small" style="color:var(--link)"></span>
+    <span id="ms-bar" class="mono" style="letter-spacing:2px;color:var(--warn)"></span>
+  </div>
+  <div style="display:flex;gap:28px;margin-top:14px;align-items:flex-start;flex-wrap:wrap">
+    <div><div class="small dim" style="margin-bottom:4px">模拟器眼睛</div>
+      <div id="ms-eye" style="width:128px;height:128px;image-rendering:pixelated;border:1px solid var(--line);border-radius:4px;background-repeat:no-repeat"></div></div>
+    <div><div class="small dim" style="margin-bottom:4px">十种心绪 × 四档（全部同时动）</div>
+      <div id="ms-grid" style="display:grid;grid-template-columns:repeat(11,auto);gap:3px"></div></div>
+  </div>
+</div>
+<script>
+const EYE = {"joy":{"idle":[10,6],"t1":[10,6],"t2":[10,14],"t3":[10,24]},"serenity":{"idle":[10,6],"t1":[10,6],"t2":[10,14],"t3":[10,24]},"anticipation":{"idle":[10,6],"t1":[10,6],"t2":[10,14],"t3":[10,24]},"affection":{"idle":[10,6],"t1":[10,6],"t2":[10,14],"t3":[10,24]},"pride":{"idle":[10,6],"t1":[10,6],"t2":[10,14],"t3":[10,24]},"curiosity":{"idle":[10,6],"t1":[10,6],"t2":[10,14],"t3":[10,24]},"sadness":{"idle":[10,6],"t1":[10,6],"t2":[10,14],"t3":[10,24]},"fear":{"idle":[10,6],"t1":[10,6],"t2":[10,14],"t3":[10,24]},"anger":{"idle":[10,6],"t1":[10,6],"t2":[10,14],"t3":[10,24]},"disgust":{"idle":[10,6],"t1":[10,6],"t2":[10,14],"t3":[10,24]}};
+const TIERS = [3,7,12];
+// 各档的色卡区间（0..10）与形状：idle 乒乓、三档单向扫完
+const LEV = {"idle":[0,4,"pingpong"],"t1":[3,7,"sweep"],"t2":[6,9,"sweep"],"t3":[8,10,"sweep"]};
+const SCALE = 8, TICK_MS = 50;          // 20 刻 = 1 秒
+function paint(el, mood, lv, tick) {
+  const d = EYE[mood] && EYE[mood][lv];
+  if (!d) return;
+  const f = Math.floor(tick / d[1]) % d[0];
+  el.style.backgroundImage = "url(eye/mood_eye_" + mood + "_" + lv + ".png)";
+  el.style.backgroundSize = (16 * SCALE) + "px " + (16 * d[0] * SCALE) + "px";
+  el.style.backgroundPosition = "0 " + (-f * 16 * SCALE) + "px";
+}
+// 网格：每格一个心绪+档位
+const grid = document.getElementById("ms-grid");
+const cells = {};
+const LV = ["idle", "t1", "t2", "t3"];
+for (const mood of Object.keys(EYE)) {
+  const label = document.createElement("div");
+  label.className = "small dim";
+  label.style.cssText = "display:flex;align-items:center;height:40px";
+  label.textContent = mood;
+  grid.appendChild(label);
+  for (const lv of LV) {
+    const c = document.createElement("div");
+    c.style.cssText = "width:40px;height:40px;image-rendering:pixelated;border:1px solid var(--line);background-repeat:no-repeat";
+    grid.appendChild(c);
+    cells[mood + "|" + lv] = c;
+    paint(c, mood, lv, 0);
+  }
+}
+// 蓄力模拟器
+let holdFrom = null;
+const holdBtn = document.getElementById("ms-hold");
+const stateEl = document.getElementById("ms-state");
+const lumEl = document.getElementById("ms-lum");
+const barEl = document.getElementById("ms-bar");
+const eyeEl = document.getElementById("ms-eye");
+function levelFor(sec) {
+  if (sec >= TIERS[2]) return "t3";
+  if (sec >= TIERS[1]) return "t2";
+  if (sec >= TIERS[0]) return "t1";
+  return "idle";
+}
+holdBtn.addEventListener("mousedown", () => { holdFrom = performance.now(); });
+holdBtn.addEventListener("mouseup", () => { holdFrom = null; });
+holdBtn.addEventListener("mouseleave", () => { holdFrom = null; });
+function loop() {
+  const tick = Math.floor(performance.now() / TICK_MS);
+  for (const mood of Object.keys(EYE)) for (const lv of LV) paint(cells[mood + "|" + lv], mood, lv, tick);
+  const mood = document.getElementById("ms-mood").value;
+  const sec = holdFrom === null ? 0 : (performance.now() - holdFrom) / 1000;
+  const lv = levelFor(sec);
+  paint(eyeEl, mood, lv, tick);
+  // 亮度文字刻度：与画面同一套公式算出来，不是另写一份
+  const d0 = EYE[mood] && EYE[mood][lv];
+  const rg = LEV[lv] || LEV.idle;
+  if (d0) {
+    const fr2 = Math.floor(tick / d0[1]) % d0[0];
+    const k2 = rg[2] === "pingpong" ? 0.5 + 0.5 * Math.sin(2 * Math.PI * fr2 / d0[0])
+                                    : (d0[0] > 1 ? fr2 / (d0[0] - 1) : 0);
+    const axis2 = rg[0] + (rg[1] - rg[0]) * k2;
+    const lum = Math.max(1, Math.min(10, Math.round(1 + axis2 * 0.9)));
+    lumEl.textContent = "亮度 " + lum + " / 10（色卡轴 " + axis2.toFixed(1) + "）";
+    barEl.textContent = "▮".repeat(lum) + "▯".repeat(10 - lum);
+  }
+  stateEl.textContent = holdFrom === null
+    ? "不蓄力（慢呼吸）"
+    : "蓄力 " + sec.toFixed(1) + " 秒 → " + (lv === "idle" ? "不足一档" : lv.toUpperCase().replace("T", "") + " 档");
+  requestAnimationFrame(loop);
+}
+loop();
+</script><h2>物品模型的分支结构 <span class="dim small">（读自生成的 items/mood_staff.json）</span></h2>
+<div class="small mono" style="background:#1e2228;padding:10px;border-radius:6px;line-height:1.9">
+（读不到 items/mood_staff.json）</div>
+<p class="small dim">心绪分支用 <code>minecraft:select</code> +
+<code>property=minecraft:custom_model_data</code>：它按【字符串】取分支
+（CustomModelDataProperty 实现的是 SelectItemModelProperty&lt;String&gt;），
+所以直接用心绪 id 当 when 值。绑定仪式要写的就是 <code>CustomModelData</code> 的 strings[0]。</p></main></html>

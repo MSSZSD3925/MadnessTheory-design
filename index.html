@@ -1,0 +1,54 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<title>总览与体检 · 癫狂构想设计站</title>
+<link rel="stylesheet" href="style.css">
+<nav><div class="t">设计站</div><a class="on" href="index.html">总览与体检</a>
+<a class="" href="kinds.html">雕像种类</a>
+<a class="" href="materials.html">材质 ↔ 方块</a>
+<a class="" href="attributes.html">属性</a>
+<a class="" href="traits.html">特性与特殊功能</a>
+<a class="" href="moods.html">心绪</a>
+<a class="" href="numerics.html">数值与公式</a>
+<a class="" href="rituals.html">仪式</a>
+<a class="" href="storage.html">温养仪式</a>
+<a class="" href="moodstaff.html">情绪之杖</a>
+<a class="" href="refs.html">参考文档</a>
+<a class="" href="intent.html">设计意图</a>
+<div class="t">说明</div>
+<div class="small dim" style="padding:4px 8px">本页内容由 <code>gen-design-site.mjs</code>
+从源码生成，改完代码重跑即可。</div></nav>
+<main><h1>总览与体检</h1><div class="card"><b>29</b> 种雕像种类 ·
+<b>142</b> 条材质 · <b>11</b> 种属性 ·
+<b>22</b> 个特性 · <b>10</b> 种心绪</div><h2>体检结果</h2><p>2 项<span class="bad">严重</span>，0 项<span class="warn">提醒</span>。</p><div class="card"><span class="bad">●</span> <b>特殊功能「randomFluctuation」没有任何【行为】调用</b>
+<div class="small dim">挂在 CHORUS 上。只在 EmotionStatueItem.java、MadnessCommands.java 里被调用来【显示文字】——玩家看得到说明，游戏里却不发生任何事。</div></div><div class="card"><span class="bad">●</span> <b>特殊功能「sharedStorage」没有任何【行为】调用</b>
+<div class="small dim">挂在 PURPUR 上。只在 EmotionStatueItem.java、MadnessCommands.java 里被调用来【显示文字】——玩家看得到说明，游戏里却不发生任何事。</div></div><h2>这几张表之间的对应关系</h2>
+<table><tr><th>层</th><th>数量</th><th>决定什么</th><th>页面</th></tr>
+<tr><td>属性</td><td>11</td><td>记录与雕像"对不对味"，决定属性层乘数</td><td><a href="attributes.html">属性</a></td></tr>
+<tr><td>种类</td><td>29</td><td>等级 / 容量 / 属性 / 特性 —— <b>数值全在这一层</b></td><td><a href="kinds.html">种类</a></td></tr>
+<tr><td>材质</td><td>142</td><td>只决定长相；数值完全等于所属种类</td><td><a href="materials.html">材质</a></td></tr>
+<tr><td>特性</td><td>22</td><td>极性层乘数 + 特殊功能</td><td><a href="traits.html">特性</a></td></tr>
+<tr><td>心绪</td><td>10</td><td>存储与展示（每类上限 150）</td><td><a href="moods.html">心绪</a></td></tr>
+</table>
+<p class="small dim">口诀：<b>种类管数值、材质管长相、特性管乘数与特殊功能、属性管对味</b>。
+新加内容时先问"它属于哪一层"，就不会走偏。</p><h2>雕像之外已经做出来的几条线</h2>
+<p class="small dim">上面几张表是雕像那条线。下面这些是另外几条已经实现的线，
+每一条的机制在<a href="rituals.html">仪式</a>页、数值表在
+<a href="numerics.html">数值与公式</a>页，这里只列入口。</p>
+<table><tr><th>线</th><th>一句话</th><th>机制</th><th>数值</th></tr>
+<tr><td><b>腐烂之物</b></td>
+<td>一只不能动、只能靠你喂它才不烂死的生物；它越惨，产出的负面结晶越多，
+而它一碰就死（作者原话："只有慢慢烂才走得完"）</td>
+<td><a href="rituals.html#rot">仪式 · 腐烂之物</a></td>
+<td><a href="numerics.html#rot">数值 · 腐烂之物</a></td></tr>
+<tr><td><b>浴血</b></td>
+<td>持续造成伤害连起来的极端仪式，五级一档，5 级是"无法主动退出"的陷阱</td>
+<td><a href="rituals.html">仪式 · 浴血</a></td>
+<td><a href="numerics.html">数值 · 浴血</a></td></tr>
+<tr><td><b>负罪（插刀）</b></td>
+<td>往自己身上插刀，插得越多越糟；一把把碎光后按整批结算成悲伤</td>
+<td><a href="rituals.html">仪式 · 负罪</a></td>
+<td><a href="numerics.html">数值 · 插刀曲线</a></td></tr>
+<tr><td><b>简单自虐四条</b></td>
+<td>愤怒砸钉子木桩 · 恐惧自溺 · 悲伤细雪冻僵 · 厌恶喝桶，四档点数 2/4/16/32</td>
+<td><a href="rituals.html">仪式 · 简单自虐</a></td>
+<td><a href="numerics.html">数值 · 四档点数</a></td></tr>
+</table></main></html>

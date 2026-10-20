@@ -1,0 +1,83 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<title>特性与特殊功能 · 癫狂构想设计站</title>
+<link rel="stylesheet" href="style.css">
+<nav><div class="t">设计站</div><a class="" href="index.html">总览与体检</a>
+<a class="" href="kinds.html">雕像种类</a>
+<a class="" href="materials.html">材质 ↔ 方块</a>
+<a class="" href="attributes.html">属性</a>
+<a class="on" href="traits.html">特性与特殊功能</a>
+<a class="" href="moods.html">心绪</a>
+<a class="" href="numerics.html">数值与公式</a>
+<a class="" href="rituals.html">仪式</a>
+<a class="" href="storage.html">温养仪式</a>
+<a class="" href="moodstaff.html">情绪之杖</a>
+<a class="" href="refs.html">参考文档</a>
+<a class="" href="intent.html">设计意图</a>
+<div class="t">说明</div>
+<div class="small dim" style="padding:4px 8px">本页内容由 <code>gen-design-site.mjs</code>
+从源码生成，改完代码重跑即可。</div></nav>
+<main><h1>特性与特殊功能</h1><h2>极性层（偏爱侧 / 冷落侧）</h2>
+<table><tr><th>特性</th><th>正面</th><th>负面</th><th>持有它的种类</th></tr><tr><td class="mono">DIRT</td><td>×0.80</td>
+<td>×0.80</td>
+<td class="small">泥土</td></tr><tr><td class="mono">WOOD_POSITIVE</td><td>×1.25</td>
+<td>×0.50</td>
+<td class="small">木头</td></tr><tr><td class="mono">STONE_NEGATIVE</td><td>×0.50</td>
+<td>×1.25</td>
+<td class="small">圆石</td></tr><tr><td class="mono">PLAIN</td><td>×1.00</td>
+<td>×1.00</td>
+<td class="small">砂岩、红沙岩、雪、冰、砖质石像、石英石像、琥珀石像</td></tr><tr><td class="mono">EMERALD</td><td>×1.00</td>
+<td>×1.00</td>
+<td class="small">绿宝石</td></tr><tr><td class="mono">METAL_IRON</td><td>×1.20</td>
+<td>×1.25</td>
+<td class="small">铁</td></tr><tr><td class="mono">METAL_GOLD</td><td>×1.25</td>
+<td>×1.05</td>
+<td class="small">金</td></tr><tr><td class="mono">METAL_DIAMOND</td><td>×1.50</td>
+<td>×1.50</td>
+<td class="small">钻石</td></tr><tr><td class="mono">NETHER_DIRT</td><td>×0.90</td>
+<td>×1.50</td>
+<td class="small">下界泥土</td></tr><tr><td class="mono">NETHER_ROCK</td><td>×0.85</td>
+<td>×1.55</td>
+<td class="small">下界岩石</td></tr><tr><td class="mono">NETHER_WOOD</td><td>×1.50</td>
+<td>×1.00</td>
+<td class="small">下界原木</td></tr><tr><td class="mono">NETHER_BRICK</td><td>×1.00</td>
+<td>×1.50</td>
+<td class="small">下界砖</td></tr><tr><td class="mono">SOUL</td><td>×1.00</td>
+<td>×1.00</td>
+<td class="small">灵魂</td></tr><tr><td class="mono">END_ROCK</td><td>×1.05</td>
+<td>×1.70</td>
+<td class="small">末地石</td></tr><tr><td class="mono">CHORUS</td><td>×1.80</td>
+<td>×1.30</td>
+<td class="small">紫颂花</td></tr><tr><td class="mono">PURPUR</td><td>×1.10</td>
+<td>×1.70</td>
+<td class="small">紫珀砖、末地砖</td></tr><tr><td class="mono">SCULK</td><td>×0.90</td>
+<td>×1.40</td>
+<td class="small">潜声石像</td></tr><tr><td class="mono">ABYSSAL</td><td>×1.10</td>
+<td>×1.10</td>
+<td class="small">深海石像</td></tr><tr><td class="mono">DRIPSTONE</td><td>×1.50</td>
+<td>×0.60</td>
+<td class="small">石笋石像</td></tr><tr><td class="mono">CORROSION</td><td>×0.95</td>
+<td>×1.30</td>
+<td class="small">蚀痕石像</td></tr><tr><td class="mono">TRIAL</td><td>×1.25</td>
+<td>×1.05</td>
+<td class="small">试炼石像</td></tr><tr><td class="mono">AMETHYST</td><td>×1.00</td>
+<td>×1.00</td>
+<td class="small">紫水晶石像</td></tr></table><h2>特殊功能 —— 含"是否真的接线"体检</h2>
+<p class="small dim">这一节就是本项目吃过亏的地方：写在说明里、代码里却没有任何【行为】用它。
+<span class="ok">✔</span> 表示有行为代码真的用它；
+<span class="bad">✘ 仅展示</span> 表示只有 tooltip / 调试输出在调它显示文字 —— 玩家看得到、游戏里不发生。</p>
+<table><tr><th>方法</th><th>挂给谁</th><th>返回值</th><th>行为调用</th></tr><tr><td class="mono">unconditionalMultiplier()</td>
+<td class="small">绿宝石</td>
+<td class="small">×1.20</td>
+<td class="small"><span class="ok">✔</span> StatueTrait.java</td></tr><tr><td class="mono">challengeMultiplier()</td>
+<td class="small">绿宝石</td>
+<td class="small">×1.50</td>
+<td class="small"><span class="ok">✔</span> StatueTrait.java</td></tr><tr><td class="mono">randomFluctuation()</td>
+<td class="small">紫颂花</td>
+<td class="small">（按特性判定）</td>
+<td class="small"><span class="bad">✘ 仅展示</span> <span class="dim">EmotionStatueItem.java、MadnessCommands.java</span></td></tr><tr><td class="mono">sharedStorage()</td>
+<td class="small">紫珀砖</td>
+<td class="small">（按特性判定）</td>
+<td class="small"><span class="bad">✘ 仅展示</span> <span class="dim">EmotionStatueItem.java、MadnessCommands.java</span></td></tr><tr><td class="mono">palate()</td>
+<td class="small">下界泥土、下界岩石、下界原木、下界砖</td>
+<td class="small">（按特性判定）</td>
+<td class="small"><span class="ok">✔</span> RitualEffects.java</td></tr></table></main></html>

@@ -1,0 +1,316 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<title>心绪 · 癫狂构想设计分册</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="wiki.css">
+<nav>
+<div class="t">设计分册</div>
+<a href="index.html">总览</a>
+<a href="world.html">这个世界</a>
+<a href="moods.html">心绪</a>
+<a href="traces.html">痕迹与账</a>
+<a href="rituals.html">一切仪式</a>
+<a href="doors.html">四门大魔法</a>
+<a href="dimension.html">情绪维度</a>
+<a href="things.html">材料与装置</a>
+<a href="progression.html">从零开始的路</a>
+<div class="t">现状（代码生成）</div>
+<a href="../index.html">总览与体检</a>
+<a href="../kinds.html">雕像种类</a>
+<a href="../materials.html">材质 ↔ 方块</a>
+<a href="../attributes.html">属性</a>
+<a href="../traits.html">特性</a>
+<a href="../moods.html">心绪</a>
+<a href="../numerics.html">数值与公式</a>
+<a href="../rituals.html">仪式</a>
+<a href="../storage.html">温养</a>
+<a href="../moodstaff.html">情绪之杖</a>
+<div class="t">说明</div>
+<div class="small dim" style="padding:4px 8px">设计分册是手写的，取自已定稿的设计记录；「现状」那栏由 <code>gen-design-site.mjs</code> 从源码生成。</div>
+</nav>
+<main>
+<p class="crumb"><a href="index.html">设计分册</a><span>/</span>心绪</p>
+<h1>心绪</h1>
+<p class="lede">十种情绪与三种施法方式</p>
+
+<div class="infobox"><div class="cap">心绪</div><table>
+<tr><th>种数</th><td>十种，分正面六种、负面四种 <span class="tag ok">已定</span></td></tr>
+<tr><th>正六</th><td>快乐／安宁／期待／喜爱／自豪／好奇</td></tr>
+<tr><th>负四</th><td>悲伤／恐惧／愤怒／厌恶</td></tr>
+<tr><th>判定方式</th><td>正面看总量，负面各自算 <span class="tag ok">已定</span></td></tr>
+<tr><th>基准上限</th><td>每类 150，十类合计 1500</td></tr>
+<tr><th>实时上限</th><td>受对面压缩，下限 125</td></tr>
+<tr><th>来源</th><td>正面——环境记录；负面——仪式；另有悦灵、恼鬼微量来源</td></tr>
+<tr><th>施法方式</th><td>瞬间使用／长按蓄力／对地面驻场</td></tr>
+<tr><th>记账</th><td>负面怎么用都留账，正面只在驻场时擦 <span class="tag ok">已定</span></td></tr>
+<tr><th>结晶</th><td>只作合成材料，不作施法燃料 <span class="tag ok">已定</span></td></tr>
+</table></div>
+
+<h2>十种心绪</h2>
+
+<p>正面六种、负面四种；负面四种对应基本情绪里的全部负面项，有出处，正面拆得更细。色值是管子里那一截的颜色，聊天栏与书页同用。</p>
+
+<div class="scroll">
+<table>
+<tr><th>心绪</th><th>id</th><th>配色</th><th>极性</th><th>一句定位</th></tr>
+<tr><td>快乐</td><td><code>joy</code></td><td><span class="chip" style="background:#FFD966"></span> <code>#FFD966</code></td><td>正面</td><td>机动／爆发跳跃</td></tr>
+<tr><td>安宁</td><td><code>serenity</code></td><td><span class="chip" style="background:#9FD8CB"></span> <code>#9FD8CB</code></td><td>正面</td><td>防御／伤害减免</td></tr>
+<tr><td>期待</td><td><code>anticipation</code></td><td><span class="chip" style="background:#C9A7E8"></span> <code>#C9A7E8</code></td><td>正面</td><td>辅助／预知闪避</td></tr>
+<tr><td>喜爱</td><td><code>affection</code></td><td><span class="chip" style="background:#F2A6C0"></span> <code>#F2A6C0</code></td><td>正面</td><td>辅助／绑定共享</td></tr>
+<tr><td>自豪</td><td><code>pride</code></td><td><span class="chip" style="background:#E8B04B"></span> <code>#E8B04B</code></td><td>正面</td><td>攻击／威慑嘲讽</td></tr>
+<tr><td>好奇</td><td><code>curiosity</code></td><td><span class="chip" style="background:#7FD1E8"></span> <code>#7FD1E8</code></td><td>正面</td><td>采集／幸运翻倍</td></tr>
+<tr><td>悲伤</td><td><code>sadness</code></td><td><span class="chip" style="background:#5B7DB1"></span> <code>#5B7DB1</code></td><td>负面</td><td>攻击／汲取</td></tr>
+<tr><td>恐惧</td><td><code>fear</code></td><td><span class="chip" style="background:#8E7CC3"></span> <code>#8E7CC3</code></td><td>负面</td><td>防御／惊骇</td></tr>
+<tr><td>愤怒</td><td><code>anger</code></td><td><span class="chip" style="background:#D9534F"></span> <code>#D9534F</code></td><td>负面</td><td>攻击／狂暴</td></tr>
+<tr><td>厌恶</td><td><code>disgust</code></td><td><span class="chip" style="background:#7A9B57"></span> <code>#7A9B57</code></td><td>负面</td><td>防御／排斥</td></tr>
+</table>
+</div>
+
+<div class="notice rule"><span class="t">硬约束</span>十种心绪枚举一律不动；新增字段一律可选加默认值；枚举只能追加在末尾，存档按 ordinal。</div>
+
+<h2>心绪条怎么读</h2>
+
+<p>基准上限每类 150。两条读法不同：正面六种合起来算一个增益，负面四种各自算自己的减益。</p>
+
+<h3>正面：总量判定</h3>
+
+<p>P ＝ 六种正面之和，容量 900。</p>
+
+<div class="scroll">
+<table>
+<tr><th>P</th><th>效果</th></tr>
+<tr><td>675 以上</td><td>施法消耗减 25%，效果时长加 50%</td></tr>
+<tr><td>450 以上</td><td>施法消耗减 10%，效果时长加 25%</td></tr>
+<tr><td>225 以上</td><td>无</td></tr>
+<tr><td>低于 225</td><td>施法消耗加 25%，效果时长减 25%，并吃「最缺那一种」的特征减益</td></tr>
+</table>
+</div>
+
+<p>这就是「正面绵长」：它让你能一直用，但不给你高峰。</p>
+
+<h3>负面：各自判定</h3>
+
+<p>四种各自独立，超过阈值（提案 75%，即 112 点）开始出现减益，越满越强。减益不新写，直接用代码里已有的十种特征性负面效果表。</p>
+
+<h3>正负容量互相抵消</h3>
+
+<dl class="kv">
+<dt>每条负面的实时上限</dt><dd>150 减 floor(P ÷ 900 × 25)，下限 125</dd>
+<dt>每条正面的实时上限</dt><dd>150 减 floor(N ÷ 600 × 25)，下限 125</dd>
+<dt>满正面时</dt><dd>负面每条最多 125，合计 500</dd>
+<dt>满负面时</dt><dd>正面每条最多 125，合计 750</dd>
+</dl>
+
+<p>超出实时上限的部分不被拒绝、不阻塞，而是从对面按 1:1 扣掉等量，扣完这一次就照常装入，不再回头重算上限。也就是说「顶死」不是一道硬门槛，而是一笔自动的兑换费：你想堆负面，正面就自己掉下去，代价看得见。</p>
+
+<div class="notice"><span class="t">设计约定</span>一次结算即完成兑换，不按字面递归重算上限。这一条修订了 08 号纲领「心绪每类上限 150、不可扩容」，属于修订而非违反：基准 150 不变，实时上限受对面压缩。</div>
+
+<h2>三种施法方式</h2>
+
+<p>抛弃法杖三档，改成三种使用方式，各自负责不同的方面，合起来表达同一个情绪倾向。</p>
+
+<div class="scroll">
+<table>
+<tr><th>使用方式</th><th>花什么</th><th>留下什么</th><th>什么时候用</th></tr>
+<tr><td>瞬间使用</td><td>10 点，强力项 20 点，无前摇</td><td>正面不留；负面写个人账 1 点</td><td>紧急：闪避、位移、推开、脱身</td></tr>
+<tr><td>长按蓄力</td><td>按蓄力时长连续投入，上限 120 点</td><td>正面不留；负面写个人账，等于投入除以 10</td><td>维持：一段时间的状态</td></tr>
+<tr><td>对地面驻场</td><td>基础 40 点，蓄力可加到 120 点</td><td>负面写场地账（投入除以 10）；正面中和场地账</td><td>外放：改变一片地方的规则</td></tr>
+</table>
+</div>
+
+<h3>输入映射</h3>
+
+<table>
+<tr><th>输入</th><th>走哪条</th></tr>
+<tr><td>轻点右键</td><td>蓄力不足就松手，走瞬发——紧急功能不会被蓄力拖延，因为它根本不等蓄力</td></tr>
+<tr><td>长按右键</td><td>走蓄力，投得越多效果越强越久</td></tr>
+<tr><td>右键方块</td><td>走驻场，落点在那个方块附近</td></tr>
+</table>
+
+<h3>长按蓄力的规格</h3>
+
+<dl class="kv">
+<dt>速率</dt><dd>每 5 刻投入 5 点，即 20 点每秒</dd>
+<dt>单次投入上限</dt><dd>120 点（一条满心绪的八成）</dd>
+<dt>效果时长</dt><dd>投入 × 0.5 秒，即 60 点换 30 秒、120 点换 60 秒</dd>
+<dt>留痕</dt><dd>投入 ÷ 10，即 30 点写 3、60 点写 6、120 点写 12</dd>
+<dt>结算</dt><dd>松手即施放；未达最低投入（20 点）中途松手全额退还；被外力打断退还一半</dd>
+</dl>
+
+<h3>对地面驻场的规格</h3>
+
+<p>基础投入 40 点，落点 4 格半径、维持 30 秒。继续蓄力每多 20 点，半径加 1 格、时长加 10 秒。</p>
+
+<div class="scroll">
+<table>
+<tr><th>投入</th><th>半径</th><th>时长</th><th>负面写入该区块</th><th>正面中和该区块</th><th>蓄力时间</th></tr>
+<tr><td>40</td><td>4 格</td><td>30 秒</td><td>4 点</td><td>1 点</td><td>2 秒</td></tr>
+<tr><td>60</td><td>5 格</td><td>40 秒</td><td>6 点</td><td>2 点</td><td>3 秒</td></tr>
+<tr><td>80</td><td>6 格</td><td>50 秒</td><td>8 点</td><td>2 点</td><td>4 秒</td></tr>
+<tr><td>100</td><td>7 格</td><td>60 秒</td><td>10 点</td><td>3 点</td><td>5 秒</td></tr>
+<tr><td>120</td><td>8 格</td><td>90 秒</td><td>12 点</td><td>4 点</td><td>6 秒</td></tr>
+</table>
+</div>
+
+<p>正负写入比正好 1 比 3，就是作者定的中和速率三分之一，不需要另算。驻场是场地账唯一的写入点。</p>
+
+<h3>记账按极性分</h3>
+
+<div class="notice rule"><span class="t">硬约束</span>只有烧负面心绪才留痕，正面心绪的魔法不留任何痕迹。写成「蓄力整列写个人账」而不区分极性的旧口径不作数。</div>
+
+<table>
+<tr><th>极性</th><th>瞬间使用</th><th>长按蓄力</th><th>对地面驻场</th></tr>
+<tr><td>正面</td><td>不留账</td><td>不留账</td><td>中和场地账</td></tr>
+<tr><td>负面</td><td>个人账 1 点</td><td>个人账 ＝ 投入 ÷ 10</td><td>场地账 ＝ 投入 ÷ 10，个人账不写</td></tr>
+</table>
+
+<h3>驻场的生效范围</h3>
+
+<table>
+<tr><th>对象</th><th>是否生效</th></tr>
+<tr><td>负面驻场写下的那层污染</td><td>对所有人 <span class="tag ok">已定</span></td></tr>
+<tr><td>驻场本身的场内效果</td><td>只对施法者自己与他命名过的生物</td></tr>
+</table>
+
+<p>理由是这条不对称本身就是主题：善意是你的，恶意是大家的。</p>
+
+<h2>三十条效果总表</h2>
+
+<p>每种心绪在三个尺度上表达自己——爆发、维持、外放。强度规格中，蓄力的通用强度公式为 强度 ＝ floor(投入 ÷ 30)，夹在 1 到 4 级，时长 ＝ 投入 × 0.5 秒；驻场的场内强度固定，不随投入变，只有半径、时长与写入量随投入变。</p>
+
+<h3>瞬间使用</h3>
+
+<p>轻点右键，无前摇。基础 10 点，强力项 20 点。</p>
+
+<div class="scroll">
+<table>
+<tr><th>心绪</th><th>极性</th><th>效果</th><th>消耗</th><th>窗口</th></tr>
+<tr><td>快乐</td><td>正</td><td>向视线方向弹射 8 格，3 秒内免摔</td><td>10</td><td>立即</td></tr>
+<tr><td>安宁</td><td>正</td><td>2 秒内受到的伤害减半</td><td>10</td><td>2 秒</td></tr>
+<tr><td>期待</td><td>正</td><td>3 秒内下一次命中你的伤害被取消，随后给 2 秒速度</td><td>20</td><td>3 秒</td></tr>
+<tr><td>喜爱</td><td>正</td><td>绑定一只你命名过的生物，3 秒内你受的伤害转给它</td><td>20</td><td>3 秒</td></tr>
+<tr><td>自豪</td><td>正</td><td>5 秒内 8 格敌对生物改目标为你，并给你力量</td><td>10</td><td>5 秒</td></tr>
+<tr><td>好奇</td><td>正</td><td>标出 16 格内矿脉与容器，标记留 10 秒</td><td>10</td><td>立即</td></tr>
+<tr><td>悲伤</td><td>负</td><td>5 秒内你造成的伤害一部分回给自己</td><td>10</td><td>5 秒</td></tr>
+<tr><td>恐惧</td><td>负</td><td>立刻让 6 格内敌对生物失去目标并后退</td><td>10</td><td>立即</td></tr>
+<tr><td>愤怒</td><td>负</td><td>立刻对前方强力击退，并给 3 秒力量</td><td>10</td><td>立即</td></tr>
+<tr><td>厌恶</td><td>负</td><td>立刻推开 6 格内生物并清除它们对你的仇恨</td><td>10</td><td>立即</td></tr>
+</table>
+</div>
+
+<h3>长按蓄力</h3>
+
+<div class="scroll">
+<table>
+<tr><th>心绪</th><th>极性</th><th>持续效果</th><th>自伤代价</th></tr>
+<tr><td>快乐</td><td>正</td><td>移速每级 +1、跳跃每级 +1、免摔</td><td>无</td></tr>
+<tr><td>安宁</td><td>正</td><td>抗性提升 1 到 3 级、每 2 秒回 1 点血</td><td>无</td></tr>
+<tr><td>期待</td><td>正</td><td>每 4 秒可取消一次伤害</td><td>无</td></tr>
+<tr><td>喜爱</td><td>正</td><td>伤害五五分、恢复共享</td><td>无</td></tr>
+<tr><td>自豪</td><td>正</td><td>力量 1 到 3 级，期间持续被优先攻击</td><td>无</td></tr>
+<tr><td>好奇</td><td>正</td><td>幸运（模组自实现）、每 5 秒重标一次</td><td>无</td></tr>
+<tr><td>悲伤</td><td>负</td><td>伤害 +15%，其中 50% 转为生命</td><td>蓄力期间最大生命减 20%</td></tr>
+<tr><td>恐惧</td><td>负</td><td>每个敌对生物每 2 秒有几率清除对你的目标，自身移速 +1 级</td><td>无</td></tr>
+<tr><td>愤怒</td><td>负</td><td>力量 1 到 3 级、攻速 +20%，每次击杀延长 2 秒并升一级</td><td>每次击杀自己掉 2 点血</td></tr>
+<tr><td>厌恶</td><td>负</td><td>4 格内生物被持续缓慢推开</td><td>无</td></tr>
+</table>
+</div>
+
+<p>恐惧与厌恶没有自伤，因为它们的代价就是账本身（负面瞬发 1 点、负面蓄力按投入）。四个负面各有一条路，不是每条都要见血。抗性提升的级数照浴血锚：浴血 4 级给抗性提升 II、5 级给抗性提升 III，所以 II 到 III 在本模组里是已经用过的量级。</p>
+
+<h3>对地面驻场</h3>
+
+<div class="scroll">
+<table>
+<tr><th>心绪</th><th>极性</th><th>场内效果</th><th>自伤代价</th></tr>
+<tr><td>快乐</td><td>正</td><td>移速 +1 级、跳跃 +1 级、免摔</td><td>无</td></tr>
+<tr><td>安宁</td><td>正</td><td>受伤减 20%、每 3 秒回 1 点血</td><td>无</td></tr>
+<tr><td>期待</td><td>正</td><td>敌对生物进入 8 格时给提示音与粒子，自身移速 +1 级</td><td>无</td></tr>
+<tr><td>喜爱</td><td>正</td><td>你命名过的生物回血，且不被敌对生物选为目标</td><td>无</td></tr>
+<tr><td>自豪</td><td>正</td><td>场内敌对生物被吸向中心，你伤害 +10%</td><td>无</td></tr>
+<tr><td>好奇</td><td>正</td><td>持续高亮，额外掉落 +10%</td><td>无</td></tr>
+<tr><td>悲伤</td><td>负</td><td>场内敌对生物缓慢加虚弱，你的汲取 +20%</td><td>无</td></tr>
+<tr><td>恐惧</td><td>负</td><td>每 2 秒把场内敌对生物推开一次</td><td>无</td></tr>
+<tr><td>愤怒</td><td>负</td><td>场内敌对生物互相攻击，每 3 秒重选一次目标</td><td>驻场期间你每秒掉 0.5 点血</td></tr>
+<tr><td>厌恶</td><td>负</td><td>每 2 秒把场内生物推离中心一次</td><td>无</td></tr>
+</table>
+</div>
+
+<p>正面驻场的场内效果只对施法者自己与他命名过的生物生效；负面驻场写下的污染对所有人生效。</p>
+
+<h3>三十条一览</h3>
+
+<div class="scroll">
+<table>
+<tr><th>心绪</th><th>瞬间使用</th><th>长按蓄力</th><th>对地面驻场</th></tr>
+<tr><td>快乐</td><td>向视线方向弹射，落地免摔</td><td>持续机动：移速、跳跃、免摔</td><td>轻快之地：场内移速与跳跃提升、免摔，并缓慢中和污染</td></tr>
+<tr><td>安宁</td><td>两秒硬减伤</td><td>持续抗性并缓慢回血</td><td>安宁之地：场内减伤、缓慢回血</td></tr>
+<tr><td>期待</td><td>3 秒内下一次命中你的伤害被取消，随后给两秒速度</td><td>持续预知：每隔几秒可取消一次伤害</td><td>预警之地：场内敌对生物靠近会提示，你移速提升</td></tr>
+<tr><td>喜爱</td><td>绑定一只你命名过的生物</td><td>链接期间伤害分摊、恢复共享</td><td>庇护之地：场内你驯服的生物回血，且不被敌对生物选为目标</td></tr>
+<tr><td>自豪</td><td>挑衅：周围生物改目标为你，附短暂力量</td><td>威慑：期间你伤害提升且被优先攻击</td><td>威仪之地：场内敌对生物被持续吸过来，你伤害更高</td></tr>
+<tr><td>好奇</td><td>探矿：一次性标出附近矿脉与容器</td><td>幸运，并持续探测</td><td>寻宝之地：场内持续高亮矿脉容器，幸运提升</td></tr>
+<tr><td>悲伤</td><td>一次汲取：造成伤害即回血</td><td>持续汲取：伤害转生命，但最大生命临时下降</td><td>哀地：场内敌对生物缓慢虚弱，你的汲取更强</td></tr>
+<tr><td>恐惧</td><td>惊骇：周围生物失去目标并后退</td><td>持续威压：不易被选为目标，自身移速提升</td><td>惊地：场内敌对生物被持续驱离</td></tr>
+<tr><td>愤怒</td><td>一记爆发：强力击退加短暂力量</td><td>狂暴：力量与攻速，击杀延长升级，每次击杀自己掉血</td><td>怒地：场内敌对生物互相攻击，你也持续掉血</td></tr>
+<tr><td>厌恶</td><td>推开周围并清除仇恨</td><td>持续排斥：靠近你的生物被缓慢推开</td><td>秽地：场内敌对生物被反复推离，不愿靠近</td></tr>
+</table>
+</div>
+
+<p>四条负面不需要另找轴：它们的效果本身就比正面强，而代价是自伤加上两本账。「正面绵长、负面剧烈」这条定律第一次在交互层就成立，不只是在数值层。</p>
+
+<h2>过满会怎样</h2>
+
+<table>
+<tr><th>情况</th><th>判定</th><th>触发</th><th>吃到的效果</th></tr>
+<tr><td>悲伤过满</td><td>各自 ≥ 112（75%）</td><td>该条过满即触发</td><td>缓慢（无力）</td></tr>
+<tr><td>恐惧过满</td><td>各自 ≥ 112</td><td>该条过满即触发</td><td>黑暗</td></tr>
+<tr><td>愤怒过满</td><td>各自 ≥ 112</td><td>该条过满即触发</td><td>失明（血洗眼睛）</td></tr>
+<tr><td>厌恶过满</td><td>各自 ≥ 112</td><td>该条过满即触发</td><td>反胃</td></tr>
+<tr><td>快乐偏低</td><td>正面总量 P 低于 225</td><td>取最缺的那一种</td><td>反胃（乐极）</td></tr>
+<tr><td>安宁偏低</td><td>P 低于 225</td><td>取最缺的那一种</td><td>缓慢（迟钝）</td></tr>
+<tr><td>期待偏低</td><td>P 低于 225</td><td>取最缺的那一种</td><td>饥饿（焦躁）</td></tr>
+<tr><td>喜爱偏低</td><td>P 低于 225</td><td>取最缺的那一种</td><td>挖掘疲劳（分心）</td></tr>
+<tr><td>自豪偏低</td><td>P 低于 225</td><td>取最缺的那一种</td><td>虚弱（傲慢）</td></tr>
+<tr><td>好奇偏低</td><td>P 低于 225</td><td>取最缺的那一种</td><td>失明（看太多）</td></tr>
+</table>
+
+<div class="notice"><span class="t">设计约定</span>触发条件是「负面各自过满即触发、正面总量过低即触发」。原表那条「带情绪之钥且十类全部满 150 才每两秒随机给一种」近乎永不触发，已改掉，顺手解决「满仓压力近乎永不触发」那个老问题。</div>
+
+<h2>幸运规格</h2>
+
+<p>正面规格之一，原文只写了「不要做什么」，这里取的是第四十三轮改写后的可照做版本。</p>
+
+<h3>属性与实现路径</h3>
+
+<table>
+<tr><th>项</th><th>规格</th></tr>
+<tr><th>属性本体</th><td>复用原版 <code>Attributes.LUCK</code>，不自建</td></tr>
+<tr><th>生效路径</th><td>写一个 Global Loot Modifier，注册到 <code>GLOBAL_LOOT_MODIFIER_SERIALIZERS</code>，生效范围写在 datapack 里</td></tr>
+<tr><th>生物吃幸运</th><td>在读取点现场判断它是否在某个六绪轮里，不给实体挂属性、没有每 tick 扫描</td></tr>
+<tr><th>村民交易</th><td>不吃幸运，改走单独一条固定值「村民声望」</td></tr>
+</table>
+
+<h3>换算与档位</h3>
+
+<table>
+<tr><th>生效点</th><th>换算</th></tr>
+<tr><td>方块与生物掉落</td><td>额外掉落概率 ＝ 幸运 × 5%</td></tr>
+<tr><td>钓鱼</td><td>稀有物概率 ＝ 幸运 × 5%（原版那套照常生效，白拿）</td></tr>
+<tr><td>开箱／刷子／宝库／战利品表的 weight 与 rolls</td><td>照常生效，不用本模组管</td></tr>
+<tr><td>村民交易</td><td>不吃幸运</td></tr>
+</table>
+
+<div class="scroll">
+<table>
+<tr><th>档</th><th>幸运</th><th>额外掉落</th></tr>
+<tr><td>一</td><td>+2</td><td>10%</td></tr>
+<tr><td>二</td><td>+4</td><td>20%</td></tr>
+<tr><td>三</td><td>+6</td><td>30%</td></tr>
+</table>
+</div>
+
+<p>幸运值本身会被别的模组读到，所以值守规矩压在 1 到 6；换算由本模组自己补，可以随便放大。值守规矩、换算负责可感知，是这两者的分工。</p>
+
+<div class="notice warn"><span class="t">待定</span>「挂掉落事件」已降级成备选；村民声望是本模组独有的设计，官方 loottables 里 <code>minecraft:villager_trade</code> 的参数集不消费 luck，社区也没找到任何模组做过「luck → 交易」。幸运值必须 clamp，上界那一刀是别人踩过的坑。</div>
+
+<p class="stamp">内容取自《癫狂构想-心绪与痕迹-设计决策记录》第四十六轮定稿。以设计记录为准，本页只是它的一个读法。</p>
+</main></html>

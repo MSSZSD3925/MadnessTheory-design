@@ -1,0 +1,856 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<title>平衡参谋-倍率总表与意见 · 癫狂构想设计站</title>
+<link rel="stylesheet" href="style.css">
+<nav><div class="t">设计站</div><a class="" href="index.html">总览与体检</a>
+<a class="" href="kinds.html">雕像种类</a>
+<a class="" href="materials.html">材质 ↔ 方块</a>
+<a class="" href="attributes.html">属性</a>
+<a class="" href="traits.html">特性与特殊功能</a>
+<a class="" href="moods.html">心绪</a>
+<a class="" href="numerics.html">数值与公式</a>
+<a class="" href="rituals.html">仪式</a>
+<a class="" href="storage.html">温养仪式</a>
+<a class="" href="moodstaff.html">情绪之杖</a>
+<a class="on" href="refs.html">参考文档</a>
+<a class="" href="intent.html">设计意图</a>
+<div class="t">说明</div>
+<div class="small dim" style="padding:4px 8px">本页内容由 <code>gen-design-site.mjs</code>
+从源码生成，改完代码重跑即可。</div></nav>
+<main><h1>平衡参谋-倍率总表与意见</h1><div class="card small"><b>本文档的一切数值均逐行取自 <code>D:\mods\MadnessTheory</code> 的 Java 源码</b>（只读，未改任何一行）。</div>
+<div class="card small">与 <code>&lt;工作区&gt;\癫狂构想-实现设计.txt</code> / <code>癫狂构想-第二阶段实施方案.txt</code> 冲突处，一律以代码为准并已在 §0 标出。</div>
+<div class="card small">生成日期：本轮会话。计算脚本：<code>_mtt_calc.py</code>（临时文件，可删）。</div>
+<hr>
+<h2>§0 与任务书/文档的出入（先看这一节）</h2>
+<table>
+<tr><th>项</th><th>任务书/文档的说法</th><th>代码实际</th><th>结论</th></tr>
+<tr><td>材质数量</td><td>"<b>110 种雕像材质</b>"</td><td><code>StatueMaterial</code> = <b>110 条</b>；<code>EmotionStatueKind</code> = <b>19 种</b>（<code>StatueMaterial.java:18</code> 注释原文："KIND 决定【等级/属性/特性】（19 种），MATERIAL 决定【长相】（110 种）"）</td><td><b>110 是"方块材质/长相"，19 才是"数值种类"</b>。110 条里每一条的等级/容量/属性/特性都等于它所属 KIND 的那一行 —— <b>材质本身不影响任何数值</b>。本文 §2 两种都给全。</td></tr>
+<tr><td>属性偏好层数</td><td>"属性偏好 = 外围 × 中心，<b>只乘两层，不是四次方</b>"</td><td><code>RitualEffects.java:175-182</code>：<code>pref *= outer.multiplierFor(...)</code>、<code>pref *= center.multiplierFor(...)</code></td><td><b>一致</b> ✅</td></tr>
+<tr><td>multiplierFor 三层</td><td>"属性层 / 极性层 / 无条件层"</td><td><code>StatueTrait.java:167-188</code></td><td><b>一致</b> ✅，但<b>还有一层没被提及</b>：<code>StatueTrait.java:179-182</code>，只要记录属性是 <code>CHALLENGE</code>，<b>任何</b>材质都会再乘 <code>challengeMultiplier()</code>（只有绿宝石是 1.50，其余 1.00）。这是<b>隐藏的第 4 层</b>（它叠在属性层上，所以绿宝石对挑战的属性层是 <code>1.00 × 1.50</code>，不是 1.00），详见 §3.2。</td></tr>
+<tr><td>档位表</td><td>"0-25%→0，25-50%→1，50-75%→2，75-100%→3"</td><td><code>EmotionRecords.java:365-368</code> <code>bandOf = floor(ratio*4)</code> 夹在 0..3</td><td><b>一致</b> ✅（边界值 0.25/0.50/0.75/1.0 归入上一档，因为 <code>floor</code>）</td></tr>
+<tr><td>仪式时长</td><td>"唤醒 7 秒 / 升华与沉坠 30 秒"</td><td><code>EmotionStatueBlockEntity.RITUAL_TICKS = 140</code>（7 秒）；<code>RitualEffects.OUTER_RITUAL_TICKS = 600</code>（30 秒）</td><td><b>一致</b> ✅</td></tr>
+<tr><td>失败处理</td><td>"队首记录没有对应极性 → 直接消耗该记录并提示'情绪太平淡了'"</td><td><code>RitualEffects.java:144-162</code></td><td><b>一致</b> ✅，且<b>失败时不启动 30 秒动画</b></td></tr>
+<tr><td><b>绽裂状态</b></td><td>任务书按"已实现"描述</td><td><code>RitualEffects.java:36-43</code> 类注释仍写"★ 未实现，仅占位"，但 <b><code>burst()</code> 方法体（第 274-385 行）是完整实现</b>，注释过期</td><td><b>代码已实现，注释骗人</b>。本文按已实现的代码算。</td></tr>
+<tr><td><b>输出系数</b></td><td>"输出比例"出现在等级表里</td><td><code>EmotionStatueKind.outputRatioForTier()</code> <b>只在 <code>EmotionStaffItem</code> 释放时用</b>（<code>EmotionStaffItem.java:137,156</code>），<b>完全不参与仪式注入公式</b></td><td><b>仪式注入与输出系数无关</b>。任务书里"升华/沉坠的最终注入 = …×属性偏好"的公式是对的，输出系数不是其中一个因数。</td></tr>
+<tr><td>绽裂外围同类加成</td><td>文档只说"外围同类同材质触发属性偏好"</td><td><code>RitualEffects.java:308-316</code>：<code>pref = outerKind.trait().multiplierFor(outerKind.attribute(), payload.attrId(), positive)</code> —— <b>比较的是"外围雕像的属性"与"法杖载荷里记录的属性"</b>，<b>只乘一层</b>（中心不参与），且<b>正负用载荷的极性</b></td><td>一致于 §13，但注意<b>只一层</b>，不是两层。</td></tr>
+<tr><td>文档倍率表 vs 代码</td><td>设计文档 §13.3 表里紫珀砖写在"下界"分组下</td><td><code>EmotionStatueKind.java:57</code>：<code>PURPUR</code> 属性 = <code>VOID</code>，<code>dimensionOf</code> = 2（末地）</td><td><b>文档笔误</b>，代码是末地/空无。</td></tr>
+</table>
+<hr>
+<h2>§1 等级表（注入比例 / 输出比例 / 容量范围）</h2>
+<p>来源：<code>EmotionStatueKind.java:113-120</code>（注入）、<code>:131-138</code>（输出）、<code>:95</code>（容量）。</p>
+<table>
+<tr><th>等级</th><th>注入比例</th><th>输出比例</th><th>该级容量范围（实际值集合）</th><th>该级种类数</th><th>种类名单</th></tr>
+<tr><td>0</td><td><b>50 %</b></td><td>80 %</td><td><b>8 / 16 / 16 / 128</b></td><td>4</td><td>泥土、木头、圆石、灵魂</td></tr>
+<tr><td>1</td><td><b>75 %</b></td><td>90 %</td><td><b>24 / 24 / 24 / 24 / 24 / 32 / 32</b></td><td>7</td><td>沙岩、红沙岩、雪、冰、下界泥土、下界岩石、下界原木</td></tr>
+<tr><td>2</td><td><b>90 %</b></td><td>100 %</td><td><b>32 / 40 / 40 / 48 / 48 / 48</b></td><td>6</td><td>铁、金、绿宝石、下界砖、末地岩石、紫颂花</td></tr>
+<tr><td>3</td><td><b>100 %</b></td><td>120 %</td><td><b>32 / 56</b></td><td>2</td><td>钻石、紫珀砖</td></tr>
+</table>
+<p><b>读表要点</b></p>
+<ul>
+<li>注入比例是<b>阶梯且递减递增</b>的：0→1 是 <b>+50 %</b>，1→2 是 <b>+20 %</b>，2→3 是 <b>+11 %</b>。</li>
+<li><b>容量不跟等级走</b>：0 级里同时有最小（8）和最大（128）；3 级里同时有 32 和 56。容量按级看是重叠的。</li>
+<li>输出比例<b>不参与仪式</b>，只在手杖挥出去时生效（<code>EmotionStaffItem.java:137</code>、<code>:156</code>、<code>:157</code>）。且手杖的输出等级存在自己的数据组件里，初始 = 材质等级（<code>GuideBookItem.java:345</code>、<code>EmotionPayload.resolvedOutputTier()</code>）。</li>
+</ul>
+<hr>
+<h2>§2 材质表</h2>
+<h3>2.1 数值表：19 种材质（<b>这一张才是决定数值的表</b>）</h3>
+<p>来源：<code>EmotionStatueKind.java:35-57</code> 的七个构造参数，逐字抄录。</p>
+<table>
+<tr><th>#</th><th>id</th><th>中文名</th><th>等级</th><th>容量</th><th>属性</th><th>特性</th><th>备注（源码原文）</th><th>下辖材质数</th></tr>
+<tr><td>1</td><td><code>dirt</code></td><td>泥土</td><td>0</td><td>8</td><td>自然</td><td><code>DIRT</code></td><td>全部情绪 ×0.80（减益）</td><td>8</td></tr>
+<tr><td>2</td><td><code>wood</code></td><td>木头</td><td>0</td><td>16</td><td>自然</td><td><code>WOOD_POSITIVE</code></td><td>正面 ×1.25 · 负面 ×0.50</td><td>30</td></tr>
+<tr><td>3</td><td><code>cobble</code></td><td>圆石</td><td>0</td><td>16</td><td>自然</td><td><code>STONE_NEGATIVE</code></td><td>负面 ×1.25 · 正面 ×0.50</td><td>17</td></tr>
+<tr><td>4</td><td><code>sandstone</code></td><td>沙岩</td><td>1</td><td>24</td><td>炎热</td><td><code>PLAIN</code></td><td>同类 ×2.00 · 交叉 ×1.50</td><td>4</td></tr>
+<tr><td>5</td><td><code>red_sandstone</code></td><td>红沙岩</td><td>1</td><td>24</td><td>炎热</td><td><code>PLAIN</code></td><td>同类 ×2.00 · 交叉 ×1.50</td><td>4</td></tr>
+<tr><td>6</td><td><code>snow</code></td><td>雪</td><td>1</td><td>24</td><td>霜寒</td><td><code>PLAIN</code></td><td>同类 ×2.00 · 交叉 ×1.50</td><td>3</td></tr>
+<tr><td>7</td><td><code>ice</code></td><td>冰</td><td>1</td><td>24</td><td>霜寒</td><td><code>PLAIN</code></td><td>同类 ×2.00 · 交叉 ×1.50</td><td>4</td></tr>
+<tr><td>8</td><td><code>iron</code></td><td>铁</td><td>2</td><td>32</td><td><b>null</b></td><td><code>METAL_IRON</code></td><td>无条件 · 正面 ×1.05 · 负面 ×1.10</td><td>2</td></tr>
+<tr><td>9</td><td><code>gold</code></td><td>金</td><td>2</td><td>40</td><td><b>null</b></td><td><code>METAL_GOLD</code></td><td>无条件 · 正面 ×1.25 · 负面 ×1.15</td><td>2</td></tr>
+<tr><td>10</td><td><code>diamond</code></td><td>钻石</td><td>3</td><td>56</td><td><b>null</b></td><td><code>METAL_DIAMOND</code></td><td>无条件 · 正负 ×1.50</td><td>1</td></tr>
+<tr><td>11</td><td><code>emerald</code></td><td>绿宝石</td><td>2</td><td>48</td><td>聚落</td><td><code>EMERALD</code></td><td>无条件 ×1.20 · 挑战 ×1.50</td><td>1</td></tr>
+<tr><td>12</td><td><code>nether_dirt</code></td><td>下界泥土</td><td>1</td><td>24</td><td>下界</td><td><code>NETHER_DIRT</code></td><td>正面 ×0.90 · 负面 ×1.50</td><td>3</td></tr>
+<tr><td>13</td><td><code>nether_rock</code></td><td>下界岩石</td><td>1</td><td>32</td><td>下界</td><td><code>NETHER_ROCK</code></td><td>负面 ×1.50 · 正面 ×0.75</td><td>9</td></tr>
+<tr><td>14</td><td><code>nether_wood</code></td><td>下界原木</td><td>1</td><td>32</td><td>下界</td><td><code>NETHER_WOOD</code></td><td>正面 ×1.50 · 负面不削弱</td><td>10</td></tr>
+<tr><td>15</td><td><code>nether_brick</code></td><td>下界砖</td><td>2</td><td>40</td><td>下界</td><td><code>NETHER_BRICK</code></td><td>负面 ×1.50（下界整体）</td><td>4</td></tr>
+<tr><td>16</td><td><code>soul</code></td><td>灵魂</td><td>0</td><td><b>128</b></td><td>空无</td><td><code>SOUL</code></td><td>容量 128 · 允许混装</td><td>2</td></tr>
+<tr><td>17</td><td><code>end_rock</code></td><td>末地岩石</td><td>2</td><td>48</td><td>空无</td><td><code>END_ROCK</code></td><td>负面 ×1.75 · 正面 ×1.00</td><td>2</td></tr>
+<tr><td>18</td><td><code>chorus</code></td><td>紫颂花</td><td>2</td><td>48</td><td>空无</td><td><code>CHORUS</code></td><td>正面 ×2.00 · 负面 ×1.50 · 随机增减</td><td>2</td></tr>
+<tr><td>19</td><td><code>purpur</code></td><td>紫珀砖</td><td>3</td><td>32</td><td>空无</td><td><code>PURPUR</code></td><td>负面 ×1.75 · 正面 ×1.00 · 共享</td><td>2</td></tr>
+</table>
+<p><b>合计 19 种 / 110 条材质</b>（8+30+17+4+4+3+4+2+2+1+1+3+9+10+4+2+2+2+2 = 110 ✅）</p>
+<h3>2.2 110 条材质 → 所属数值行（按数值行分组，一条不漏）</h3>
+<div class="card small">同一组内<b>所有材质的数值完全相同</b>，只有外观（<code>sideTexture</code> / <code>topTexture</code>）不同。</div>
+<div class="card small">核对方法：在下面任一组里数条目数，应等于 §2.1 最后一列。</div>
+<table>
+<tr><th>数值行</th><th>中文名</th><th>等级/容量/属性</th><th>下辖 110 条材质 id</th></tr>
+<tr><td><code>dirt</code></td><td>泥土</td><td>0 / 8 / 自然</td><td><code>coarse_dirt</code>, <code>dirt</code>, <code>dirt_path</code>, <code>grass_block</code>, <code>mud</code>, <code>mycelium</code>, <code>podzol</code>, <code>rooted_dirt</code> <b>(8)</b></td></tr>
+<tr><td><code>wood</code></td><td>木头</td><td>0 / 16 / 自然</td><td><code>acacia_log</code>, <code>acacia_planks</code>, <code>bamboo_block</code>, <code>bamboo_planks</code>, <code>birch_log</code>, <code>birch_planks</code>, <code>cherry_log</code>, <code>cherry_planks</code>, <code>dark_oak_log</code>, <code>dark_oak_planks</code>, <code>jungle_log</code>, <code>jungle_planks</code>, <code>mangrove_log</code>, <code>mangrove_planks</code>, <code>oak_log</code>, <code>oak_planks</code>, <code>pale_oak_log</code>, <code>pale_oak_planks</code>, <code>spruce_log</code>, <code>spruce_planks</code>, <code>stripped_acacia_log</code>, <code>stripped_bamboo_block</code>, <code>stripped_birch_log</code>, <code>stripped_cherry_log</code>, <code>stripped_dark_oak_log</code>, <code>stripped_jungle_log</code>, <code>stripped_mangrove_log</code>, <code>stripped_oak_log</code>, <code>stripped_pale_oak_log</code>, <code>stripped_spruce_log</code> <b>(30)</b></td></tr>
+<tr><td><code>cobble</code></td><td>圆石</td><td>0 / 16 / 自然</td><td><code>andesite</code>, <code>calcite</code>, <code>cobbled_deepslate</code>, <code>cobblestone</code>, <code>deepslate</code>, <code>deepslate_bricks</code>, <code>diorite</code>, <code>granite</code>, <code>mossy_cobblestone</code>, <code>polished_andesite</code>, <code>polished_diorite</code>, <code>polished_granite</code>, <code>polished_tuff</code>, <code>smooth_stone</code>, <code>stone</code>, <code>stone_bricks</code>, <code>tuff</code> <b>(17)</b></td></tr>
+<tr><td><code>sandstone</code></td><td>沙岩</td><td>1 / 24 / 炎热</td><td><code>chiseled_sandstone</code>, <code>cut_sandstone</code>, <code>sandstone</code>, <code>smooth_sandstone</code> <b>(4)</b></td></tr>
+<tr><td><code>red_sandstone</code></td><td>红沙岩</td><td>1 / 24 / 炎热</td><td><code>chiseled_red_sandstone</code>, <code>cut_red_sandstone</code>, <code>red_sandstone</code>, <code>smooth_red_sandstone</code> <b>(4)</b></td></tr>
+<tr><td><code>snow</code></td><td>雪</td><td>1 / 24 / 霜寒</td><td><code>powder_snow</code>, <code>snow</code>, <code>snow_block</code> <b>(3)</b></td></tr>
+<tr><td><code>ice</code></td><td>冰</td><td>1 / 24 / 霜寒</td><td><code>blue_ice</code>, <code>frosted_ice</code>, <code>ice</code>, <code>packed_ice</code> <b>(4)</b></td></tr>
+<tr><td><code>iron</code></td><td>铁</td><td>2 / 32 / 无</td><td><code>iron_block</code>, <code>raw_iron_block</code> <b>(2)</b></td></tr>
+<tr><td><code>gold</code></td><td>金</td><td>2 / 40 / 无</td><td><code>gold_block</code>, <code>raw_gold_block</code> <b>(2)</b></td></tr>
+<tr><td><code>diamond</code></td><td>钻石</td><td>3 / 56 / 无</td><td><code>diamond_block</code> <b>(1)</b></td></tr>
+<tr><td><code>emerald</code></td><td>绿宝石</td><td>2 / 48 / 聚落</td><td><code>emerald_block</code> <b>(1)</b></td></tr>
+<tr><td><code>nether_dirt</code></td><td>下界泥土</td><td>1 / 24 / 下界</td><td><code>nether_wart_block</code>, <code>netherrack</code>, <code>warped_wart_block</code> <b>(3)</b></td></tr>
+<tr><td><code>nether_rock</code></td><td>下界岩石</td><td>1 / 32 / 下界</td><td><code>basalt</code>, <code>blackstone</code>, <code>chiseled_polished_blackstone</code>, <code>cracked_polished_blackstone_bricks</code>, <code>gilded_blackstone</code>, <code>polished_basalt</code>, <code>polished_blackstone</code>, <code>polished_blackstone_bricks</code>, <code>smooth_basalt</code> <b>(9)</b></td></tr>
+<tr><td><code>nether_wood</code></td><td>下界原木</td><td>1 / 32 / 下界</td><td><code>crimson_hyphae</code>, <code>crimson_planks</code>, <code>crimson_stem</code>, <code>stripped_crimson_hyphae</code>, <code>stripped_crimson_stem</code>, <code>stripped_warped_hyphae</code>, <code>stripped_warped_stem</code>, <code>warped_hyphae</code>, <code>warped_planks</code>, <code>warped_stem</code> <b>(10)</b></td></tr>
+<tr><td><code>nether_brick</code></td><td>下界砖</td><td>2 / 40 / 下界</td><td><code>chiseled_nether_bricks</code>, <code>cracked_nether_bricks</code>, <code>nether_bricks</code>, <code>red_nether_bricks</code> <b>(4)</b></td></tr>
+<tr><td><code>soul</code></td><td>灵魂</td><td>0 / 128 / 空无</td><td><code>soul_sand</code>, <code>soul_soil</code> <b>(2)</b></td></tr>
+<tr><td><code>end_rock</code></td><td>末地岩石</td><td>2 / 48 / 空无</td><td><code>end_stone</code>, <code>end_stone_bricks</code> <b>(2)</b></td></tr>
+<tr><td><code>chorus</code></td><td>紫颂花</td><td>2 / 48 / 空无</td><td><code>chorus_flower</code>, <code>chorus_plant</code> <b>(2)</b></td></tr>
+<tr><td><code>purpur</code></td><td>紫珀砖</td><td>3 / 32 / 空无</td><td><code>purpur_block</code>, <code>purpur_pillar</code> <b>(2)</b></td></tr>
+</table>
+<p><b>注意</b>：<code>coarse_dirt</code> / <code>dirt</code> / <code>dirt_path</code> / <code>grass_block</code> 等 8 条都属于 <code>dirt</code>（泥土），<b>包括草方块</b> —— 也就是说<b>站在草地上随手雕一尊就是"泥土"材质（0 级 / 容量 8 / 全减益）</b>，这大概是分布最广的一块"陷阱"。</p>
+<h3>2.3 雕刻来源方块（<code>initSources()</code>，可与上表交叉核对）</h3>
+<p><code>EmotionStatueKind.java:193-282</code> 定义了"什么方块能雕成什么"。它与 <code>StatueMaterial</code> 一一对应。</p>
+<hr>
+<h2>§3 特性乘数表（三层 + 隐藏第四层）</h2>
+<p>来源：<code>StatueTrait.java:88-140</code>（极性层/无条件层）、<code>:167-188</code>（<code>multiplierFor</code>）、<code>EmotionAttribute.java:193-207</code>（交叉表）。</p>
+<h3>3.1 三层 + 一层的定义</h3>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+最终单层倍率 = ①属性层 × ②极性层 × ③无条件层
+① 属性层（表 3.2）
+     材质属性 != null 且 == 记录属性        → ×2.00
+     材质属性 != null 且 记录属性 ∈ 交叉表  → ×1.50
+     其它（含材质属性 == null 的铁/金/钻石）→ ×1.00
+     ☆ 再叠一层：若记录属性 == 挑战 → 再 ×1.50，但只有绿宝石的这层 != 1.00
+② 极性层（表 3.3）  正 = 升华那一侧，负 = 沉坠那一侧
+③ 无条件层（表 3.4）只有绿宝石 ×1.20
+</pre>
+<p><code>positive</code> 这个入参来自 <b>记录的正面占比 <code>ratio</code>（&gt;0.5 才算正）</b>，不是从属性推的 —— <code>RitualEffects.java:178-179</code> 把 <code>positive</code>（即"这是升华还是沉坠"）直接传进去。<b>一条记录的属性不决定它是正是负。</b></p>
+<h3>3.2 属性层矩阵（单层，含绿宝石的挑战加成）</h3>
+<p>零层即"材质属性 == null"（铁/金/钻石）时永远是 ×1.00（挑战仍会吃到绿宝石的层，但那三块不提供）。</p>
+<table>
+<tr><th>材质属性 →</th><th>自然</th><th>炎热</th><th>霜寒</th><th>空无</th><th>下界</th><th>幽闭</th><th>深海</th><th>高峻</th><th>残迹</th><th>聚落</th><th>挑战</th><th>平均</th></tr>
+<tr><td><b>自然</b>（泥土/木头/圆石）</td><td><b>2.00</b></td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.18</td></tr>
+<tr><td><b>炎热</b>（沙岩/红沙岩）</td><td>1.00</td><td><b>2.00</b></td><td>1.00</td><td>1.00</td><td><b>1.50</b></td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.23</td></tr>
+<tr><td><b>霜寒</b>（雪/冰）</td><td>1.00</td><td>1.00</td><td><b>2.00</b></td><td><b>1.50</b></td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.23</td></tr>
+<tr><td><b>空无</b>（灵魂/末地岩石/紫颂花/紫珀砖）</td><td>1.00</td><td>1.00</td><td><b>1.50</b></td><td><b>2.00</b></td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.23</td></tr>
+<tr><td><b>下界</b>（下界四种）</td><td>1.00</td><td><b>1.50</b></td><td>1.00</td><td>1.00</td><td><b>2.00</b></td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.23</td></tr>
+<tr><td><b>幽闭</b></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td><b>无任何材质带幽闭属性</b></td></tr>
+<tr><td><b>深海</b></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td><b>无任何材质带深海属性</b></td></tr>
+<tr><td><b>高峻</b></td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td></tr>
+<tr><td><b>残迹</b></td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td></tr>
+<tr><td><b>聚落</b>（绿宝石）</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td><b>1.50</b></td><td><b>2.00</b></td><td><b>3.00</b></td><td>1.23</td></tr>
+<tr><td><b>挑战</b>（无材质）</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td><b>无任何材质带挑战属性</b></td></tr>
+<tr><td><b>null</b>（铁/金/钻石）</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td></tr>
+</table>
+<p><b>读表要点</b></p>
+<ul>
+<li><b>交叉表是对称配对</b>：炎热↔下界、霜寒↔空无、幽闭↔深海、高峻↔挑战、残迹↔聚落。<b>自然没有任何交叉</b>（<code>EmotionAttribute.java:205</code>）。</li>
+<li><b>只有 5 种属性有材质</b>：自然、炎热、霜寒、空无、下界（+聚落）。<b>高峻、残迹、幽闭、深海、挑战 5 种属性没有任何雕像材质</b> —— 这 5 种属性的记录<b>永远吃不到属性层</b>。</li>
+<li><b>挑战是唯一有"额外加成"的属性</b>：遇到绿宝石 ×3.00，遇到别人 ×1.00。</li>
+<li><b>聚落只在绿宝石身上</b>：遇到残迹 ×1.50，遇到聚落 ×2.00，遇到挑战 ×3.00。</li>
+</ul>
+<h3>3.3 极性层（18 种特性，正/负两列）</h3>
+<table>
+<tr><th>特性</th><th>材质</th><th>正面乘数</th><th>负面乘数</th><th>正负之比</th><th>双侧平均</th></tr>
+<tr><td><code>DIRT</code></td><td>泥土</td><td><b>0.80</b></td><td><b>0.80</b></td><td>1.00</td><td>0.80</td></tr>
+<tr><td><code>WOOD_POSITIVE</code></td><td>木头</td><td><b>1.25</b></td><td><b>0.50</b></td><td>2.50</td><td>0.875</td></tr>
+<tr><td><code>STONE_NEGATIVE</code></td><td>圆石</td><td><b>0.50</b></td><td><b>1.25</b></td><td>0.40</td><td>0.875</td></tr>
+<tr><td><code>PLAIN</code></td><td>沙岩/红沙岩/雪/冰</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td></tr>
+<tr><td><code>METAL_IRON</code></td><td>铁</td><td><b>1.05</b></td><td><b>1.10</b></td><td>0.95</td><td>1.075</td></tr>
+<tr><td><code>METAL_GOLD</code></td><td>金</td><td><b>1.25</b></td><td><b>1.15</b></td><td>1.09</td><td>1.20</td></tr>
+<tr><td><code>METAL_DIAMOND</code></td><td>钻石</td><td><b>1.50</b></td><td><b>1.50</b></td><td>1.00</td><td><b>1.50</b></td></tr>
+<tr><td><code>EMERALD</code></td><td>绿宝石</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00（但无条件层 ×1.20）</td></tr>
+<tr><td><code>NETHER_DIRT</code></td><td>下界泥土</td><td><b>0.90</b></td><td><b>1.50</b></td><td>0.60</td><td>1.20</td></tr>
+<tr><td><code>NETHER_ROCK</code></td><td>下界岩石</td><td><b>0.75</b></td><td><b>1.50</b></td><td>0.50</td><td>1.125</td></tr>
+<tr><td><code>NETHER_WOOD</code></td><td>下界原木</td><td><b>1.50</b></td><td><b>1.00</b></td><td>1.50</td><td>1.25</td></tr>
+<tr><td><code>NETHER_BRICK</code></td><td>下界砖</td><td>1.00</td><td><b>1.50</b></td><td>0.67</td><td>1.25</td></tr>
+<tr><td><code>SOUL</code></td><td>灵魂</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td></tr>
+<tr><td><code>END_ROCK</code></td><td>末地岩石</td><td>1.00</td><td><b>1.75</b></td><td>0.57</td><td>1.375</td></tr>
+<tr><td><code>CHORUS</code></td><td>紫颂花</td><td><b>2.00</b></td><td><b>1.50</b></td><td>1.33</td><td><b>1.75</b></td></tr>
+<tr><td><code>PURPUR</code></td><td>紫珀砖</td><td>1.00</td><td><b>1.75</b></td><td>0.57</td><td>1.375</td></tr>
+</table>
+<h3>3.4 无条件层</h3>
+<table>
+<tr><th>特性</th><th>无条件乘数</th><th>挑战额外乘数</th></tr>
+<tr><td>绿宝石 <code>EMERALD</code></td><td><b>1.20</b></td><td><b>1.50</b></td></tr>
+<tr><td>其余 17 种</td><td>1.00</td><td>1.00</td></tr>
+</table>
+<p>铁/金/钻石的"无条件增益"是通过<b>极性层</b>表达的（两个方向都 &gt;1.0），不是通过无条件层。</p>
+<h3>3.5 材质专属的额外规矩（非乘数）</h3>
+<table>
+<tr><th>特性</th><th>方法</th><th>效果</th><th>在代码里真的生效吗</th></tr>
+<tr><td><code>SOUL</code></td><td><code>allowsMixing()</code></td><td>允许混装不同情绪组</td><td><b>未在仪式路径上找到调用点</b> → 标注"未核对/可能未接线"</td></tr>
+<tr><td><code>CHORUS</code></td><td><code>randomFluctuation()</code></td><td>内含心绪随机增减</td><td><b>未在 <code>RitualEffects</code> 里找到调用点</b> → 同上</td></tr>
+<tr><td><code>PURPUR</code></td><td><code>sharedStorage()</code></td><td>注入的情绪由多根杖共享</td><td><b>未在 <code>RitualEffects</code> 里找到调用点</b> → 同上</td></tr>
+</table>
+<div class="card small">这三条在 <code>StatueTrait.java:142-157</code> 定义，<code>multiplierFor</code> 没有引用它们。我只 grep 了仪式/法杖路径，<b>没有全仓穷举</b>，所以标"未核对"，不下结论。</div>
+<hr>
+<h2>§4 属性表</h2>
+<p>来源：<code>EmotionAttribute.java:46-60</code>（id/名/色）、<code>:193-207</code>（交叉）、<code>:239-254</code>（群系/结构来源）。</p>
+<table>
+<tr><th>id</th><th>中文名</th><th>颜色</th><th>细分自（源码注解）</th><th>与谁"同类"（交叉，双方 ×1.50）</th><th>有没有材质带这个属性</th></tr>
+<tr><td><code>natural</code></td><td>自然</td><td><code>#7BC96F</code></td><td>serene / relic</td><td><b>无</b>（唯一没有交叉的）</td><td>✅ 泥土/木头/圆石</td></tr>
+<tr><td><code>hot</code></td><td>炎热</td><td><code>#E2703A</code></td><td>challenge / irritable</td><td>下界</td><td>✅ 沙岩/红沙岩</td></tr>
+<tr><td><code>cold</code></td><td>霜寒</td><td><code>#7FC8E8</code></td><td>chilly / serene</td><td>空无</td><td>✅ 雪/冰</td></tr>
+<tr><td><code>void</code></td><td>空无</td><td><code>#8A6FD0</code></td><td>void / haunted</td><td>霜寒</td><td>✅ 灵魂/末地岩石/紫颂花/紫珀砖</td></tr>
+<tr><td><code>nether</code></td><td>下界</td><td><code>#C0392B</code></td><td>haunted / challenge</td><td>炎热</td><td>✅ 下界泥土/岩石/原木/砖</td></tr>
+<tr><td><code>cavern</code></td><td>幽闭</td><td><code>#6B7B8C</code></td><td>gloomy / haunted</td><td>深海</td><td>❌ <b>无</b></td></tr>
+<tr><td><code>ocean</code></td><td>深海</td><td><code>#3F7FBF</code></td><td>serene / void</td><td>幽闭</td><td>❌ <b>无</b></td></tr>
+<tr><td><code>mountain</code></td><td>高峻</td><td><code>#B8BFC6</code></td><td>challenge / serene</td><td>挑战</td><td>❌ <b>无</b></td></tr>
+<tr><td><code>ruin</code></td><td>残迹</td><td><code>#B08D57</code></td><td>relic / gloomy</td><td>聚落</td><td>❌ <b>无</b></td></tr>
+<tr><td><code>village</code></td><td>聚落</td><td><code>#E8C170</code></td><td>village / serene</td><td>残迹</td><td>✅ 绿宝石</td></tr>
+<tr><td><code>challenge</code></td><td>挑战</td><td><code>#D94F4F</code></td><td>challenge / irritable</td><td>高峻</td><td>❌ <b>无</b>（但绿宝石对它 ×3.00）</td></tr>
+</table>
+<p><b>群系 → 属性的判定顺序</b>（<code>EmotionAttribute.java:239-254</code>，<b>顺序敏感，先命中者赢</b>）：</p>
+<p>幽闭（deep_dark/lush_caves/dripstone_caves）→ 下界 → 空无 → 深海 → 霜寒 → 炎热 → 高峻 → 幽闭（cave/underground/mineshaft）→ 聚落（village/<b>plains</b>）→ 自然（forest/taiga/jungle/swamp…）→ 兜底自然。</p>
+<p><b>结构优先于群系</b>（<code>:268-276</code>）：劫掠者哨塔 / 下界堡垒 / 猪灵堡垒 / 要塞 / 林地府邸 / 海底神殿 / 远古城市 / 试炼密室 → <b>挑战</b>。</p>
+<p><b>正面比例区间</b>（<code>Config.java:198-207</code> 的 <code>groupDefaultRatios</code>，这是默认配置，<b>不是代码硬值，作者可改</b>）：</p>
+<table>
+<tr><th>组</th><th>默认区间</th><th>该区间的档位</th><th><code>amountFrom</code></th><th>说明</th></tr>
+<tr><td><code>serene</code> 安宁</td><td>0.75–1.00</td><td>3</td><td><b>32</b></td><td>最高档</td></tr>
+<tr><td><code>village</code> 聚落</td><td>0.75–1.00</td><td>3</td><td><b>32</b></td><td>最高档</td></tr>
+<tr><td><code>relic</code> 残迹</td><td>0.50–0.75</td><td>2–3</td><td><b>24–32</b></td><td>跨档</td></tr>
+<tr><td><code>gloomy</code> 阴森</td><td>0.25–0.50</td><td>1</td><td><b>16</b></td><td></td></tr>
+<tr><td><code>irritable</code> 急躁</td><td>0.25–0.50</td><td>1</td><td><b>16</b></td><td></td></tr>
+<tr><td><code>chilly</code> 寒冷</td><td>0.25–0.50</td><td>1</td><td><b>16</b></td><td></td></tr>
+<tr><td><code>challenge</code> 挑战</td><td>0.25–0.50</td><td>1</td><td><b>16</b></td><td>⚠️ 与"绿宝石 ×3.00 打挑战"配不上，见 §9</td></tr>
+<tr><td><code>haunted</code> 幽魂</td><td>0.00–0.25</td><td>0</td><td><b>8</b></td><td>最低档</td></tr>
+<tr><td><code>void</code> 虚无</td><td>0.00–0.25</td><td>0</td><td><b>8</b></td><td>最低档</td></tr>
+</table>
+<p>另有两条逐群系显式配置（<code>Config.java:173-174</code>）：<code>minecraft:forest|0.75|1.0</code>、<code>minecraft:dark_forest|0.25|0.5</code>。<b>默认区间是 0.5–0.75</b>（<code>Config.java:180,184</code>）。</p>
+<div class="card small">⚠️ 这些是<b>默认配置值</b>，玩家/作者改配置就会变。<b>代码里的硬值是 <code>amountFrom = 8 + 档位×8</code>，不是区间。</b></div>
+<hr>
+<h2>§5 十种心绪表</h2>
+<p>来源：<code>EmotionMood.java:35-46</code>。</p>
+<table>
+<tr><th>#</th><th>id</th><th>中文名</th><th>正/负</th><th>配色</th><th>能力定位（源码注解，<b>具体数值未定</b>）</th></tr>
+<tr><td>1</td><td><code>joy</code></td><td>快乐</td><td>正</td><td><code>#FFD966</code></td><td>机动 / 爆发跳跃</td></tr>
+<tr><td>2</td><td><code>serenity</code></td><td>安宁</td><td>正</td><td><code>#9FD8CB</code></td><td>防御 / 伤害减免</td></tr>
+<tr><td>3</td><td><code>anticipation</code></td><td>期待</td><td>正</td><td><code>#C9A7E8</code></td><td>辅助 / 预知闪避</td></tr>
+<tr><td>4</td><td><code>affection</code></td><td>喜爱</td><td>正</td><td><code>#F2A6C0</code></td><td>辅助 / 绑定共享</td></tr>
+<tr><td>5</td><td><code>pride</code></td><td>自豪</td><td>正</td><td><code>#E8B04B</code></td><td>攻击 / 威慑嘲讽</td></tr>
+<tr><td>6</td><td><code>curiosity</code></td><td>好奇</td><td>正</td><td><code>#7FD1E8</code></td><td>采集 / 幸运翻倍</td></tr>
+<tr><td>7</td><td><code>sadness</code></td><td>悲伤</td><td>负</td><td><code>#5B7DB1</code></td><td>攻击 / 汲取</td></tr>
+<tr><td>8</td><td><code>fear</code></td><td>恐惧</td><td>负</td><td><code>#8E7CC3</code></td><td>防御 / 惊骇</td></tr>
+<tr><td>9</td><td><code>anger</code></td><td>愤怒</td><td>负</td><td><code>#D9534F</code></td><td>攻击 / 狂暴</td></tr>
+<tr><td>10</td><td><code>disgust</code></td><td>厌恶</td><td>负</td><td><code>#7A9B57</code></td><td>防御 / 排斥</td></tr>
+</table>
+<p><b>存储上限</b>：<code>EmotionMoodStore.CAPACITY = 100</code>，<b>每类各自 100，不是十类共享</b>（<code>EmotionMoodStore.java:26-30</code> 明确写了两者的区别）。</p>
+<p><b>存储条目</b>是 <code>心绪id|属性id|数量</code> 三元组，同一心绪在不同属性标签下<b>可以是分开的多条</b>（<code>:11-13</code>），而 <code>freeSpaceFor</code> 用 <code>amountAll</code> 汇总判定（<code>:46-48</code>）—— 所以<b>同一种心绪的属性标签加起来不能超过 100</b>。</p>
+<hr>
+<h2>§6 全链路算例（从一条记录 → 注入 → 绽裂）</h2>
+<h3>6.1 公式（照 <code>RitualEffects.java:126-183</code> 逐行抄）</h3>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+idx        = 书里第一条【未消耗】的记录（从头找，先记的先用）   ← :238-245
+amount     = 8 + floor(ratio × 4) × 8          （档位 0/1/2/3 → 8/16/24/32）  ← GuideBookItem:393
+share      = 升华 ? ratio : (1 − ratio)                                        ← :134
+total      = round(amount × share)                                             ← :135
+if total ≤ 0 → 【失败】消耗该记录、不注入、不启动动画                            ← :144-162
+pref       = mult(外围特性, 外围属性, 记录属性, positive)
+           × mult(中心特性, 中心属性, 记录属性, positive)                       ← :175-182
+lossss     = 外围注入比例 × 中心注入比例 × pref     ← :182
+injected   = max(1, round(total × loss))          ← :183   ★ 有 1 点下限
+</pre>
+<p><b>三个独立因数，缺一不可</b>（<code>RitualEffects.java:230-233</code> 的提示也把它们拆成三段显示）：</p>
+<p><code>外围 ×0.50~0.90</code> · <code>中心 ×0.50~1.00</code> · <code>偏好 ×0.64~16.00</code></p>
+<p><b>外围可用材质是受结构限制的</b>（<code>RitualStructure.java:206-217</code>）：</p>
+<table>
+<tr><th>仪式</th><th>外围种类</th><th>外围等级</th><th>外围注入比例</th></tr>
+<tr><td><b>升华</b></td><td><code>WOOD</code> / <code>NETHER_WOOD</code> / <code>CHORUS</code></td><td>0 / 1 / 2</td><td><b>0.50 / 0.75 / 0.90</b></td></tr>
+<tr><td><b>沉坠</b></td><td><code>COBBLE</code> / <code>NETHER_ROCK</code> / <code>END_ROCK</code></td><td>0 / 1 / 2</td><td><b>0.50 / 0.75 / 0.90</b></td></tr>
+</table>
+<div class="card small">⚠️ <b>外围永远吃不到等级 3 的 1.00</b> —— 因为 3 级只有钻石和紫珀砖，两者都不在木/石类里。<b>外围的注入比例上限就是 0.90。</b></div>
+<p><b>中心可以是任意 19 种之一</b>（<code>RitualStructure.match</code> 只要求"中心是雕像 + 台座上有法杖"）。</p>
+<h3>6.2 算例 1：最低配（几乎全错）</h3>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+结构：中心 = 泥土雕像（台座插一根泥土杖）   外围 = 4× 泥土    仪式 = 升华
+记录：amountFrom = 8（档位 0，例如幽魂/虚无组，占比 0.24）
+total  = round(8 × 0.24) = 2
+外围：dirt × 0.50，属性偏好 2.00(自然同类) × 0.80(极性层) × 1.00 = 1.60
+中心：dirt × 0.50，属性偏好 1.60
+loss   = 0.50 × 0.50 × 1.60 × 1.60 = 0.6400
+注入   = max(1, round(2 × 0.64)) = max(1, 1) = 【1 点】
+
+代价：一条记录 + 30 秒 + 5 尊雕像（1 中心 4 外围）
+</pre>
+<h3>6.3 算例 2：入门配（木头 + 泥土中心）</h3>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+结构：中心 = 泥土，外围 = 4× 木头，升华
+记录：amountFrom = 16（档位 1），占比 0.75，属性 自然
+total  = round(16 × 0.75) = 12
+外围：wood × 0.50，偏好 2.50 × 1.25 = 3.125
+中心：dirt × 0.50，偏好 1.60 × 0.80 = 1.28
+loss   = 0.50 × 0.50 × 3.125 × 1.28 = 1.0000
+注入   = 【12 点】
+</pre>
+<p>有趣的巧合：<b>恰好等于 total 本身</b>，玩家会觉得"没损耗"。</p>
+<h3>6.4 算例 3：中档（下界原木 + 绿宝石中心）</h3>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+结构：中心 = 绿宝石，外围 = 4× 下界原木，升华
+记录：amountFrom = 16（档位 1），占比 0.99，属性 下界
+total  = round(16 × 0.99) = 16
+外围：nether_wood × 0.75，偏好 3.00(下界同类) × 1.50(极性) = 4.50
+中心：emerald × 0.90，偏好 1.20(无条件) × 1.00(属性层) = 1.20
+loss   = 0.75 × 0.90 × 4.50 × 1.20 = 3.6450
+注入   = round(16 × 3.645) = 【58 点】
+</pre>
+<h3>6.5 算例 4：高档（下界原木 + 钻石中心）</h3>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+结构：中心 = 钻石，外围 = 4× 下界原木，升华
+记录：amountFrom = 24（档位 2），占比 0.75，属性 炎热
+total  = round(24 × 0.75) = 18
+外围：nether_wood × 0.75，偏好 (1.50 交叉) × 1.50(极性) = 2.25
+中心：diamond × 1.00，偏好 1.50(无条件) × 1.00(属性层) = 1.50
+loss   = 0.75 × 1.00 × 2.25 × 1.50 = 2.53125
+注入   = round(18 × 2.53125) = 【46 点】
+</pre>
+<h3>6.6 算例 5：上限（紫颂花 + 绿宝石中心，挑战记录）</h3>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+结构：中心 = 绿宝石，外围 = 4× 紫颂花，升华
+记录：amountFrom = 32（档位 3），占比 1.00，属性 挑战
+total  = round(32 × 1.00) = 32
+外围：chorus × 0.90，偏好 1.00 × 1.00 × 2.00(极性) = 2.00
+中心：emerald × 0.90，偏好 1.00 × 1.00 × 3.00(挑战) × 1.20(无条件) = 1.80
+loss   = 0.90 × 0.90 × 2.00 × 1.80 = 2.9160
+注入   = round(32 × 2.916) = 【93 点】
+</pre>
+<h3>6.7 算例 6：全局最大（外围 4× 紫颂花 + 中心 紫颂花，空无记录）</h3>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+结构：中心 = 紫颂花，外围 = 4× 紫颂花，升华
+记录：amountFrom = 32（档位 3），占比 1.00，属性 空无
+total  = round(32 × 1.00) = 32
+外围：chorus × 0.90，偏好 4.00(空无同类2.00 × 极性2.00) × 1.00(无条件) = 4.00
+中心：chorus × 0.90，偏好 4.00
+loss   = 0.90 × 0.90 × 4.00 × 4.00 = 12.9600
+注入   = round(32 × 12.96) = 【415 点】   ★ 单次仪式的最大值
+</pre>
+<h3>6.8 算例 7：绽裂（把算例 6 的杖炸掉）</h3>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+杖：容量 128（灵魂杖），已有 0 点，注入 415 点 → 含量 415，ratio = 1.0（纯正）
+   415 &gt; 128 → 满足"超容量"入场券 ✅   ratio ≥ 0.999 → 判定为正面 ✅
+   （★ 载体必须是容量 128 的灵魂杖。若台座上插的是紫颂花杖（容量 48），
+     那么在第 46 点注入时就已经 amount &gt; 48，会被 :86-90 的"已经满了"拦下，
+     根本到不了 415 点。**这是"大容量杖"的唯一正当用途。**）
+心绪总量 = round(415 × 3.0) = 1245
+外围同类加成：chorus 对 空无 × 1.0 → 4.00   →  加成后 = round(1245 × 4.00) = 4980
+每份 = 4980 // 6 = 830   （六种正面心绪各得 830 ± 20%）
+装得下的部分 = 6 × min(830, 100) = 600
+溢出 = 4980 − 600（按 830×6=4980 算） = 4380 → 经验 = 4380 // 3 = 1460
+
+结果：心绪 +600（六种正面各 100，全满），经验 +1460（≈ 51 级），法杖清空
+</pre>
+<h3>6.9 最好 / 最坏差多少倍</h3>
+<table>
+<tr><th>维度</th><th>最坏</th><th>最好</th><th>倍数</th></tr>
+<tr><td>单条记录的基础点数</td><td>8（占比 &lt;0.25）</td><td>32（占比 ≥0.75）</td><td><b>4×</b></td></tr>
+<tr><td>同极性可提取份额</td><td>≈0（失败边缘）</td><td>1.00</td><td><b>∞</b></td></tr>
+<tr><td>结构总倍率（真实可达）</td><td>0.1562</td><td><b>12.96</b></td><td><b>83×</b></td></tr>
+<tr><td><b>最终注入（含点数差）</b></td><td><b>1 点</b></td><td><b>415 点</b></td><td><b>415×</b></td></tr>
+<tr><td>同一条 32 点记录在两套结构下</td><td>5 点（wood+cobble）</td><td>415 点（chorus+chorus）</td><td><b>83×</b></td></tr>
+<tr><td>绽裂后心绪总量</td><td>~24 点</td><td>~4980 点</td><td><b>207×</b></td></tr>
+</table>
+<hr>
+<h2>§7 极值扫描</h2>
+<p>全部由 <code>_mtt_calc.py</code> 枚举 19×19×11（外围合法子集）得出。</p>
+<h3>7.1 单次升华 / 沉坠的注入极值</h3>
+<table>
+<tr><th></th><th>最小</th><th>最大</th></tr>
+<tr><td><b>升华（正面）</b></td><td><b>1 点</b></td><td><b>415 点</b></td></tr>
+<tr><td><b>沉坠（负面）</b></td><td><b>1 点</b></td><td><b>353 点</b></td></tr>
+<tr><td>全局（不限仪式）</td><td>1 点</td><td>415 点</td></tr>
+</table>
+<p><b>下限说明</b>：<code>RitualEffects.java:183</code> 的 <code>Math.max(1, …)</code> 保证了<b>任何成功的仪式至少注入 1 点</b>。</p>
+<p>但注意还有一个"<b>0 点的失败分支</b>"：<code>total ≤ 0</code> 时（公式见 §6.1）走 <code>:144-162</code>，<b>该条记录被消耗、什么都不注入</b>。</p>
+<p>要让 <code>round(amount × share)</code> 恰好为 0，需要 <code>amount × share &lt; 0.5</code>，例如 <code>share = 0.01</code>（<code>void</code> 组的记录去升华：<code>round(8 × 0.01) = 0</code>）。<b>这是"烧一条记录换 0 收益"，比注入 1 点更糟。</b></p>
+<h3>7.2 最大倍率组合（真实可达，外围受结构限制）</h3>
+<table>
+<tr><th>仪式</th><th>倍率</th><th>外围</th><th>中心</th><th>记录属性</th><th>拆解（外围比例 × 中心比例 × 偏好 = 总值）</th><th>32 点记录的注入</th></tr>
+<tr><td><b>升华 第 1</b></td><td><b>12.960</b></td><td>4× 紫颂花</td><td>紫颂花</td><td><b>空无</b></td><td>0.90 × 0.90 × (<b>4.00 × 4.00</b>)</td><td><b>415</b></td></tr>
+<tr><td>升华 第 2</td><td>7.290</td><td>4× 紫颂花</td><td>紫颂花</td><td>霜寒</td><td>0.90 × 0.90 × (3.00 × 3.00)</td><td>233</td></tr>
+<tr><td>升华 第 3</td><td>7.200</td><td>4× 紫颂花</td><td>紫珀砖</td><td>空无</td><td>0.90 × 1.00 × (4.00 × 2.00)</td><td>230</td></tr>
+<tr><td>升华 第 4</td><td>6.480</td><td>4× 紫颂花</td><td>末地岩石</td><td>空无</td><td>0.90 × 0.90 × (4.00 × 2.00)</td><td>207</td></tr>
+<tr><td>升华 第 5</td><td>5.400</td><td>4× 紫颂花</td><td>钻石</td><td>空无</td><td>0.90 × 1.00 × (4.00 × 1.50)</td><td>173</td></tr>
+<tr><td>升华 第 6</td><td>5.062</td><td>4× 下界原木</td><td>下界原木</td><td><b>下界</b></td><td>0.75 × 0.75 × (3.00 × 3.00)</td><td>162</td></tr>
+<tr><td><b>沉坠 第 1</b></td><td><b>11.025</b></td><td>4× 末地岩石</td><td>紫珀砖</td><td><b>空无</b></td><td>0.90 × 1.00 × (<b>3.50 × 3.50</b>)</td><td><b>353</b></td></tr>
+<tr><td>沉坠 第 2</td><td>9.922</td><td>4× 末地岩石</td><td>末地岩石</td><td>空无</td><td>0.90 × 0.90 × (3.50 × 3.50)</td><td>318</td></tr>
+<tr><td>沉坠 第 3</td><td>8.505</td><td>4× 末地岩石</td><td>紫颂花</td><td>空无</td><td>0.90 × 0.90 × (3.50 × 3.00)</td><td>272</td></tr>
+<tr><td>沉坠 第 4</td><td>6.075</td><td>4× 下界岩石</td><td>下界砖</td><td><b>下界</b></td><td>0.75 × 0.90 × (3.00 × 3.00)</td><td>194</td></tr>
+<tr><td>沉坠 第 5</td><td>5.062</td><td>4× 下界岩石</td><td>下界岩石</td><td>下界</td><td>0.75 × 0.75 × (3.00 × 3.00)</td><td>162</td></tr>
+</table>
+<p><b>最小倍率组合</b>：<code>0.15625</code> = 外围木头/圆石（0.50）× 中心敌对属性材质（0.50）× 偏好（木头对霜寒 1.25 × 圆石对霜寒 0.50 = 0.625）。</p>
+<p>具体：<code>外围 wood + 中心 cobble + 霜寒/挑战/幽闭记录</code> → <code>0.50 × 0.50 × 1.25 × 0.50 = 0.15625</code>。</p>
+<h3>7.3 各材质对 11 种属性的平均单层倍率（评估支配/死选项用）</h3>
+<table>
+<tr><th>材质</th><th>等级</th><th>容量</th><th>正面平均</th><th>负面平均</th><th>用哪一侧</th></tr>
+<tr><td><code>dirt</code> 泥土</td><td>0</td><td>8</td><td>0.873</td><td>0.873</td><td>两侧都差</td></tr>
+<tr><td><code>wood</code> 木头</td><td>0</td><td>16</td><td><b>1.364</b></td><td>0.545</td><td>正</td></tr>
+<tr><td><code>cobble</code> 圆石</td><td>0</td><td>16</td><td>0.545</td><td><b>1.364</b></td><td>负</td></tr>
+<tr><td><code>sandstone</code> 沙岩</td><td>1</td><td>24</td><td>1.136</td><td>1.136</td><td>双侧</td></tr>
+<tr><td><code>red_sandstone</code> 红沙岩</td><td>1</td><td>24</td><td>1.136</td><td>1.136</td><td>双侧</td></tr>
+<tr><td><code>snow</code> 雪</td><td>1</td><td>24</td><td>1.136</td><td>1.136</td><td>双侧</td></tr>
+<tr><td><code>ice</code> 冰</td><td>1</td><td>24</td><td>1.136</td><td>1.136</td><td>双侧</td></tr>
+<tr><td><code>iron</code> 铁</td><td>2</td><td>32</td><td>1.050</td><td>1.100</td><td>双侧（最弱）</td></tr>
+<tr><td><code>gold</code> 金</td><td>2</td><td>40</td><td>1.250</td><td>1.150</td><td>双侧</td></tr>
+<tr><td><code>diamond</code> 钻石</td><td>3</td><td>56</td><td><b>1.500</b></td><td><b>1.500</b></td><td>双侧（万能）</td></tr>
+<tr><td><code>emerald</code> 绿宝石</td><td>2</td><td>48</td><td>1.418</td><td>1.418</td><td>双侧</td></tr>
+<tr><td><code>nether_dirt</code> 下界泥土</td><td>1</td><td>24</td><td>1.023</td><td>1.705</td><td>负</td></tr>
+<tr><td><code>nether_rock</code> 下界岩石</td><td>1</td><td>32</td><td>0.852</td><td>1.705</td><td>负</td></tr>
+<tr><td><code>nether_wood</code> 下界原木</td><td>1</td><td>32</td><td><b>1.705</b></td><td>1.136</td><td>正</td></tr>
+<tr><td><code>nether_brick</code> 下界砖</td><td>2</td><td>40</td><td>1.136</td><td>1.705</td><td>负</td></tr>
+<tr><td><code>soul</code> 灵魂</td><td>0</td><td><b>128</b></td><td>1.136</td><td>1.136</td><td>双侧（中性）</td></tr>
+<tr><td><code>end_rock</code> 末地岩石</td><td>2</td><td>48</td><td>1.136</td><td><b>1.989</b></td><td>负</td></tr>
+<tr><td><code>chorus</code> 紫颂花</td><td>2</td><td>48</td><td><b>2.273</b></td><td>1.705</td><td>正（最高）</td></tr>
+<tr><td><code>purpur</code> 紫珀砖</td><td>3</td><td>32</td><td>1.136</td><td><b>1.989</b></td><td>负</td></tr>
+</table>
+<h3>7.4 是否存在"失控组合"</h3>
+<p><b>有，但只有一个，而且非常极端：外围 4× 紫颂花 + 中心 紫颂花 + 空无记录。</b></p>
+<p>原因链：</p>
+<p>1. <b>紫颂花同时是"木类外围"和"空无属性"</b> —— 它是唯一一个既能摆进升华结构、又能与空无记录构成 ×2.00 同类的材质。</p>
+<p>2. 空无 ↔ 霜寒是交叉对 → 霜寒记录也吃 ×1.50。</p>
+<p>3. 于是偏好可以做到 <code>4.00 × 4.00 = 16.00</code>，而升华为 0.90 × 0.90，<b>总值 12.96</b>。</p>
+<p>4. 对比第二集团（下界原木 + 下界原木 + 下界记录）只有 <b>5.062</b> —— <b>2.56 倍断层</b>。</p>
+<p>具体后果：</p>
+<ul>
+<li>一条 32 点的空无记录 → <b>415 点</b> 注入。<b>一条记录就能把灵魂杖（128）冲爆 3.2 倍</b>，直接满足绽裂入场券。</li>
+<li>若外围与中心都用紫颂花，<b>4 尊外围雕像只要 4 个紫颂花方块</b>，采集成本极低（末地一找一大片）。</li>
+<li>反向验证：如果用下界原木，同样一条记录只能给 162 点。<b>用不用紫颂花 = 2.56 倍差距，且没有任何额外成本。</b></li>
+</ul>
+<p><b>第二个不那么极端但同样要注意的点</b>：<code>Math.max(1, …)</code> 的 1 点下限意味着"<b>失败也有保底 1 点</b>"。结合 §7.1 的"0 点失败会烧掉记录"，<b>1 点注入比 0 点失败好，但两者观感几乎一样</b>（都是"什么都没发生"），玩家难以分辨是"运气差"还是"结构摆错了"。</p>
+<hr>
+<h2>§8 第二部分的账本基础（数字先行）</h2>
+<h3>8.1 绽裂账本（空存储、无偏好加成）</h3>
+<table>
+<tr><th>杖含量</th><th>极性</th><th>心绪总量 (×3)</th><th>每份</th><th>±20% 区间</th><th>理想分配</th><th>实际装下</th><th>溢出</th><th>→ 经验</th></tr>
+<tr><td>9</td><td>正</td><td>27</td><td>4</td><td>3–5</td><td>24</td><td>24</td><td>0</td><td>0</td></tr>
+<tr><td>16</td><td>正</td><td>48</td><td>8</td><td>6–10</td><td>48</td><td>48</td><td>0</td><td>0</td></tr>
+<tr><td><b>17</b></td><td>正</td><td>51</td><td>8</td><td>6–10</td><td><b>48</b></td><td>48</td><td>3（被整除丢掉）</td><td>0</td></tr>
+<tr><td>32</td><td>正</td><td>96</td><td>16</td><td>13–19</td><td>96</td><td>96</td><td>0</td><td>0</td></tr>
+<tr><td>57</td><td>正</td><td>171</td><td>28</td><td>22–34</td><td>168</td><td>168</td><td>3</td><td>0</td></tr>
+<tr><td>98</td><td>正</td><td>294</td><td>49</td><td>39–59</td><td>294</td><td>294</td><td>0</td><td>0</td></tr>
+<tr><td>129（灵魂满溢）</td><td>正</td><td>387</td><td>64</td><td>51–77</td><td>384</td><td>384</td><td>3</td><td><b>0</b></td></tr>
+<tr><td>201</td><td>正</td><td>603</td><td>100</td><td>80–120</td><td><b>600</b></td><td>600</td><td>3</td><td><b>0</b></td></tr>
+<tr><td>360</td><td>正</td><td>1080</td><td>180</td><td>144–216</td><td>1080</td><td><b>600</b>（封顶）</td><td>480</td><td><b>160</b></td></tr>
+<tr><td>201</td><td>负</td><td>603</td><td>150</td><td>120–180</td><td>600</td><td><b>400</b>（4×100 封顶）</td><td>200</td><td><b>66</b></td></tr>
+<tr><td>360</td><td>负</td><td>1080</td><td>270</td><td>216–324</td><td>1080</td><td><b>400</b></td><td>680</td><td><b>226</b></td></tr>
+</table>
+<p><b>关键阈值（正面）</b>：每份 = <code>(含量×3) // 6</code>，要<b>恰好不溢出</b>需 <code>每份 ≤ 100</code> → <code>含量 ≤ 200</code>。</p>
+<p><b>关键阈值（负面）</b>：每份 = <code>(含量×3) // 4</code>，要<b>恰好不溢出</b>需 <code>每份 ≤ 100</code> → <code>含量 ≤ 133</code>。</p>
+<p><b>存储总容量</b>：正面 <code>6×100 = 600</code>，负面 <code>4×100 = 400</code>。</p>
+<h3>8.2 每条"满溢"杖（容量+1）一次绽裂能拿到什么</h3>
+<table>
+<tr><th>杖种类</th><th>容量</th><th>满溢含量</th><th>心绪总量</th><th>每份</th><th>实际装下</th><th>经验</th></tr>
+<tr><td>dirt</td><td>8</td><td>9</td><td>27</td><td>4</td><td>24</td><td>0</td></tr>
+<tr><td>wood / cobble</td><td>16</td><td>17</td><td>51</td><td>8</td><td>48</td><td>0</td></tr>
+<tr><td>sandstone…nether_dirt</td><td>24</td><td>25</td><td>75</td><td>12</td><td>72</td><td>0</td></tr>
+<tr><td>iron / nether_rock / nether_wood / purpur</td><td>32</td><td>33</td><td>99</td><td>16</td><td>96</td><td>0</td></tr>
+<tr><td>gold / nether_brick</td><td>40</td><td>41</td><td>123</td><td>20</td><td>120</td><td>0</td></tr>
+<tr><td>emerald / end_rock / chorus</td><td>48</td><td>49</td><td>147</td><td>24</td><td>144</td><td>0</td></tr>
+<tr><td>diamond</td><td>56</td><td>57</td><td>171</td><td>28</td><td>168</td><td>0</td></tr>
+<tr><td>soul</td><td>128</td><td>129</td><td>387</td><td>64</td><td>384</td><td>0</td></tr>
+</table>
+<p><b>读表</b>：<b>只要刚好满溢 1 点，存储都装得下，经验为 0。</b> 溢出转经验只在"一条记录就把杖灌到远超容量"时才发生。</p>
+<h3>8.3 经验转换效率</h3>
+<p>代码链（<code>RitualEffects.java:305</code>、<code>:321</code>、<code>:342</code>）：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+心绪总量 = round(法杖含量 × 3.0)
+加成后   = round(心绪总量 × 外围偏好)          // 外围偏好 0.50 ~ 4.00
+每份     = 加成后 // (正面 6 / 负面 4)
+装下     = Σ min(每份, 100)                    // 每类上限 100
+经验     = (每份 × 份数 − 装下) ÷ 3            // 整数除法
+</pre>
+<p><b>当存储全满时</b>（<code>每份 &gt; 100</code>，即正面 <code>含量 &gt; 200</code>、负面 <code>含量 &gt; 133</code>）：</p>
+<div class="card small"><b>经验 ≈ 法杖含量 × 外围偏好 ÷ 3</b>，即 <b>经验 : 法杖含量 ≈ 1 : 3（无偏好）到 4 : 3（满偏好）</b>。</div>
+<p><b>注意这里没有 33 % 这个数</b> —— <code>×3</code> 和 <code>÷3</code> 互相抵消了，剩下的唯一变量是<b>外围偏好</b>。</p>
+<p>换句话说：<b>绽裂把"多少点情绪"直接变成"多少点经验"，比例是 1:1（无偏好）到 1.33:1（满偏好）。</b></p>
+<p>对照：<b>烧掉一条记录</b> + <b>30 秒</b> + <b>5 尊雕像结构</b> 换来的法杖含量，最多 <b>415 点</b> → 单次绽裂最多 <b>≈138 点经验</b>（1 次绽裂，外围紫颂花偏好 ×1.33 的情况）。</p>
+<p>而<b>正常玩（存储没满）一条记录能产生的经验是 0</b>。</p>
+<hr>
+<h2>§9 平衡意见（参谋视角）</h2>
+<div class="card small">每条给<b>把握程度</b>：高 = 有代码事实支撑 / 中 = 推理但未见作者意图 / 低 = 依赖作者未公开的取舍。</div>
+<h3>9.1 明显不合理的数值区间</h3>
+<h4>★★★ 问题 1：紫颂花是"唯一的孤儿外挂"，断层 2.56 倍（把握：<b>高</b>）</h4>
+<p><b>事实</b>：<code>chorus</code> 是<b>唯一</b>同时满足"属于升华合法的木类"且"属性 = 空无"的材质。</p>
+<p>空无 ↔ 霜寒是交叉对，于是：</p>
+<ul>
+<li>空无记录：外围 4.00 × 中心 4.00 = <b>16.00</b></li>
+<li>霜寒记录：外围 3.00 × 中心 3.00 = <b>9.00</b></li>
+<li>其它任何外围（下界原木 3.00、木头 2.50）：最好只有 <code>3.00 × 3.00 = 9.00</code></li>
+</ul>
+<p><b>后果</b>：14.5 级升级后，<b>升华的"最优解"永远是紫颂花</b>，没有任何取舍。</p>
+<p>且"用不用紫颂花"= 2.56 倍注入差，<b>玩家的全部决策被压缩成"我有没有紫颂花"</b>。</p>
+<p><b>建议改法（三选一，按推荐度排序）</b>：</p>
+<table>
+<tr><th>方案</th><th>具体改动</th><th>效果</th></tr>
+<tr><td><b>A（推荐）</b></td><td><code>CHORUS</code> 正面 2.00 → <b>1.60</b>，负面 1.50 → <b>1.20</b>；给 <code>PURPUR</code> 正面 1.00 → <b>1.20</b>（补偿它 3 级只有 32 容量）</td><td>紫颂花空无记录变 <code>0.90×0.90×(3.20×3.20)=8.29</code>，与下界原木的 5.06 拉近到 1.64 倍</td></tr>
+<tr><td>B</td><td>把紫颂花的属性从 <code>VOID</code> 改成 <code>null</code>（走无条件增益）</td><td>立刻消除"同类×同类"的 16 倍，但紫颂花失去属性身份，和末地设定冲突</td></tr>
+<tr><td>C</td><td>让 <code>NETHER_WOOD</code>/<code>WOOD</code> 也能吃到交叉（例如让"自然"也进交叉表）</td><td>治标，会让自然属性从"最容易获得"变成"也最强"，与 <code>EmotionAttribute.java:34</code> 的设计意图冲突</td></tr>
+</table>
+<p><b>我的数字建议（方案 A 的完整版）</b>：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+CHORUS   正面 2.00 → 1.60     负面 1.50 → 1.20      （保留"最强木头"身份，不再断层）
+PURPUR   正面 1.00 → 1.20     负面 1.75 → 1.60      （3级/32容量需要补偿）
+END_ROCK 正面 1.00 → 1.10     负面 1.75 → 1.65      （末地石头略降，与下界岩石 1.50 拉开但不过分）
+NETHER_ROCK 正面 0.75 → 0.85                        （正面不该被"石头不该给正面"压这么低）
+</pre>
+<p>改完后最大倍率：<code>0.90 × 1.00 × (3.20 × 1.60) = 4.61</code>（外围末地岩石+中心紫颂花的空无记录 → 单条 32 点记录 147 点）。</p>
+<p>新断层 = 4.61 / 5.06 ≈ <b>0.91</b>（不再是断层）。</p>
+<h4>★★☆ 问题 2：升华与沉坠不对称，沉坠天生弱 15 %（把握：<b>高</b>）</h4>
+<p><b>事实</b>：把双侧平均最好的组合列出来：</p>
+<table>
+<tr><th>仪式</th><th>最优组合</th><th>偏好乘积</th><th>总倍率</th><th>32 点记录注入</th></tr>
+<tr><td>升华</td><td>紫颂花 × 紫颂花</td><td>4.00 × 4.00 = 16.00</td><td>12.960</td><td>415</td></tr>
+<tr><td>沉坠</td><td>末地岩石 × 紫珀砖</td><td>3.50 × 3.50 = 12.25</td><td>11.025</td><td><b>353</b></td></tr>
+</table>
+<p>根因：木类外围的正面峰值（紫颂花 2.00）&gt; 石头类的负面峰值（末地岩石 1.75），而<b>两者的"属性层"都能吃满 ×2.00</b>，所以差距直接来自极性层。</p>
+<p>更糟的是<b>「下界」组合两边完全一样</b>（下界原木 1.50 / 下界岩石 1.50），但<b>升华为 0.75×0.75，沉坠为 0.75×0.90</b>（因为下界砖是 2 级、容量 40，能做中心；而对应的"下界原木类 2 级"不存在）。</p>
+<p><b>建议</b>：把 <code>END_ROCK</code> 负面从 1.75 提到 <b>1.80</b>，或把 <code>CHORUS</code> 正面从 2.00 降到 1.75（与问题 1 的改法合并处理）。</p>
+<p><b>目标</b>：两个仪式的最大倍率落在同一区间（我建议都收在 <b>8.0–10.0</b>，对应 32 点记录注入 256–320 点）。</p>
+<h4>★★★ 问题 3：灵魂雕像是一个"数值陷阱"（把握：<b>高</b>）</h4>
+<p><b>事实</b>：<code>soul</code> = 等级 0（注入 <b>50 %</b>）+ 容量 <b>128</b>（全场最高）+ 属性空无 + 特性中性。</p>
+<p>这是<b>自相矛盾</b>的一行：它想当"大容量容器"，但<b>注入效率全场最低之一</b>，导致它装满的代价是别人的 2 倍。</p>
+<p><b>而且它作为中心时注入比例 0.50，是所有中心里最低的一档</b>（与泥土/木头/圆石并列）——</p>
+<p><b>玩家花了 128 容量的期待，换来的是每次注入打对折。</b></p>
+<p>更微妙的是它<b>反而是绽裂的最佳载体</b>（容量越大，能积累的情绪越多才越容易超容量）：</p>
+<ul>
+<li>用泥土杖（容量 8）：任何一次注入（哪怕 1 点）都超容量 → 绽裂立刻可用，但心绪总量只有 <code>9×3 = 27</code>。</li>
+<li>用灵魂杖（容量 128）：要攒到 <b>129 点</b> 才能绽裂 → 需要 1–4 条记录，但一次能炸出 387 点心绪。<b>而 §8.2 显示 387 &lt; 600，照样装得下、经验为 0。</b></li>
+</ul>
+<p><b>建议（把握：中，因为取决于作者想让灵魂干什么）</b>：</p>
+<ul>
+<li>如果灵魂是"容量专精"：<code>capacity 128 → 96</code>，<code>tier 0 → 1</code>（注入 50 % → 75 %）。代价是容量优势变小，但至少不自相矛盾。</li>
+<li>如果灵魂是"高阶容器"：<code>tier 0 → 2</code>，容量 128 → 160。<b>但必须同时压低它在绽裂里的优势</b>（见 9.3）。</li>
+<li><b>最省事的改法</b>：只把 <code>tier 0 → 1</code>。容量 128 保留。这样灵魂从"下位陷阱"变成"中期可用的大泵"，且不动数据结构。</li>
+</ul>
+<h4>★★☆ 问题 4：铁完全被金支配，泥土完全被木头支配（把握：<b>高</b>）</h4>
+<p><b>铁的支配链</b>（全部同属性，只看数值）：</p>
+<table>
+<tr><th></th><th>等级</th><th>容量</th><th>无条件乘数（正/负）</th></tr>
+<tr><td>铁</td><td>2</td><td>32</td><td>1.05 / 1.10</td></tr>
+<tr><td>金</td><td>2</td><td><b>40</b></td><td><b>1.25 / 1.15</b></td></tr>
+</table>
+<p>铁在<b>等级相同、容量更小、两个方向的乘数都严格小于金</b>。金只需要 9 个金锭（一个方块）—— 这不是"便宜换弱"，这是<b>纯支配</b>。</p>
+<p><b>建议</b>：铁要么降级到 1 级（容量 24，乘数 1.05/1.10 保留，成为"便宜的 1 级万能中心"），要么把乘数提上去（<b>1.20 / 1.25</b>，让铁的负面比金高，形成"铁偏负、金偏正"的分工）。</p>
+<p><b>我倾向后者</b>（把握：中）：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+METAL_IRON   正面 1.05 → 1.20    负面 1.10 → 1.25     （铁 = 便宜、偏负的万能泵）
+METAL_GOLD   正面 1.25 → 1.25    负面 1.15 → 1.05     （金 = 偏正，与铁错开）
+</pre>
+<p><b>泥土的支配链</b>：<code>dirt</code> = 0 级 / 容量 8 / 双面 0.80；<code>wood</code> = 0 级 / 容量 16 / 正面 1.25。</p>
+<p><b>木头在两个方向都不输泥土，容量还大一倍。</b> 泥土唯一的"优势"是它可以被草方块/菌丝/灰化土/泥巴轻易获得 —— 但木头同样满世界都是。</p>
+<p><b>建议</b>：把 <code>DIRT</code> 改成真正的"垃圾处理品"定位，让它<b>有一样东西是别人没有的</b>（把握：中）：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+DIRT  容量 8 → 16（与 wood/cobble 齐平）
+      特殊：泥土是唯一【允许把任意极性倒进去而不触发极性冲突反噬】的材质
+            （即 RitualEffects.java:95-119 的"两股对立情绪相撞"对 dirt 中心不生效）
+</pre>
+<p>这条改动的依据在代码里：<code>RitualEffects.java:95-119</code> 的极性冲突惩罚<b>非常严厉</b>（清空法杖 + 反胃 400 tick + 中毒 200 tick）。给它开一个"泥土豁免"的口子，泥土就有了明确用途，且不动任何倍率数字。</p>
+<h4>★☆☆ 问题 5：仪式注入完全不吃"输出系数"，导致等级表的另一半形同虚设（把握：<b>高</b>）</h4>
+<p><b>事实</b>：<code>outputRatioForTier</code> 只出现在 <code>EmotionStaffItem</code>。仪式注入公式是 <code>外围注入 × 中心注入 × 偏好</code>，<b>没有输出系数</b>。</p>
+<p>后果：<b>中心雕像等级的价值只剩"注入比例 0.50/0.75/0.90/1.00"这一条</b>，等级表里那半张"输出 80/90/100/120 %"只影响"挥杖打怪时给几秒生命恢复/虚弱"（<code>EmotionStaffItem.java:157</code>：<code>duration = clamp(power × 20, 20, 600)</code>，上限 30 秒）。</p>
+<p><b>这条不算 bug，但它意味着</b>：玩家评估一尊雕像时，<b>输出系数几乎不进入决策</b>，因为它跟"攒情绪→绽裂→拿心绪"的主循环无关。</p>
+<p><b>建议</b>（把握：中）：如果作者希望等级表两半都有意义，可以给仪式注入加一个"中心输出等级的小额加成"，例如</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+lossss = 外围注入 × 中心注入 × 偏好 × (0.85 + 0.15 × 中心等级)   // 0级 ×0.85，3级 ×1.30
+</pre>
+<p><b>注意</b>：这会<b>普遍提高</b>注入量（0 级中心反而被削弱），需要同时把基础倍率整体下调，否则 §7 的极值会往上走。<b>我不推荐在没有整体重算的情况下动这条。</b></p>
+<h3>9.2 是否存在支配策略</h3>
+<p><b>有，而且很明显。</b></p>
+<h4>支配策略 1：<b>永远用升华 + 紫颂花外围 + 紫颂花中心 + 只记"空无"记录</b>（把握：<b>高</b>）</h4>
+<table>
+<tr><th>对比项</th><th>升华 + 紫颂花</th><th>沉坠 + 末地岩石/紫珀</th></tr>
+<tr><td>最大倍率</td><td><b>12.96</b></td><td>11.03</td></tr>
+<tr><td>外围雕像数</td><td>4</td><td>4</td></tr>
+<tr><td>外围方块</td><td>紫颂花（末地，一棵树砍一堆）</td><td>末地岩石 / 紫珀砖</td></tr>
+<tr><td>中心方块</td><td>紫颂花</td><td>紫珀砖（要烧紫颂果）</td></tr>
+<tr><td>记录获取</td><td>末地群系（空无）或霜寒</td><td>同</td></tr>
+<tr><td><b>结论</b></td><td><b>成本更低、收益更高</b></td><td>全面劣势</td></tr>
+</table>
+<p>只要玩家知道这条，<b>沉坠仪式就成了"没有存在理由"的选择</b>（除了它产出负面心绪这条设定上的理由）。</p>
+<h4>支配策略 2：<b>外层"下界"是万能次优解</b>（把握：<b>中高</b>）</h4>
+<p>下界组合 <code>下界原木 × 下界原木</code> 对下界记录 = <b>5.062</b>，而且：</p>
+<ul>
+<li>下界原木容量 32（比木头 16 大一倍）；</li>
+<li>下界记录极易获得（下界群系 + <code>soul_sand</code>/<code>basalt_deltas</code>/<code>crimson_forest</code> 全归下界属性）；</li>
+<li>下界岩石（9 条材质）容量 32，是沉坠侧的对应物。</li>
+</ul>
+<p><b>问题</b>：下界组合的<b>上限虽然低于紫颂花，但它的"下限"高得多</b>（不需要末地）。这让"紫颂花"变成"毕业装"，而下界变成"70 % 效果、30 % 成本"的常态选择 —— <b>这其实是个健康的设计</b>，只要紫颂花不再断层 2.56 倍。<b>所以问题 1 的修正是解锁整个体系的关键。</b></p>
+<h4>支配策略 3（<b>最需要警惕的</b>）：<b>紫珀砖是所有"负面杖"的默认中心</b>（把握：<b>高</b>）</h4>
+<p><code>purpur</code> = 等级 3（注入 100 %）+ 容量 32 + 属性空无 + 负面 1.75 + 无条件 1.00。</p>
+<p>作为中心：负面峰值 <code>1.75 × 2.00(空无同类) × 1.00 = 3.50</code>，且<b>注入比例 1.00 是全场最高</b>。</p>
+<p>对比 <code>end_rock</code>（等级 2 / 0.90 / 容量 48 / 负面 1.75 × 2.00 = 3.50）：</p>
+<ul>
+<li>紫珀砖：<code>0.90(外围) × 1.00(中心) × (3.50 × 3.50) = 11.025</code></li>
+<li>末地岩石：<code>0.90 × 0.90 × (3.50 × 3.50) = 9.922</code></li>
+</ul>
+<p><b>紫珀砖用更小的容量换到了 11 % 更多注入</b> —— 这是<b>正确</b>的权衡（容量小 → 更容易超容量 → 更快绽裂）。</p>
+<p><b>但它的"共享存储"特性（<code>sharedStorage()</code>）在仪式路径上找不到调用点</b>，所以目前紫珀砖实际就是<b>"3 级、容量 32、负面 1.75 的空无中心"</b>，没有任何独特机制。<b>建议把"共享存储"真正接上，否则它就是一个纯数值件。</b></p>
+<h3>9.3 是否存在死选项</h3>
+<table>
+<tr><th>选项</th><th>死因</th><th>把握</th></tr>
+<tr><td><b><code>cavern</code>（幽闭）、<code>ocean</code>（深海）、<code>mountain</code>（高峻）、<code>ruin</code>（残迹）</b></td><td><b>没有任何雕像材质带这四种属性</b> → 这四种记录<b>永远吃不到属性层的 ×2.00 / ×1.50</b>。只有绿宝石对 <code>ruin</code> 给 ×1.50。</td><td><b>高</b></td></tr>
+<tr><td><b><code>challenge</code>（挑战）作为"记录属性"</b></td><td>只在两种情况下有加成：① 绿宝石中心（×3.00 → 但 ×3.00 里含 ×1.50 的挑战层，实际是 <code>1.00 × 1.50 × 1.20 = 1.80</code>）；② 高峻的交叉（但<b>高峻没有材质</b>）。<b>而绿宝石 ×1.80 远低于"空无记录 × 紫颂花 4.00"</b>。更糟：挑战组默认正面占比只有 0.25–0.50 → 档位 1 → <b><code>amountFrom</code> 只有 16</b>（别的最高档是 32）。</td><td><b>高</b></td></tr>
+<tr><td><b><code>mountain</code> ↔ <code>challenge</code> 交叉对</b></td><td>双方<b>都没有材质</b>（<code>mountain</code> 无材质，<code>challenge</code> 无材质）→ 这条交叉规则<b>在本模组里永远不会被触发</b>。</td><td><b>高</b></td></tr>
+<tr><td><b><code>cavern</code> ↔ <code>ocean</code> 交叉对</b></td><td>同上，双方都没材质。</td><td><b>高</b></td></tr>
+<tr><td><b><code>ruin</code> ↔ <code>village</code> 交叉对</b></td><td><code>village</code> 只有绿宝石一块，<code>ruin</code> 无材质 → 只能通过绿宝石触发（×1.50）。<b>半个死规则</b>。</td><td><b>高</b></td></tr>
+<tr><td><b><code>soul</code>（灵魂）作为"注入中心"</b></td><td>0 级注入 50 %，是所有中心里最低档；它"容量 128"的长处<b>在 30 秒仪式里帮不上忙</b>（容量只影响"能装多少"和"绽裂入场券"，不影响每次注入多少）。</td><td><b>中高</b></td></tr>
+<tr><td><b><code>nether_dirt</code> ↔ <code>nether_rock</code> 交叉对</b></td><td><b>下界泥土被下界岩石完全支配</b>：容量都是 1 级，但下界岩石容量 32 &gt; 24，正面 0.75 &lt; 0.90（泥土略好），负面两者都 1.50。<b>总账：泥土只赢正面 0.15，输容量 8。</b> 而且两者属性完全相同（下界），<b>互为完美替代品</b>。</td><td><b>中</b></td></tr>
+</table>
+<p><b>建议（把握：高）</b>：<b>给四种"无材质属性"至少各配一块材质。</b> 最省的做法是复用现成方块、只改 <code>EmotionStatueKind</code> 的一行：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+CAVERN   建议给「深板岩」系列（COBBLE 已有 deepslate…）→ 新增一种材质 kind「deepslate」，等级 1，容量 24，属性 幽闭
+OCEAN    建议给「海晶石 / 海晶灯」→ 新 kind「prismarine」，等级 1，容量 24，属性 深海
+MOUNTAIN 建议给「方解石 / 石笋块」→ 新 kind「calcite_block」，等级 1，容量 32，属性 高峻
+RUIN     建议给「苔石 / 裂石砖」→ 新 kind「mossy_stone」，等级 1，容量 24，属性 残迹
+CHALLENGE 建议给「黑曜石 / 哭泣的黑曜石」→ 新 kind「obsidian」，等级 2，容量 32，属性 挑战
+</pre>
+<p><b>代价</b>：<code>EmotionStatueKind</code> 从 19 增到 24，<code>StatueMaterial</code> 要相应增加（重跑 <code>_tools/gen-statue-materials.mjs</code>），<b>书页与命令的清单会变长</b>。</p>
+<p><b>收益</b>：11 种属性里 5 种从"死属性"变成"有归属"，玩家去海洋/高山/废墟记录情绪才有正反馈 —— <b>这是当前最大的设计空洞</b>。</p>
+<div class="card small">⚠️ 如果作者不想加种类，<b>次优方案</b>：给现有材质加"属性别名"。例如让 <code>cobble</code> 除了自然之外，对 <code>cavern</code>/<code>ruin</code> 也给 ×1.50（改 <code>crossPartners</code> 即可，不动枚举数量）。<b>代价是"交叉"这个概念被稀释。</b></div>
+<h3>9.4 三种仪式的收益/成本是否失衡</h3>
+<table>
+<tr><th>仪式</th><th>结构</th><th>消耗</th><th>时长</th><th>直接产出</th><th>间接产出</th></tr>
+<tr><td><b>升华</b></td><td>中心 1 + 外围 4（木类，同类）</td><td>1 条记录</td><td>30 秒</td><td>法杖 +1~415 点（正面）</td><td>可绽裂 → 心绪</td></tr>
+<tr><td><b>沉坠</b></td><td>中心 1 + 外围 4（石类，同类）</td><td>1 条记录</td><td>30 秒</td><td>法杖 +1~353 点（负面）</td><td>可绽裂 → 心绪</td></tr>
+<tr><td><b>绽裂</b></td><td>中心 1 + 外围 8（任意，朝外）</td><td><b>不消耗记录</b></td><td>（见下）</td><td>心绪 + 按含量×3</td><td>装不下 → 经验</td></tr>
+</table>
+<p><b>时长问题（把握：中）</b>：<code>OUTER_RITUAL_TICKS = 600</code> 只用在升华/沉坠（<code>RitualEffects.java:211</code>）。<b>绽裂没有时长常量</b>，<code>burst()</code> 是<b>立即结算</b>的（<code>RitualEffects.java:274-385</code>，方法内没有任何 <code>startRitual</code>/延时调用）。</p>
+<p><b>所以绽裂是"零时长"的</b> —— 它只要 8 尊外围雕像（比升华/沉坠多 4 尊）作为成本。</p>
+<p><b>失衡分析</b>：</p>
+<ul>
+<li><b>升华/沉坠</b>：成本 = 1 条记录 + 30 秒 + 5 尊雕像。收益 = 1~415 点情绪。</li>
+<li><b>绽裂</b>：成本 = 8 尊雕像（一次性建设，可复用）+ 0 秒 + 0 条记录。收益 = 最多 4980 点心绪 + 1460 经验。</li>
+</ul>
+<p><b>绽裂不消耗记录</b>这件事本身是对的（它是"释放"不是"收集"），但它导致的后果是：</p>
+<div class="card small"><b>绽裂的边际成本 ≈ 0</b>（雕像建好之后），而它的产出直接消耗"存储容量"这个<b>每玩家上限 1000 点（6×100 + 4×100）的资源</b>。</div>
+<div class="card small">也就是说：<b>绽裂的瓶颈在心绪存储，不在仪式本身。</b></div>
+<p>这个设计是<b>自洽的</b>，但它带来两个具体问题（见 9.5、9.6）。</p>
+<p><b>建议</b>（把握：中）：</p>
+<p>1. <b>给绽裂一个时长</b>（例如 <code>BURST_TICKS = 200</code>，10 秒），让"多摆 4 尊雕像"这个成本更实在，也给"气球爆开"的动画留时间。</p>
+<p>2. <b>把绽裂的入场券从"超容量 1 点"改成"超容量 50 %"</b>，理由见 9.6。</p>
+<p>3. <b>让升华/沉坠的成本结构对称</b>：目前沉坠的产出天生低 15 %（问题 2），<b>建议通过调 <code>END_ROCK</code>/<code>CHORUS</code> 的极性层拉平，而不是通过增加沉坠的奖励</b>。</p>
+<h3>9.5 心绪 100/类的上限与绽裂 ×3 的产出是否匹配</h3>
+<p><b>答：严重不匹配，而且是双向的</b>（把握：<b>高</b>）。</p>
+<h4>方向一：上限太低，一次"满溢小杖"就能顶满</h4>
+<p><code>EmotionMoodStore.CAPACITY = 100</code>（每类），<b>存储总容量</b> = 正面 600 / 负面 400。</p>
+<p>而 §8.2 显示：<b>一次满溢（容量+1）的绽裂</b>产出心绪总量从 27（泥土杖）到 387（灵魂杖）。</p>
+<ul>
+<li>泥土杖：27 点，分 6 份每份 4 → <b>存储毫无压力</b>（吸收率 100 %）。</li>
+<li>灵魂杖：387 点，分 6 份每份 64 → <b>存储也毫无压力</b>（384 ≤ 600）。</li>
+<li><b>只有含量 &gt; 200 时才开始溢出。</b></li>
+</ul>
+<p><b>但</b>：§6.8 的算例 7 里，一条记录就能把杖灌到 415 点 → 绽裂产出 4980 点 → <b>存储只装 600，其余 4380 变 1460 经验</b>。</p>
+<p><b>换句话说：一套紫颂花结构 + 一条空无记录，第一次绽裂就把六种正面心绪全部顶满到 100。</b></p>
+<p><b>这是"一下就顶满"的典型。</b> 之后玩家再绽裂，<b>装不下的部分全变经验</b>。</p>
+<h4>方向二：上限太高（相对低容量杖的产出），导致整数截断浪费</h4>
+<table>
+<tr><th>杖</th><th>满溢含量</th><th>心绪总量</th><th>每份</th><th>理想分配</th><th>与总量之比</th></tr>
+<tr><td>dirt</td><td>9</td><td>27</td><td>4</td><td>24</td><td><b>88.9 %</b>（丢 3 点）</td></tr>
+<tr><td>wood</td><td>17</td><td>51</td><td>8</td><td>48</td><td><b>94.1 %</b>（丢 3 点）</td></tr>
+<tr><td>soul</td><td>129</td><td>387</td><td>64</td><td>384</td><td><b>99.2 %</b>（丢 3 点）</td></tr>
+</table>
+<p><b>整数截断的损失很小（≤ 11 %）</b>，所以这一侧不是大问题。<b>真正的问题是方向一。</b></p>
+<h4>建议（把握：高）</h4>
+<table>
+<tr><th>建议</th><th>具体数值</th><th>理由</th></tr>
+<tr><td><b>A（推荐）</b></td><td>把转换比从 <b>×3 → ×1.5</b>，同时每类上限 <b>100 → 150</b></td><td>×1.5 让 415 点含量 → 622 点心绪 → 分 6 份每份 103（刚好在 150 之下）；存储总容量 900，<b>一次顶不满，两次才满</b>。玩家的"攒→炸→撒"有了 2 次节奏</td></tr>
+<tr><td>B</td><td>保持 ×3，每类上限 <b>100 → 300</b></td><td>存储总容量 1800，415 点含量 → 1245（正面）也能装下。但 300 这个数字太整，"装满"的成就感被拉长</td></tr>
+<tr><td>C</td><td>保持 ×3 和 100，但给每份加"软上限"：<code>每份 = min(每份, 40)</code>，超出部分直接转经验</td><td>改动最小，且天然压制紫颂花断层的影响。<b>但会让"大容量杖"失去意义</b></td></tr>
+</table>
+<p><b>我推荐 A</b>，并配套：<b>绽裂的 <code>totalMood = round(amount × 3.0)</code> 改成 <code>round(amount × 1.5)</code></b>（<code>RitualEffects.java:305</code>），<code>EmotionMoodStore.CAPACITY = 100 → 150</code>（<code>EmotionMoodStore.java:30</code>）。</p>
+<h3>9.6 溢出转经验（÷3）会不会变成刷经验的手段</h3>
+<p><b>结论：作为"刷经验引擎"效率很低；但作为"无上限的溢出出口"有一个结构性问题。</b>（把握：<b>高</b>）</p>
+<h4>效率测算</h4>
+<p><code>溢出心绪 ÷ 3 = 经验</code>，而 <code>心绪 = 法杖含量 × 3 × 外围偏好</code>。<b>两个 ×3 ÷3 互相抵消</b>，所以：</p>
+<p><b>每 1 点法杖含量 → 最多 1.33 点经验</b>（满外围偏好时；无偏好时是 1:1）。获得这些含量需要：</p>
+<ul>
+<li><b>1 条记录</b>（<code>amountFrom</code> 8~32，乘以份额 0~1 → <code>total</code> 2~32）</li>
+<li><b>一次 30 秒仪式</b></li>
+<li><b>一套 5 尊雕像的结构</b></li>
+</ul>
+<p><b>最乐观刷经验路径</b>：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+无限循环：外围 4× 紫颂花 + 中心紫颂花 + 空无记录 → 每条记录 415 点注入
+          → 攒 1 条就溢出 → 绽裂 → 600 点心绪（已满）+ 约 138 点经验
+</pre>
+<p>即 <b>每条记录 + 30 秒 ≈ 138 点经验</b>（约 4.8 级）。</p>
+<p>对照 Minecraft 常规经验农场（刷怪塔 ~1000+ 经验/分钟、烧炼机 ~1 级/分钟），<b>这个效率并不夸张</b>。</p>
+<p><b>而且</b>：需要 5 尊紫颂花雕像 + 8 尊绽裂雕像 + 稳定的空无记录来源（末地或霜寒群系）——<b>门槛比刷怪塔高得多</b>。</p>
+<p><b>所以：不是"刷经验的手段"，但确实是"多余的杖含量可以换经验"的好设计。</b></p>
+<h4>结构性问题：<b>经验产出没有上限，且 <code>capacity</code> 是载荷字段</b></h4>
+<p><code>RitualEffects.java:342</code> 是裸的 <code>int xp = shortfall / 3;</code>，<b>没有任何上限</b>。</p>
+<p>而 <code>shortfall</code> 由 <code>payload.amount()</code> 决定，<code>amount</code> 是<b>累加</b>的（<code>RitualEffects.java:192</code>：<code>payload.amount() + injected</code>）。</p>
+<p><b>如果 <code>capacity</code> 可以被设成很大的值</b>（<code>EmotionPayload</code> 的 <code>capacity</code> 是数据组件字段），那么"攒一根巨大容量的杖 → 一次绽裂 → 巨量经验"就是可能的。</p>
+<p><b>我检查了通往绽裂的路径</b>：</p>
+<ul>
+<li><code>GuideBookItem.java:344</code> 创建法杖时用的是 <code>kind.capacity()</code>（<b>受 19 种材质表约束，最大 128</b>）</li>
+<li>释放清空用 <code>payload.drained()</code>（<b>保留 capacity</b>，<code>:91-94</code>）—— 所以<b>旧杖的 capacity 会跟着走，不会被重置为 0</b></li>
+<li><code>effectiveCapacity()</code> 在 <code>capacity &lt;= 0</code> 时回落到 <code>kind.capacity()</code>（<code>:100-108</code>）</li>
+<li><b>我未核对</b>：是否有命令 / NBT 编辑 / 创造模式物品能直接写入 <code>capacity</code></li>
+</ul>
+<p><b>若存在这样的路径</b>，则 <code>xp = amount/3</code> 无上限 —— 一次绽裂可以给出任意经验。<b>这一条我标"未核对"，但值得作者确认。</b></p>
+<h4>入场券判定的边角（把握：<b>中</b>）</h4>
+<p><code>RitualEffects.java:283</code>：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+if (payload.amount() &lt;= payload.effectiveCapacity()) { ...拒绝... }
+</pre>
+<p><b>只有这一条下界判定，没有 <code>capacity &gt; 0</code> 的检查。</b></p>
+<p>我追了一遍 <code>capacity</code> 的所有来源，<b>结论是这里暂时不可被利用</b>（如实说明，不夸大）：</p>
+<ul>
+<li>仪式产出的杖 <code>capacity = kind.capacity()</code>，恒 &gt; 0（<code>GuideBookItem.java:344</code>）。</li>
+<li><code>payload.drained()</code>（释放清空）<b>保留 capacity</b>（<code>EmotionPayload.java:91-94</code>），所以"用过的杖"capacity 不会归 0。</li>
+<li><code>effectiveCapacity()</code> 只在 <code>capacity &lt;= 0</code> 且 <code>kindId</code> 为空时返回 0（<code>EmotionPayload.java:100-108</code>），</li>
+</ul>
+<p>  而这时 <code>amount</code> 也必然为 0 → <code>0 &lt;= 0</code> → <b>被拒绝</b> ✅。</p>
+<p><b>所以这不是漏洞，只是防呆不够</b>：<code>kindId</code> 为空、<code>capacity</code> 为 0、<code>amount</code> 恰好为 0 时靠 <code>&lt;=</code> 兜住，</p>
+<p>一旦将来有人让 capacity 变成<b>负数</b>（例如某个新写入路径），<code>amount &lt;= capacity</code> 会恒真 → 反而<b>拒绝一切</b>，或者被反向绕过。<b>建议加一行显式守卫。</b></p>
+<p><b>真正需要改的是门票门槛，不是这个边角</b>：</p>
+<p>3. <b>"极小极性的杖"根本不划算</b>：<code>capacity = 32</code>（紫珀砖），<code>amount = 33</code> → 满足入场券。</p>
+<p>   <code>totalMood = 99</code>，<code>per = 16</code>，<b>六种正面心绪各得 16 点</b> → 存入 96 点。<b>零经验</b>。</p>
+<p>   → 玩家为了"清掉 33 点"付出的成本（1 条记录 + 30 秒 + 4 尊雕像）<b>远超收益</b>。</p>
+<p>   → <b>这不是漏洞，是"不划算"</b> —— 但它暴露了"超容量 1 点"这个门槛毫无意义。</p>
+<p><b>真正的结构性问题</b>：<b>绽裂的入场券（超容量 1 点）太宽松</b>，导致：</p>
+<ul>
+<li>玩家<b>不需要</b>"升华/沉坠反复注入"就能绽裂 —— 只要多灌 1 点。</li>
+<li>这与 <code>癫狂构想-第二阶段实施方案.txt:229-230</code> 的设计意图（"法杖【超容量】正是绽裂仪式的入场券"，暗示需要"反复注入"）<b>在数值上脱节</b>。</li>
+</ul>
+<h4>建议（把握：高）</h4>
+<table>
+<tr><th>建议</th><th>具体改动</th><th>理由</th></tr>
+<tr><td><b>A（推荐）</b></td><td><code>RitualEffects.java:283</code> 的判定改为 <code>if (payload.amount() &lt; payload.effectiveCapacity() * 1.5) 拒绝</code>；并在 <code>payload.effectiveCapacity() &lt;= 0</code> 时<b>直接拒绝</b></td><td>让"超容量"名副其实，同时堵住 capacity=0 的边角</td></tr>
+<tr><td><b>B</b></td><td>经验产出加软上限：<code>int xp = Math.min(shortfall / 3, 60);</code></td><td>单次绽裂最多 2 级经验，杜绝"一根巨杖换 1000 经验"</td></tr>
+<tr><td><b>C</b></td><td>溢出不再转经验，改为"溢出部分按 1:1 存进一个<b>无属性标签</b>的溢出池"（上限另设，例如 200/类）</td><td>保留"不浪费"的善意，但把经验彻底排除，避免任何刷经验联想。<b>需要新数据结构，成本最高</b></td></tr>
+</table>
+<p><b>我推荐 A + B 一起做。</b></p>
+<h3>9.7 等级 0→3 的收益曲线是否平滑</h3>
+<p><b>注入比例曲线是平滑的</b>（把握：<b>高</b>）：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+0→1  0.50 → 0.75    +50.0 %
+1→2  0.75 → 0.90    +20.0 %
+2→3  0.90 → 1.00    +11.1 %
+</pre>
+<p>递减递增，符合"边际收益递减"。<b>这条没问题。</b></p>
+<p><b>容量曲线是完全不平滑的</b>（把握：<b>高</b>）：</p>
+<p>按等级看容量的实际分布：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+0 级：8, 16, 16, 128    ← 包括全场最大和全场最小
+1 级：24, 24, 24, 24, 24, 32, 32
+2 级：32, 40, 40, 48, 48, 48
+3 级：32, 56             ← 32 与 1 级并列，56 也没超过 2 级太多
+</pre>
+<p><b>问题点</b>：</p>
+<table>
+<tr><th>现象</th><th>具体</th><th>把握</th></tr>
+<tr><td><b><code>purpur</code>（3 级 / 容量 32）容量倒挂</b></td><td>3 级的紫珀砖容量 <b>32</b>，比 2 级的 <code>nether_brick</code>（40）和 <code>end_rock</code>（48）都小，和 1 级的 <code>nether_rock</code>/<code>nether_wood</code> 持平。<b>"升到 3 级，容量反而缩水"</b></td><td><b>高</b></td></tr>
+<tr><td><b><code>soul</code>（0 级 / 容量 128）断层</b></td><td>128 是次高（56）的 <b>2.3 倍</b>，而它只有 0 级。这让"容量"和"等级"彻底脱钩</td><td><b>高</b></td></tr>
+<tr><td><b><code>dirt</code>（0 级 / 容量 8）断层</b></td><td>8 是最低，木头/圆石同 0 级都是 16。泥土<b>容量也只有一半</b></td><td><b>高</b></td></tr>
+<tr><td><b>1 级内部有 24 和 32 两档</b></td><td><code>nether_rock</code>/<code>nether_wood</code> 是 32，其余 1 级是 24 —— <b>同为 1 级容量差 33 %</b></td><td><b>中</b></td></tr>
+<tr><td><b>"跳级式强点"是否存在</b></td><td><b>注入比例上没有跳级</b>（最陡是 0→1 的 +50 %）。<b>但容量上有</b>：<code>soul</code> 0 级拿 128 是"跳级"；<code>purpur</code> 3 级拿 32 是"跳级反向"</td><td><b>高</b></td></tr>
+</table>
+<p><b>建议（把握：高）</b>：把容量做成<b>"等级为主 + 材质特性微调"</b>的两层结构，而不是现在这样一列自由数字。</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+基准容量（按等级）：0 级 = 16   1 级 = 32   2 级 = 48   3 级 = 64
+材质微调：         ±0 或 ±8 或 ×2（仅灵魂）
+</pre>
+<p><b>具体重排建议</b>：</p>
+<table>
+<tr><th>材质</th><th>现容量</th><th>建议容量</th><th>理由</th></tr>
+<tr><td><code>dirt</code></td><td>8</td><td><b>16</b></td><td>与 wood/cobble 齐平，它靠"极低倍率"体现弱，不靠容量</td></tr>
+<tr><td><code>wood</code></td><td>16</td><td>16</td><td>不动</td></tr>
+<tr><td><code>cobble</code></td><td>16</td><td>16</td><td>不动</td></tr>
+<tr><td><code>sandstone</code>/<code>red_sandstone</code>/<code>snow</code>/<code>ice</code></td><td>24</td><td><b>32</b></td><td>与 1 级基准对齐</td></tr>
+<tr><td><code>nether_dirt</code></td><td>24</td><td>32</td><td>同上（同时解决 §9.3 的"被下界岩石支配"）</td></tr>
+<tr><td><code>nether_rock</code>/<code>nether_wood</code></td><td>32</td><td>32</td><td>不动</td></tr>
+<tr><td><code>iron</code></td><td>32</td><td><b>48</b></td><td>2 级基准；配合 §9.1 问题 4，铁降乘数、升容量</td></tr>
+<tr><td><code>gold</code></td><td>40</td><td>48</td><td>2 级基准</td></tr>
+<tr><td><code>emerald</code></td><td>48</td><td>48</td><td>不动</td></tr>
+<tr><td><code>nether_brick</code></td><td>40</td><td>48</td><td>2 级基准</td></tr>
+<tr><td><code>end_rock</code>/<code>chorus</code></td><td>48</td><td>48</td><td>不动</td></tr>
+<tr><td><code>diamond</code></td><td>56</td><td><b>64</b></td><td>3 级基准</td></tr>
+<tr><td><code>purpur</code></td><td><b>32</b></td><td><b>64</b></td><td><b>修掉容量倒挂</b>（这是最该改的一条）</td></tr>
+<tr><td><code>soul</code></td><td><b>128</b></td><td><b>96</b> 或 <b>64</b></td><td>保留"容量专精"身份但不做 2.3 倍断层</td></tr>
+</table>
+<p>改完后：容量随等级严格单调（16 &lt; 32 &lt; 48 &lt; 64），<b>唯一例外是灵魂</b>（0 级/96，用"等级低但容量大"作为它的身份）—— <b>这个例外是有意义的，保留它。</b></p>
+<h3>9.8 我建议改的具体数值（汇总，按优先级）</h3>
+<table>
+<tr><th>#</th><th>改动</th><th>从 → 到</th><th>把握</th><th>理由</th></tr>
+<tr><td><b>1</b></td><td><code>CHORUS</code> 正面 / 负面极性层</td><td>2.00 / 1.50 → <b>1.80 / 1.30</b>（见本节末的联合重算）</td><td><b>高</b></td><td>消除 2.56 倍断层（§9.1 问题 1）</td></tr>
+<tr><td><b>2</b></td><td><code>PURPUR</code> 容量</td><td><b>32 → 64</b></td><td><b>高</b></td><td>修掉"3 级容量倒挂"（§9.7）</td></tr>
+<tr><td><b>3</b></td><td><code>SOUL</code> 等级</td><td><b>0 → 1</b>（注入 50 % → 75 %），容量 128 → <b>96</b></td><td><b>高</b></td><td>灵魂是自相矛盾的陷阱（§9.1 问题 3）</td></tr>
+<tr><td><b>4</b></td><td><code>END_ROCK</code> 负面 / 正面</td><td>1.75 / 1.00 → <b>1.70 / 1.05</b></td><td><b>高</b></td><td>拉平升华/沉坠不对称（§9.2 支配策略 1）。<b>必须与 #1 联合定值</b></td></tr>
+<tr><td><b>5</b></td><td><code>METAL_IRON</code> 正/负</td><td>1.05 / 1.10 → <b>1.20 / 1.25</b></td><td><b>中</b></td><td>铁被金完全支配（§9.1 问题 4）</td></tr>
+<tr><td><b>6</b></td><td><code>METAL_GOLD</code> 负面</td><td>1.15 → <b>1.05</b></td><td><b>中</b></td><td>与铁错开方向（金偏正、铁偏负）</td></tr>
+<tr><td><b>7</b></td><td><code>DIRT</code> 容量</td><td><b>8 → 16</b>，并加"豁免极性冲突反噬"特性</td><td><b>中</b></td><td>泥土完全被木头支配（§9.1 问题 4）</td></tr>
+<tr><td><b>8</b></td><td>绽裂入场券</td><td><code>amount &gt; capacity</code> → <b><code>amount ≥ capacity × 1.5</code></b>，且 <code>capacity ≤ 0</code> 直接拒绝</td><td><b>高</b></td><td>"超容量 1 点"太宽松，与设计意图脱节（§9.6）</td></tr>
+<tr><td><b>9</b></td><td>绽裂转换比</td><td><b>×3 → ×1.5</b></td><td><b>高</b></td><td>与存储上限 100 匹配（§9.5）</td></tr>
+<tr><td><b>10</b></td><td><code>EmotionMoodStore.CAPACITY</code></td><td><b>100 → 150</b></td><td><b>高</b></td><td>让"一次顶不满"，恢复 2 次节奏（§9.5）</td></tr>
+<tr><td><b>11</b></td><td>溢出转经验</td><td><code>shortfall / 3</code> → <b><code>min(shortfall / 3, 60)</code></b></td><td><b>高</b></td><td>堵住无上限经验（§9.6）</td></tr>
+<tr><td><b>12</b></td><td>新增 5 种材质 kind，覆盖 <code>CAVERN</code>/<code>OCEAN</code>/<code>MOUNTAIN</code>/<code>RUIN</code>/<code>CHALLENGE</code></td><td>新增</td><td><b>中</b></td><td>5 种属性是死属性，是最大的设计空洞（§9.3）</td></tr>
+<tr><td><b>13</b></td><td>绽裂仪式时长</td><td>0 → <b>200 tick（10 秒）</b></td><td><b>中</b></td><td>与升华/沉坠的 30 秒成本结构对齐（§9.4）</td></tr>
+<tr><td><b>14</b></td><td>1 级材质容量</td><td>24 → <b>32</b>（<code>sandstone</code>/<code>red_sandstone</code>/<code>snow</code>/<code>ice</code>/<code>nether_dirt</code>）</td><td><b>中</b></td><td>等级与容量的单调性（§9.7）</td></tr>
+<tr><td><b>15</b></td><td>挑战组默认正面占比</td><td>`challenge\</td><td>0.25\</td><td>0.5<code> → **</code>challenge\</td><td>0.5\</td><td>0.75`**</td><td><b>低</b></td><td>挑战记录 <code>amountFrom</code> 只有 16，而绿宝石对它的 ×3.00 需要高点数才划算。<b>但这是配置文件，属于作者可调项，不该我定</b></td></tr>
+</table>
+<h4>改动后的极值预测（把握：中）</h4>
+<p>按 #1/#4/#9 改完后：</p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+升华最大倍率：0.90 × 0.90 × (3.20 × 3.20) = 8.29   （外围紫颂花 + 中心紫颂花 + 空无记录）
+             但紫颂花中心等级 2 → 注入 0.90；若中心是紫珀砖(3级/1.00) → 0.90 × 1.00 × (3.20 × 2.00) = 5.76
+沉坠最大倍率：0.90 × 1.00 × (3.60 × 3.60) = 11.66   ← 会反超升华，需要再平衡
+</pre>
+<p><b>所以 #4 不能单独做，必须和 #1 一起做，并且要复查沉坠侧。</b></p>
+<p><b>我的建议是改成：</b></p>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+CHORUS   正面 2.00 → 1.80    负面 1.50 → 1.30
+PURPUR   负面 1.75 → 1.70    正面 1.00 → 1.10
+END_ROCK 负面 1.75 → 1.70    正面 1.00 → 1.05
+NETHER_ROCK 负面 1.50 → 1.55 正面 0.75 → 0.85
+</pre>
+<p>则：</p>
+<ul>
+<li>升华最大：<code>0.90 × 0.90 × (3.60 × 3.60) = 10.50</code> → 32 点记录 <b>336 点</b></li>
+<li>沉坠最大：<code>0.90 × 1.00 × (3.40 × 3.40) = 10.40</code> → 32 点记录 <b>333 点</b></li>
+<li><b>两者基本持平（差 0.9 %），且都落在"单条记录 300–350 点"的健康区间</b>（当前是 415 vs 353，差 17.6 %）。</li>
+<li>下界组合（下界原木 × 下界原木 + 下界记录）：<code>0.75 × 0.75 × (3.00 × 3.00) = 5.06</code> → <b>162 点</b>。</li>
+</ul>
+<p>  <b>最优/次优 = 336/162 = 2.07 倍</b> —— 仍然有优势但不再是断层，玩家可以"用末地装打 2 倍收益，或用下界装稳定拿一半"。<b>这是可接受的取舍。</b></p>
+<hr>
+<h2>§10 复核清单（给作者当核对工具用）</h2>
+<h3>10.1 一句话公式链</h3>
+<pre class="mono small" style="background:#1e2228;padding:8px;border-radius:6px;overflow:auto">
+记录.ratio ──floor(×4)──▶ 档位 0/1/2/3 ──▶ amountFrom = 8/16/24/32
+                                              │
+                          ┌───────────────────┴──────────────────┐
+                          │  升华取 ratio 份 · 沉坠取 (1−ratio) 份 │
+                          └───────────────────┬──────────────────┘
+                                              ▼
+                                       total = round(...)
+                                              │
+        total ≤ 0 ──▶ 【失败】消耗记录，不注入，不播动画
+                                              │
+                                              ▼
+  注入 = max( 1, round( total × 外围注入比例 × 中心注入比例 × 偏好 ) )
+                                              │
+                    偏好 = 外围倍率 × 中心倍率
+                    单层倍率 = 属性层(1.00~3.00) × 极性层(0.50~2.00) × 无条件层(1.00/1.20)
+                                              │
+                                              ▼
+                          累加进法杖（可超容量；满/超容量时禁止再注入）
+                                              │
+                          超容量 + 纯单一极性 ──▶ 绽裂
+                                              │
+              心绪总量 = round(含量 × 3)，再 × 外围单层偏好（只一层）
+                          每份 = 心绪总量 // (正面 6 / 负面 4)，每条 ±20 % 随机
+                                              │
+                          每类封顶 100，装不下的 ÷3 变经验
+                                              │
+                          溢出转经验：约 1 点杖含量 → 1 点经验（满偏好时 1.33）
+</pre>
+<h3>10.2 容易算错的五个地方</h3>
+<p>1. <b>偏好是"外围一层 × 中心一层"，不是四次方，也不是"外围四尊各算一次"。</b> 外围四尊强制同类，所以只算一尊。（<code>RitualStructure.java:184-188</code> 强制 <code>kind != k</code> 就 <code>return null</code>）</p>
+<p>2. <b>属性偏好里没有"输出系数"。</b> 输出系数只在挥杖时用。</p>
+<p>3. <b><code>Math.max(1, …)</code> 的保底 1 点，只在"仪式成功"时生效。</b> <code>total ≤ 0</code> 是<b>另一条失败路径</b>，那条是 0 点。</p>
+<p>4. <b>绽裂的偏好只乘一次（外围），且用的是"法杖载荷里的属性"。</b> 中心雕像完全不参与（<code>RitualEffects.java:306-316</code>）。</p>
+<p>5. <b><code>每份 = boosted // pool.size()</code> 是整数除法，然后是 <code>max(1, round(per × (0.8 + rng × 0.4)))</code>。</b> 所以 <code>boosted</code> 的零头会被丢掉（例如 boosted=51、6 份 → per=8、只发 48）。<b>随机浮动是在 <code>per</code> 之上，不是在 <code>boosted</code> 之上。</b></p>
+<h3>10.3 我明确标"未核对"的三处</h3>
+<table>
+<tr><th>项</th><th>为什么没核</th></tr>
+<tr><td><code>SOUL.allowsMixing()</code> / <code>CHORUS.randomFluctuation()</code> / <code>PURPUR.sharedStorage()</code> 是否真的被调用</td><td>只在 <code>StatueTrait</code> 内 grep，<b>未全仓穷举</b>。<code>multiplierFor</code> 不引用它们，仪式/法杖路径也没看到调用点</td></tr>
+<tr><td><code>EmotionPayload.capacity</code> 是否可被外部（命令/NBT/创造物品）写入任意值</td><td>只核了 <code>GuideBookItem</code>（用 <code>kind.capacity()</code>）和 <code>drained()</code>（保留原值）两条路径，<b>未核 <code>MadnessCommands.java</code>（54 KB）</b></td></tr>
+<tr><td>群系 → 属性的实际命中率（有多少群系落进 5 个"死属性"）</td><td><code>BIOME_RULES</code> 的顺序敏感匹配我没跑全量群系表，只读了规则顺序</td></tr>
+</table>
+<hr>
+<p><b>（完）</b></p></main></html>
